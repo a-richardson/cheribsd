@@ -62,7 +62,7 @@ WANT_DUMP=	yes
 LIBADD= 	cheri z
 .endif
 
-LIBADD+=	xo util
+LIBADD+=	xo util pthread
 
 NO_SHARED?=	YES
 
