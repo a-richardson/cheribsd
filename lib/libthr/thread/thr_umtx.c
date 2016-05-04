@@ -33,6 +33,36 @@
 #ifndef HAS__UMTX_OP_ERR
 int _umtx_op_err(void *obj, int op, u_long val, void *uaddr, void *uaddr2)
 {
+	const char* op_str;
+	switch (op) {
+	case UMTX_OP_RESERVED0: op_str = "UMTX_OP_RESERVED1"; break;
+	case UMTX_OP_RESERVED1: op_str = "UMTX_OP_RESERVED1"; break;
+	case UMTX_OP_WAIT: op_str = "UMTX_OP_WAIT"; break;
+	case UMTX_OP_WAKE: op_str = "UMTX_OP_WAKE"; break;
+	case UMTX_OP_MUTEX_TRYLOCK: op_str = "UMTX_OP_MUTEX_TRYLOCK"; break;
+	case UMTX_OP_MUTEX_LOCK: op_str = "UMTX_OP_MUTEX_LOCK"; break;
+	case UMTX_OP_MUTEX_UNLOCK: op_str = "UMTX_OP_MUTEX_UNLOCK"; break;
+	case UMTX_OP_SET_CEILING: op_str = "UMTX_OP_SET_CEILING"; break;
+	case UMTX_OP_CV_WAIT: op_str = "UMTX_OP_CV_WAIT"; break;
+	case UMTX_OP_CV_SIGNAL: op_str = "UMTX_OP_CV_SIGNAL"; break;
+	case UMTX_OP_CV_BROADCAST: op_str = "UMTX_OP_CV_BROADCAST"; break;
+	case UMTX_OP_WAIT_UINT: op_str = "UMTX_OP_WAIT_UINT"; break;
+	case UMTX_OP_RW_RDLOCK: op_str = "UMTX_OP_RW_RDLOCK"; break;
+	case UMTX_OP_RW_WRLOCK: op_str = "UMTX_OP_RW_WRLOCK"; break;
+	case UMTX_OP_RW_UNLOCK: op_str = "UMTX_OP_RW_UNLOCK"; break;
+	case UMTX_OP_WAIT_UINT_PRIVATE: op_str = "UMTX_OP_WAIT_UINT_PRIVATE"; break;
+	case UMTX_OP_WAKE_PRIVATE: op_str = "UMTX_OP_WAKE_PRIVATE"; break;
+	case UMTX_OP_MUTEX_WAIT: op_str = "UMTX_OP_MUTEX_WAIT"; break;
+	case UMTX_OP_MUTEX_WAKE: op_str = "UMTX_OP_MUTEX_WAKE"; break;
+	case UMTX_OP_SEM_WAIT: op_str = "UMTX_OP_SEM_WAIT"; break;
+	case UMTX_OP_SEM_WAKE: op_str = "UMTX_OP_SEM_WAKE"; break;
+	case UMTX_OP_NWAKE_PRIVATE: op_str = "UMTX_OP_NWAKE_PRIVATE"; break;
+	case UMTX_OP_MUTEX_WAKE2: op_str = "UMTX_OP_MUTEX_WAKE2"; break;
+	case UMTX_OP_SEM2_WAIT: op_str = "UMTX_OP_SEM2_WAIT"; break;
+	case UMTX_OP_SEM2_WAKE: op_str = "UMTX_OP_SEM2_WAKE"; break;
+	default: op_str = "UNKNOWN UMTX_OP";
+	}
+	stderr_debug("_umtx_op_err(%p, %s, %ld, %p, %p)\n", obj, op_str, val, uaddr, uaddr2);
 	if (_umtx_op(obj, op, val, uaddr, uaddr2) == -1)
 		return (errno);
 	return (0);
@@ -59,10 +89,12 @@ int
 __thr_umutex_lock(struct umutex *mtx, uint32_t id)
 {
 	uint32_t owner;
+	stderr_debug("__thr_umutex_lock %p: id=%d, flags=0x%x\n", mtx, id, mtx->m_flags);
 
 	if ((mtx->m_flags & (UMUTEX_PRIO_PROTECT | UMUTEX_PRIO_INHERIT)) == 0) {
 		for (;;) {
 			/* wait in kernel */
+			stderr_debug("calling _umtx_op_err(%p, UMTX_OP_MUTEX_WAIT)\n", mtx);
 			_umtx_op_err(mtx, UMTX_OP_MUTEX_WAIT, 0, 0, 0);
 
 			owner = mtx->m_owner;
@@ -71,7 +103,7 @@ __thr_umutex_lock(struct umutex *mtx, uint32_t id)
 				return (0);
 		}
 	}
-
+	stderr_debug("calling _umtx_op_err(%p, UMTX_OP_MUTEX_LOCK)\n", mtx);
 	return	_umtx_op_err(mtx, UMTX_OP_MUTEX_LOCK, 0, 0, 0);
 }
 
@@ -82,8 +114,11 @@ __thr_umutex_lock_spin(struct umutex *mtx, uint32_t id)
 {
 	uint32_t owner;
 
-	if (!_thr_is_smp)
+	stderr_debug("__thr_umutex_lock_spin %p: id=%d, flags=0x%x\n", mtx, id, mtx->m_flags);
+	if (!_thr_is_smp) {
+		stderr_debug("__thr_umutex_lock_spin: !_thr_is_smp!\n");
 		return __thr_umutex_lock(mtx, id);
+	}
 
 	if ((mtx->m_flags & (UMUTEX_PRIO_PROTECT | UMUTEX_PRIO_INHERIT)) == 0) {
 		for (;;) {
@@ -117,6 +152,9 @@ __thr_umutex_timedlock(struct umutex *mtx, uint32_t id,
 	uint32_t owner;
 	int ret;
 
+	stderr_debug("__thr_umutex_timedlock %p, id %d time %p\n", mtx, id, abstime);
+
+
 	if (abstime == NULL) {
 		tm_p = NULL;
 		tm_size = 0;
@@ -133,6 +171,7 @@ __thr_umutex_timedlock(struct umutex *mtx, uint32_t id,
 
 			/* wait in kernel */
 			ret = _umtx_op_err(mtx, UMTX_OP_MUTEX_WAIT, 0,
+				// FIXME: another provenacne warning?
 				 (void *)(uintptr_t)tm_size, __DECONST(void *, tm_p));
 
 			/* now try to lock it */
@@ -141,6 +180,7 @@ __thr_umutex_timedlock(struct umutex *mtx, uint32_t id,
 			     atomic_cmpset_acq_32(&mtx->m_owner, owner, id|owner))
 				return (0);
 		} else {
+			// FIXME: another provenacne warning?
 			ret = _umtx_op_err(mtx, UMTX_OP_MUTEX_LOCK, 0, 
 				 (void *)(uintptr_t)tm_size, __DECONST(void *, tm_p));
 			if (ret == 0)
@@ -155,12 +195,14 @@ __thr_umutex_timedlock(struct umutex *mtx, uint32_t id,
 int
 __thr_umutex_unlock(struct umutex *mtx, uint32_t id)
 {
+	stderr_debug("__thr_umutex_unlock %p, id %d\n", mtx, id);
 	return _umtx_op_err(mtx, UMTX_OP_MUTEX_UNLOCK, 0, 0, 0);
 }
 
 int
 __thr_umutex_trylock(struct umutex *mtx)
 {
+	stderr_debug("__thr_umutex_trylock %p\n", mtx);
 	return _umtx_op_err(mtx, UMTX_OP_MUTEX_TRYLOCK, 0, 0, 0);
 }
 
@@ -168,12 +210,15 @@ int
 __thr_umutex_set_ceiling(struct umutex *mtx, uint32_t ceiling,
 	uint32_t *oldceiling)
 {
+	stderr_debug("__thr_umutex_set_ceiling %p, ceiling %d, oldceil %p\n", mtx, ceiling, oldceiling);
 	return _umtx_op_err(mtx, UMTX_OP_SET_CEILING, ceiling, oldceiling, 0);
 }
 
 int
 _thr_umtx_wait(volatile long *mtx, long id, const struct timespec *timeout)
 {
+	stderr_debug("_thr_umtx_wait_uint %p, id %d, timeout %p\n", mtx, id, timeout);
+
 	if (timeout && (timeout->tv_sec < 0 || (timeout->tv_sec == 0 &&
 		timeout->tv_nsec <= 0)))
 		return (ETIMEDOUT);
@@ -184,6 +229,7 @@ _thr_umtx_wait(volatile long *mtx, long id, const struct timespec *timeout)
 int
 _thr_umtx_wait_uint(volatile u_int *mtx, u_int id, const struct timespec *timeout, int shared)
 {
+	stderr_debug("_thr_umtx_wait_uint %p, id %d, shared %d\n", mtx, id, shared);
 	if (timeout && (timeout->tv_sec < 0 || (timeout->tv_sec == 0 &&
 		timeout->tv_nsec <= 0)))
 		return (ETIMEDOUT);
@@ -196,6 +242,8 @@ int
 _thr_umtx_timedwait_uint(volatile u_int *mtx, u_int id, int clockid,
 	const struct timespec *abstime, int shared)
 {
+	stderr_debug("_thr_umtx_timedwait_uint %p, id %d, shared %d\n", mtx, id, shared);
+
 	struct _umtx_time *tm_p, timeout;
 	size_t tm_size;
 
@@ -218,6 +266,7 @@ _thr_umtx_timedwait_uint(volatile u_int *mtx, u_int id, int clockid,
 int
 _thr_umtx_wake(volatile void *mtx, int nr_wakeup, int shared)
 {
+	stderr_debug("_thr_umtx_wake %p, nr %d, shared %d\n", mtx, nr_wakeup, shared);
 	return _umtx_op_err(__DEVOLATILE(void *, mtx), shared ? UMTX_OP_WAKE : UMTX_OP_WAKE_PRIVATE,
 		nr_wakeup, 0, 0);
 }
@@ -232,6 +281,7 @@ int
 _thr_ucond_wait(struct ucond *cv, struct umutex *m,
 	const struct timespec *timeout, int flags)
 {
+	stderr_debug("_thr_ucond_wait %p, c_has_waiters: %d, mtx %p\n", cv, cv->c_has_waiters, m);
 	if (timeout && (timeout->tv_sec < 0 || (timeout->tv_sec == 0 &&
 	    timeout->tv_nsec <= 0))) {
 		struct pthread *curthread = _get_curthread();
@@ -245,6 +295,7 @@ _thr_ucond_wait(struct ucond *cv, struct umutex *m,
 int
 _thr_ucond_signal(struct ucond *cv)
 {
+	stderr_debug("_thr_ucond_signal %p, c_has_waiters: %d\n", cv, cv->c_has_waiters);
 	if (!cv->c_has_waiters)
 		return (0);
 	return _umtx_op_err(cv, UMTX_OP_CV_SIGNAL, 0, NULL, NULL);
@@ -253,6 +304,7 @@ _thr_ucond_signal(struct ucond *cv)
 int
 _thr_ucond_broadcast(struct ucond *cv)
 {
+	stderr_debug("_thr_ucond_broadcast %p, c_has_waiters: %d\n", cv, cv->c_has_waiters);
 	if (!cv->c_has_waiters)
 		return (0);
 	return _umtx_op_err(cv, UMTX_OP_CV_BROADCAST, 0, NULL, NULL);

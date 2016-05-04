@@ -79,12 +79,15 @@ _thr_rtld_lock_create(void)
 
 	l = &lock_place[locki];
 	l->lock.rw_flags = URWLOCK_PREFER_READER;
+	stderr_debug("_thr_rtld_lock_create finished: %p\n", l);
 	return (l);
 }
 
 static void
 _thr_rtld_lock_destroy(void *lock)
 {
+	stderr_debug("_thr_rtld_lock_destroy %p\n", lock);
+
 	int locki;
 	size_t i;
 
@@ -118,11 +121,14 @@ _thr_rtld_rlock_acquire(void *lock)
 	curthread = _get_curthread();
 	SAVE_ERRNO();
 	l = (struct rtld_lock *)lock;
+	stderr_debug("_thr_rtld_rlock_acquire cur=%p, lock=%p\n", curthread, lock);
+
 
 	THR_CRITICAL_ENTER(curthread);
 	while (_thr_rwlock_rdlock(&l->lock, 0, NULL) != 0)
 		;
 	curthread->rdlock_count++;
+	stderr_debug("_thr_rtld_rlock_acquire: curthread->rdlock_count = %d\n", curthread->rdlock_count);
 	RESTORE_ERRNO();
 }
 
@@ -136,6 +142,7 @@ _thr_rtld_wlock_acquire(void *lock)
 	curthread = _get_curthread();
 	SAVE_ERRNO();
 	l = (struct rtld_lock *)lock;
+	stderr_debug("_thr_rtld_wlock_acquire cur=%p, lock=%p\n", curthread, lock);
 
 	THR_CRITICAL_ENTER(curthread);
 	while (_thr_rwlock_wrlock(&l->lock, NULL) != 0)
@@ -154,7 +161,8 @@ _thr_rtld_lock_release(void *lock)
 	curthread = _get_curthread();
 	SAVE_ERRNO();
 	l = (struct rtld_lock *)lock;
-	
+	stderr_debug("_thr_rtld_lock_release cur=%p, lock=%p\n", curthread, lock);
+
 	state = l->lock.rw_state;
 	if (_thr_rwlock_unlock(&l->lock) == 0) {
 		if ((state & URWLOCK_WRITE_OWNER) == 0)
@@ -199,6 +207,7 @@ _thr_rtld_init(void)
 
 	/* force to resolve memcpy PLT */
 	memcpy(&dummy, &dummy, sizeof(dummy));
+	stderr_debug("_thr_rtld_init cur=%p\n", curthread);
 
 	mprotect(NULL, 0, 0);
 	_rtld_get_stack_prot();

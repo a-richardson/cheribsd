@@ -568,14 +568,28 @@ struct pthread {
 #define	THR_UMUTEX_UNLOCK(thrd, lck)			\
 	_thr_umutex_unlock((lck), TID(thrd))
 
+#if THR_LOCK_DEBUG
+#define THR_LOCK_DEBUG_MSG(kind, thrd, lck)			\
+	stderr_debug("THR_LOCK_" #kind "(%p, %p) at %s:%d\n",	\
+	    thrd, lck, __FILE__, __LINE__);
+#define THR_LIST_RWLOCK_DEBUG_MSG(kind, curthrd)		\
+	stderr_debug("THREAD_LIST_" #kind "(%p) at %s:%d\n",	\
+	    curthrd, __FILE__, __LINE__);
+#else
+#define THR_LOCK_DEBUG_MSG(kind, thrd, lck)
+#define THR_LIST_RWLOCK_DEBUG_MSG(kind, curthrd)
+#endif
+
 #define	THR_LOCK_ACQUIRE(thrd, lck)			\
 do {							\
+	THR_LOCK_DEBUG_MSG(ACQUIRE, thrd, lck)		\
 	(thrd)->locklevel++;				\
 	_thr_umutex_lock(lck, TID(thrd));		\
 } while (0)
 
 #define	THR_LOCK_ACQUIRE_SPIN(thrd, lck)		\
 do {							\
+	THR_LOCK_DEBUG_MSG(ACQUIRE_SPIN, thrd, lck)	\
 	(thrd)->locklevel++;				\
 	_thr_umutex_lock_spin(lck, TID(thrd));		\
 } while (0)
@@ -593,6 +607,7 @@ do {							\
 #define	THR_LOCK_RELEASE(thrd, lck)			\
 do {							\
 	THR_ASSERT_LOCKLEVEL(thrd);			\
+	THR_LOCK_DEBUG_MSG(RELEASE, thrd, lck)		\
 	_thr_umutex_unlock((lck), TID(thrd));		\
 	(thrd)->locklevel--;				\
 	_thr_ast(thrd);					\
@@ -605,18 +620,21 @@ do {							\
 
 #define	THREAD_LIST_RDLOCK(curthrd)				\
 do {								\
+	THR_LIST_RWLOCK_DEBUG_MSG(RDLOCK, curthrd)		\
 	(curthrd)->locklevel++;					\
 	_thr_rwl_rdlock(&_thr_list_lock);			\
 } while (0)
 
 #define	THREAD_LIST_WRLOCK(curthrd)				\
 do {								\
+	THR_LIST_RWLOCK_DEBUG_MSG(WRLOCK, curthrd)		\
 	(curthrd)->locklevel++;					\
 	_thr_rwl_wrlock(&_thr_list_lock);			\
 } while (0)
 
 #define	THREAD_LIST_UNLOCK(curthrd)				\
 do {								\
+	THR_LIST_RWLOCK_DEBUG_MSG(UNLOCK, curthrd)		\
 	_thr_rwl_unlock(&_thr_list_lock);			\
 	(curthrd)->locklevel--;					\
 	_thr_ast(curthrd);					\

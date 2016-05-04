@@ -191,6 +191,7 @@ _thr_free(struct pthread *curthread, struct pthread *thread)
 	 * block, but don't know its detail and can not assume how
 	 * it works, so better to avoid caching it here.
 	 */
+	stderr_debug("_thr_free(%p, %p)\n", curthread, thread);
 	if (curthread != NULL) {
 		stderr_debug("curthread != NULL, THR_LOCK_ACQUIRE\n");
 		THR_LOCK_ACQUIRE(curthread, &tcb_lock);
@@ -214,12 +215,10 @@ _thr_free(struct pthread *curthread, struct pthread *thread)
 		 * Add the thread to the free thread list, this also avoids
 		 * pthread id is reused too quickly, may help some buggy apps.
 		 */
-		stderr_debug("THR_LOCK_ACQUIRE\n");
 		THR_LOCK_ACQUIRE(curthread, &free_thread_lock);
 		stderr_debug("TAILQ_INSERT_TAIL\n");
 		TAILQ_INSERT_TAIL(&free_threadq, thread, tle);
 		free_thread_count++;
-		stderr_debug("THR_LOCK_ACQUIRE\n");
 		THR_LOCK_RELEASE(curthread, &free_thread_lock);
 	}
 	stderr_debug("exiting _thr_free\n");

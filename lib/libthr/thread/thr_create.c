@@ -121,6 +121,7 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 	if (create_stack(&new_thread->attr) != 0) {
 		/* Insufficient memory to create a stack: */
 		stderr_debug("thr_stack failed!\n");
+		// FIXME: this causes a deadlock in the kernel!
 		_thr_free(curthread, new_thread);
 		stderr_debug("_thr_free returned!\n");
 		return (EAGAIN);
