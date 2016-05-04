@@ -1834,6 +1834,7 @@ void
 cheriabi_mmap_set_retcap(struct thread *td, struct chericap *retcap,
    struct chericap *addr, size_t len, int prot, int flags)
 {
+	// TODO: add tmpfs stuff?
 	register_t perms, ret;
 	size_t addr_base;
 
