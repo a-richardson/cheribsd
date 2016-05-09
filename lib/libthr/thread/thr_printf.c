@@ -51,6 +51,7 @@ static void	pstr(int fd, const char *s);
 void
 _thread_printf(int fd, const char *fmt, ...)
 {
+	//WTF is going on here? it causes a capability violation at -O0 but not at -O1???
 	static const char digits[16] = "0123456789abcdef";
 	va_list	 ap;
 	/* XXX_AR: we should print capabilities not vaddr_t -> increase size */

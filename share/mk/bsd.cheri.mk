@@ -28,10 +28,10 @@ _CHERI_CC+=	--sysroot=${SYSROOT}
 
 .if ${WANT_CHERI} == "pure" || ${WANT_CHERI} == "sandbox"
 OBJCOPY:=	elfcopy
-_CHERI_CC+=	-mabi=sandbox -mxgot -O0
+_CHERI_CC+=	-mabi=sandbox -mxgot -O1
 LIBDIR:=	/usr/libcheri
 ROOTOBJDIR=	${.OBJDIR:S,${.CURDIR},,}${SRCTOP}/worldcheri${SRCTOP}
-CFLAGS+=	-O0 -ftls-model=local-exec
+CFLAGS+=	-O1 -ftls-model=local-exec
 .if ${MK_CHERI_LINKER} == "yes"
 _CHERI_CC+=	-cheri-linker
 CFLAGS+=	-Wno-error
