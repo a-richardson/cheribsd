@@ -436,15 +436,20 @@ init_main_thread(struct pthread *thread)
 
 	thread->attr.stackaddr_attr = (void*)(uintptr_t)(_usrstack -
 	    _thr_stack_initial);
+	thread->attr.stacksize_attr = _thr_stack_initial;
+	thread->attr.guardsize_attr = _thr_guard_default;
+	thread->attr.flags |= THR_STACK_USER;
 #ifdef __CHERI_PURE_CAPABILITY__
 	/* In CHERIABI stackaddr_attr can't be dereferenced */
 	THR_ASSERT(cheri_gettag(thread->attr.stackaddr_attr) == 0,
 	    "thread->attr.stackaddr_attr should not be a capability");
+	/* XXX-AR: derive a valid stack capbility here? */
+	void* stack = cheri_getstack();
+	stderr_debug("cheri_getstack()=" CHERI_CAP_FMT_STR ", stacksize: 0x%lx, "
+	    "stackaddr_attr=" CHERI_CAP_FMT_STR ", guard=0x%lx\n",
+	    CHERI_CAP_FMT_ARG(stack), thread->attr.stacksize_attr,
+	    CHERI_CAP_FMT_ARG(thread->attr.stackaddr_attr), thread->attr.guardsize_attr);
 #endif
-	thread->attr.stacksize_attr = _thr_stack_initial;
-	thread->attr.guardsize_attr = _thr_guard_default;
-	thread->attr.flags |= THR_STACK_USER;
-
 	/*
 	 * Write a magic value to the thread structure
 	 * to help identify valid ones:

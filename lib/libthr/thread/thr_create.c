@@ -126,6 +126,13 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 		stderr_debug("_thr_free returned!\n");
 		return (EAGAIN);
 	}
+#ifdef __CHERI_PURE_CAPABILITY__
+	stderr_debug("new thread stacksize: 0x%lx, "
+	    "stackaddr_attr=" CHERI_CAP_FMT_STR ", guard=0x%lx\n",
+	    new_thread->attr.stacksize_attr,
+	    CHERI_CAP_FMT_ARG(new_thread->attr.stackaddr_attr),
+	    new_thread->attr.guardsize_attr);
+#endif
 	/*
 	 * Write a magic value to the thread structure
 	 * to help identify valid ones:
