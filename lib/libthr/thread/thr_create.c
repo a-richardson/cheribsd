@@ -163,13 +163,17 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 	 * Handle the race between __pthread_map_stacks_exec and
 	 * thread linkage.
 	 */
-	if (old_stack_prot != _rtld_get_stack_prot())
+	if (old_stack_prot != _rtld_get_stack_prot()) {
+		stderr_debug("calling _thr_stack_fix_protection\n");
 		_thr_stack_fix_protection(new_thread);
+	} else {
+		stderr_debug("NOT calling _thr_stack_fix_protection\n");
+	}
 
 	/* Return thread pointer eariler so that new thread can use it. */
 	(*thread) = new_thread;
 	if (SHOULD_REPORT_EVENT(curthread, TD_CREATE) || cpusetp != NULL) {
-		stderr_debug("calling THR_THREAD_LOCK, SHOULD_REPORT_EVENT\n");
+		stderr_debug("SHOULD_REPORT_EVENT TD_CREATE\n");
 		THR_THREAD_LOCK(curthread, new_thread);
 		locked = 1;
 	} else
