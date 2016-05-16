@@ -840,6 +840,8 @@ cheriabi_exec_setregs(struct thread *td, struct image_params *imgp, u_long stack
 	td->td_md.md_ss_addr = 0;
 
 	td->td_md.md_tls_tcb_offset = TLS_TP_OFFSET + TLS_TCB_SIZE_C;
+	printf("cheriabi_exec_setregs(%p): td->td_md.md_tls_tcb_offset = TLS_TP_OFFSET(%d) + TLS_TCB_SIZE_C(%zd) -> 0x%zx, proc = %p, sysent = %p, cheri_sysent %p\n",
+	       td, TLS_TP_OFFSET, TLS_TCB_SIZE_C, td->td_md.md_tls_tcb_offset, td->td_proc, td->td_proc ? td->td_proc->p_sysent : NULL, &elf_freebsd_cheriabi_sysvec);
 }
 
 /*
@@ -852,6 +854,9 @@ cheriabi_set_threadregs(struct thread *td, struct thr_param_c *param)
 
 	frame = td->td_frame;
 	bzero(frame, sizeof(*frame));
+
+	printf("cheriabi_set_threadregs(%p): td->td_md.md_tls_tcb_offset = 0x%zx, proc %p, sysent %p, cheri sysent: %p\n",
+	       td, td->td_md.md_tls_tcb_offset, td->td_proc, td->td_proc ? td->td_proc->p_sysent : NULL, &elf_freebsd_cheriabi_sysvec);
 
 	/*
 	 * Keep interrupt mask
@@ -903,9 +908,15 @@ cheriabi_set_user_tls(struct thread *td, struct chericap *tls_base)
 	 */
 	error = cheriabi_cap_to_ptr((caddr_t *)&td->td_md.md_tls, tls_base,
 	    0, 0, 1);
+	printf("cheriabi_set_user_tls(%p): td->td_md.md_tls_tcb_offset = 0x%zx, tls base: ", td, td->td_md.md_tls_tcb_offset);
+	CHERI_CLC(CHERI_CR_CTEMP0, CHERI_CR_KDC, tls_base, 0);
+	CHERI_CAP_PRINT(CHERI_CR_CTEMP0);
 	if (error)
 		return (error);
 	cheri_capability_copy(&td->td_md.md_tls_cap, tls_base);
+	printf("tls cap: ");
+	CHERI_CLC(CHERI_CR_CTEMP0, CHERI_CR_KDC, &td->td_md.md_tls_cap, 0);
+	CHERI_CAP_PRINT(CHERI_CR_CTEMP0);
 	/* XXX: should support a crdhwr version */
 	if (curthread == td && cpuinfo.userlocal_reg == true) {
 		/*
@@ -923,6 +934,8 @@ cheriabi_set_user_tls(struct thread *td, struct chericap *tls_base)
 		 */
 		mips_wr_userlocal((unsigned long)((caddr_t)td->td_md.md_tls +
 		    td->td_md.md_tls_tcb_offset));
+		printf("mips_wr_userlocal(%p + %lx= %lx)\n", td->td_md.md_tls, td->td_md.md_tls_tcb_offset,
+			(unsigned long)((caddr_t)td->td_md.md_tls + td->td_md.md_tls_tcb_offset));
 	}
 
 	return (0);

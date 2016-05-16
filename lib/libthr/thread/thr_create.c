@@ -198,6 +198,8 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 #endif
 	param.tls_base = (char *)new_thread->tcb;
 	param.tls_size = sizeof(struct tcb);
+	stderr_debug("param.tls_base=" CHERI_CAP_FMT_STR ", param.tls_size=0x%lx\n",
+	    CHERI_CAP_FMT_ARG(new_thread->tcb), param.tls_size);
 	param.child_tid = &new_thread->tid;
 	param.parent_tid = &new_thread->tid;
 	param.flags = 0;
@@ -271,7 +273,9 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 		_thr_report_creation(curthread, new_thread);
 		THR_THREAD_UNLOCK(curthread, new_thread);
 	} else {
-		stderr_debug("don, not locked!\n");
+		stderr_debug("done, not locked!\n");
+// 		stderr_debug("param.tls_base=" CHERI_CAP_FMT_STR ", param.tls_size=0x%lx\n",
+// 		    CHERI_CAP_FMT_ARG(new_thread->tcb), param.tls_size);
 
 	}
 out:

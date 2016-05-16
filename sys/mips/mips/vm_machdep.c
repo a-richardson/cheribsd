@@ -598,7 +598,10 @@ cpu_set_user_tls(struct thread *td, void *tls_base)
 	else
 #endif
 	td->td_md.md_tls_tcb_offset = TLS_TP_OFFSET + TLS_TCB_SIZE;
+	printf("cpu_set_user_tls(%p): md_tls_tcb_offset = 0x%zx, proc %p, flags 0x%x, curthread=%p\n", td, td->td_md.md_tls_tcb_offset, td->td_proc, td->td_proc ? td->td_proc->p_sysent->sv_flags : 0, curthread);
+	/* XXX-AR: add a TLS alignment check here */
 	td->td_md.md_tls = (char*)tls_base;
+	/* Why doesn't the CHERIABI version check for curthread == td */
 	if (td == curthread && cpuinfo.userlocal_reg == true) {
 		mips_wr_userlocal((unsigned long)tls_base +
 		    td->td_md.md_tls_tcb_offset);

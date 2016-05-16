@@ -173,6 +173,8 @@ _thr_alloc(struct pthread *curthread)
 	}
 	if (tcb != NULL) {
 		thread->tcb = tcb;
+		stderr_debug("allocated tcb: " CHERI_CAP_FMT_STR ", curthread = %p\n",
+		    CHERI_CAP_FMT_ARG(tcb), curthread);
 	} else {
 		thr_destroy(curthread, thread);
 		atomic_fetchadd_int(&total_threads, -1);
