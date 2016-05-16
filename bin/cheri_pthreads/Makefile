@@ -1,11 +1,11 @@
 # $FreeBSD$
 
-PROG=	cheri_pthreads
-SRCS=	cheri_pthreads.c
+PROG?=	cheri_pthreads
+SRCS?=	cheri_pthreads.c
 
 MAN=
-NEED_CHERI=	pure
-WANT_DUMP=	yes
+NEED_CHERI?=	pure
+WANT_DUMP?=	yes
 
 LIBADD=  pthread
 
