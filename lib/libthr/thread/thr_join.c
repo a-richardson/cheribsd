@@ -82,31 +82,41 @@ join_common(pthread_t pthread, void **thread_return,
 	long tid;
 	int ret = 0;
 
-	if (pthread == NULL)
+	if (pthread == NULL) {
+		stderr_debug("join: pthread == NULL\n");
 		return (EINVAL);
+	}
 
-	if (pthread == curthread)
+	if (pthread == curthread) {
+		stderr_debug("join: EDEADLK %p == %p\n", pthread, curthread);
 		return (EDEADLK);
+	}
 
-	if ((ret = _thr_find_thread(curthread, pthread, 1)) != 0)
+	if ((ret = _thr_find_thread(curthread, pthread, 1)) != 0) {
+		stderr_debug("join: ESRCH _thr_find_thread(%p, %p, 1) == 0\n", curthread, pthread);
 		return (ESRCH);
+	}
 
 	if ((pthread->flags & THR_FLAGS_DETACHED) != 0) {
+		stderr_debug("join: EINVAL: pthread->flags & THR_FLAGS_DETACHED\n");
 		ret = EINVAL;
 	} else if (pthread->joiner != NULL) {
 		/* Multiple joiners are not supported. */
+		stderr_debug("join: ENOTSUP: multiple joiners not supported: pthread->joiner = %p\n", pthread->joiner);
 		ret = ENOTSUP;
 	}
 	if (ret) {
 		THR_THREAD_UNLOCK(curthread, pthread);
 		return (ret);
 	}
+	/* XXX-AR: where is the THR_THREAD_LOCK being called?? */
 	/* Set the running thread to be the joiner: */
 	pthread->joiner = curthread;
 
 	THR_THREAD_UNLOCK(curthread, pthread);
 
 	THR_CLEANUP_PUSH(curthread, backout_join, pthread);
+	stderr_debug("join: _thr_cancel_enter(%p)\n", curthread);
 	_thr_cancel_enter(curthread);
 
 	tid = pthread->tid;
@@ -127,7 +137,9 @@ join_common(pthread_t pthread, void **thread_return,
 			break;
 	}
 
+	stderr_debug("join: _thr_cancel_leave(%p)\n", curthread);
 	_thr_cancel_leave(curthread, 0);
+	stderr_debug("join: THR_CLEANUP_POP(%p)\n", curthread);
 	THR_CLEANUP_POP(curthread, 0);
 
 	if (ret == ETIMEDOUT) {
