@@ -96,6 +96,7 @@ thread_uw_init(void)
 		}
 	    }
 	}
+	stderr_debug("thread_uw_init() finished: forcedunwind=%p\n", (void*)forcedunwind);
 	inited = 1;
 }
 
@@ -103,12 +104,14 @@ _Unwind_Reason_Code
 _Unwind_ForcedUnwind(struct _Unwind_Exception *ex, _Unwind_Stop_Fn stop_func,
 	void *stop_arg)
 {
+	stderr_debug("About to call uwl_forcedunwind aka %p\n", uwl_forcedunwind);
 	return (*uwl_forcedunwind)(ex, stop_func, stop_arg);
 }
 
 unsigned long
 _Unwind_GetCFA(struct _Unwind_Context *context)
 {
+	stderr_debug("About to call uwl_getcfa aka %p\n", uwl_getcfa);
 	return (*uwl_getcfa)(context);
 }
 #else
@@ -171,6 +174,8 @@ thread_unwind(void)
 
 	curthread->ex.exception_class = 0;
 	curthread->ex.exception_cleanup = thread_unwind_cleanup;
+	stderr_debug("_Unwind_ForcedUnwind(&curthread->ex(%p), thread_unwind_stop, NULL):" CHERI_CAP_FMT_STR"\n", &curthread->ex,
+		CHERI_CAP_FMT_ARG(&_Unwind_ForcedUnwind));
 	_Unwind_ForcedUnwind(&curthread->ex, thread_unwind_stop, NULL);
 	PANIC("_Unwind_ForcedUnwind returned");
 }
@@ -227,6 +232,7 @@ _pthread_exit_mask(void *status, sigset_t *mask)
 	
 	/* Save the return value: */
 	curthread->ret = status;
+	stderr_debug("thread %p return value is %p\n", curthread, status);
 #ifdef _PTHREAD_FORCED_UNWIND
 
 #ifdef PIC
@@ -235,10 +241,11 @@ _pthread_exit_mask(void *status, sigset_t *mask)
 
 #ifdef PIC
 	if (uwl_forcedunwind != NULL) {
+		stderr_debug("uwl_forcedunwind != NULL: %p\n", &_Unwind_ForcedUnwind);
 #else
 	if (WEAK_SYMBOL_NONNULL(_Unwind_ForcedUnwind)) {
+		stderr_debug("WEAK_SYMBOL_NONNULL(_Unwind_ForcedUnwind): %p\n", &_Unwind_ForcedUnwind);
 #endif
-		stderr_debug("Found _Unwind_ForcedUnwind\n");
 		if (curthread->unwind_disabled) {
 			if (message_printed == 0) {
 				message_printed = 1;
@@ -259,6 +266,7 @@ cleanup:
 	}
 
 #else
+	stderr_debug("not using _Unwind_ForcedUnwind\n");
 	while (curthread->cleanup != NULL) {
 		__pthread_cleanup_pop_imp(1);
 	}
@@ -271,6 +279,8 @@ static void
 exit_thread(void)
 {
 	struct pthread *curthread = _get_curthread();
+
+	stderr_debug("exit_thread(%p)\n", curthread);
 
 	/* Check if there is thread specific data: */
 	if (curthread->specific != NULL) {
