@@ -61,19 +61,25 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 	cpuset_t *cpusetp = NULL;
 	int cpusetsize = 0;
 	int old_stack_prot;
-
+	stderr_debug("_pthread_create\n");
 	_thr_check_init();
+	stderr_debug("called _thr_check_init\n");
 
 	/*
 	 * Tell libc and others now they need lock to protect their data.
 	 */
 	if (_thr_isthreaded() == 0) {
+		stderr_debug("calling _malloc_first_thread\n");
 		_malloc_first_thread();
-		if (_thr_setthreaded(1))
+		stderr_debug("calling _thr_setthreaded\n");
+		if (_thr_setthreaded(1)) {
+			stderr_debug("_thr_setthreaded failed\n");
 			return (EAGAIN);
+		}
 	}
-
+	stderr_debug("calling _get_curthread\n");
 	curthread = _get_curthread();
+	stderr_debug("calling _thr_alloc\n");
 	if ((new_thread = _thr_alloc(curthread)) == NULL)
 		return (EAGAIN);
 
@@ -109,10 +115,14 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 
 	new_thread->tid = TID_TERMINATED;
 
+	stderr_debug("calling _rtld_get_stack_prot\n");
 	old_stack_prot = _rtld_get_stack_prot();
+	stderr_debug("calling create_stack\n");
 	if (create_stack(&new_thread->attr) != 0) {
 		/* Insufficient memory to create a stack: */
+		stderr_debug("thr_stack failed!\n");
 		_thr_free(curthread, new_thread);
+		stderr_debug("_thr_free returned!\n");
 		return (EAGAIN);
 	}
 	/*
@@ -124,6 +134,8 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 	new_thread->arg = arg;
 	new_thread->cancel_enable = 1;
 	new_thread->cancel_async = 0;
+	stderr_debug("initializing mutex queue\n");
+
 	/* Initialize the mutex queue: */
 	TAILQ_INIT(&new_thread->mutexq);
 	TAILQ_INIT(&new_thread->pp_mutexq);
@@ -143,6 +155,7 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 
 	/* Add the new thread. */
 	new_thread->refcount = 1;
+	stderr_debug("calling _thr_link\n");
 	_thr_link(curthread, new_thread);
 
 	/*
@@ -155,6 +168,7 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 	/* Return thread pointer eariler so that new thread can use it. */
 	(*thread) = new_thread;
 	if (SHOULD_REPORT_EVENT(curthread, TD_CREATE) || cpusetp != NULL) {
+		stderr_debug("calling THR_THREAD_LOCK, SHOULD_REPORT_EVENT\n");
 		THR_THREAD_LOCK(curthread, new_thread);
 		locked = 1;
 	} else
@@ -185,9 +199,9 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 			&sched_param, &rtp);
 		param.rtp = &rtp;
 	}
-
 	/* Schedule the new thread. */
 	if (create_suspended) {
+		stderr_debug("create_suspended\n");
 		SIGFILLSET(set);
 		SIGDELSET(set, SIGTRAP);
 		__sys_sigprocmask(SIG_SETMASK, &set, &oset);
@@ -195,7 +209,9 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 		SIGDELSET(new_thread->sigmask, SIGCANCEL);
 	}
 
+	stderr_debug("calling thr_new\n");
 	ret = thr_new(&param, sizeof(param));
+	stderr_debug("thr_new returned\n");
 
 	if (ret != 0) {
 		ret = errno;
@@ -210,16 +226,20 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 		__sys_sigprocmask(SIG_SETMASK, &oset, NULL);
 
 	if (ret != 0) {
-		if (!locked)
+		if (!locked) {
+			stderr_debug("calling THR_THREAD_LOCK, ret != 0\n");
 			THR_THREAD_LOCK(curthread, new_thread);
+		}
 		new_thread->state = PS_DEAD;
 		new_thread->tid = TID_TERMINATED;
 		new_thread->flags |= THR_FLAGS_DETACHED;
 		new_thread->refcount--;
 		if (new_thread->flags & THR_FLAGS_NEED_SUSPEND) {
 			new_thread->cycle++;
+			stderr_debug("calling _thr_umtx_wake\n");
 			_thr_umtx_wake(&new_thread->cycle, INT_MAX, 0);
 		}
+		stderr_debug("calling _thr_try_gc\n");
 		_thr_try_gc(curthread, new_thread); /* thread lock released */
 		atomic_add_int(&_thread_active_threads, -1);
 	} else if (locked) {
@@ -235,9 +255,12 @@ _pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 				goto out;
 			}
 		}
-
+		stderr_debug("calling _thr_report_creation, was locked\n");
 		_thr_report_creation(curthread, new_thread);
 		THR_THREAD_UNLOCK(curthread, new_thread);
+	} else {
+		stderr_debug("don, not locked!\n");
+
 	}
 out:
 	if (ret)

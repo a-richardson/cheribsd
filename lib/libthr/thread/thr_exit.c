@@ -238,6 +238,7 @@ _pthread_exit_mask(void *status, sigset_t *mask)
 #else
 	if (WEAK_SYMBOL_NONNULL(_Unwind_ForcedUnwind)) {
 #endif
+		stderr_debug("Found _Unwind_ForcedUnwind\n");
 		if (curthread->unwind_disabled) {
 			if (message_printed == 0) {
 				message_printed = 1;
@@ -250,6 +251,7 @@ _pthread_exit_mask(void *status, sigset_t *mask)
 
 	} else {
 cleanup:
+		stderr_debug("_Unwind_ForcedUnwind is NULL!\n");
 		while (curthread->cleanup != NULL) {
 			__pthread_cleanup_pop_imp(1);
 		}

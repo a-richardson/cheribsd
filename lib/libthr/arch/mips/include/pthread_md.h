@@ -49,7 +49,6 @@
 #define TCB_ALIGN (16)
 #endif
 
-
 /*
  * Variant I tcb. The structure layout is fixed, don't blindly
  * change it!

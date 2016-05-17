@@ -192,14 +192,21 @@ _thr_free(struct pthread *curthread, struct pthread *thread)
 	 * it works, so better to avoid caching it here.
 	 */
 	if (curthread != NULL) {
+		stderr_debug("curthread != NULL, THR_LOCK_ACQUIRE\n");
 		THR_LOCK_ACQUIRE(curthread, &tcb_lock);
+		stderr_debug("curthread != NULL, _tcb_dtor\n");
 		_tcb_dtor(thread->tcb);
+		stderr_debug("curthread != NULL, THR_LOCK_RELEASE\n");
 		THR_LOCK_RELEASE(curthread, &tcb_lock);
 	} else {
+		stderr_debug("curthread == NULL, _tcb_dtor\n");
 		_tcb_dtor(thread->tcb);
 	}
+	stderr_debug("_tcb_dtor called!\n");
+
 	thread->tcb = NULL;
 	if ((curthread == NULL) || (free_thread_count >= MAX_CACHED_THREADS)) {
+		stderr_debug("thr_destroy\n");
 		thr_destroy(curthread, thread);
 		atomic_fetchadd_int(&total_threads, -1);
 	} else {
@@ -207,11 +214,15 @@ _thr_free(struct pthread *curthread, struct pthread *thread)
 		 * Add the thread to the free thread list, this also avoids
 		 * pthread id is reused too quickly, may help some buggy apps.
 		 */
+		stderr_debug("THR_LOCK_ACQUIRE\n");
 		THR_LOCK_ACQUIRE(curthread, &free_thread_lock);
+		stderr_debug("TAILQ_INSERT_TAIL\n");
 		TAILQ_INSERT_TAIL(&free_threadq, thread, tle);
 		free_thread_count++;
+		stderr_debug("THR_LOCK_ACQUIRE\n");
 		THR_LOCK_RELEASE(curthread, &free_thread_lock);
 	}
+	stderr_debug("exiting _thr_free\n");
 }
 
 static void

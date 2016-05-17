@@ -43,17 +43,26 @@ __FBSDID("$FreeBSD$");
 #define TCB_ALIGN (sizeof(void*) < 16 ? 16 : sizeof(void*))
 #endif
 
+
+
 struct tcb *
 _tcb_ctor(struct pthread *thread, int initial)
 {
 	struct tcb *tcb;
 
-	if (initial)
+	stderr_debug("_tcb_ctor: thread: %p, intial: %d\n", thread, initial);
+
+	if (initial) {
 		tcb = _tcb_get();
-	else
+		stderr_debug("Initial _tcb_get: %p\n", tcb);
+	} else {
 		tcb = _rtld_allocate_tls(NULL, sizeof(struct tcb), TCB_ALIGN);
-	if (tcb)
+		stderr_debug("TCB allocation: %p, align: %d\n", tcb, TCB_ALIGN);
+	}
+	if (tcb) {
+		stderr_debug("Setting tcb_thread: TCB is %p\n", tcb);
 		tcb->tcb_thread = thread;
+	}
 	return (tcb);
 }
 
