@@ -43,7 +43,7 @@ struct thread_args {
 	int num;
 };
 
-//static pthread_mutex_t global_mutex;
+static pthread_mutex_t global_mutex;
 
 static void *thread_func(void *_arg)
 {
@@ -52,15 +52,15 @@ static void *thread_func(void *_arg)
 
 	fprintf(stderr, "---Thread %d thread_func() started!\n", arg->num);
 
-	//pthread_t self = pthread_self();
-	//fprintf(stderr, "Thread %p num: %d\n", self, arg->num);
-// 	if ((result = pthread_mutex_lock(&global_mutex)) != 0) {
-// 		errc(1, result, "pthread_mutex_lock");
-// 	}
+	pthread_t self = pthread_self();
+	fprintf(stderr, "Thread %p num: %d\n", self, arg->num);
+	if ((result = pthread_mutex_lock(&global_mutex)) != 0) {
+		errc(1, result, "pthread_mutex_lock");
+	}
 	fprintf(stderr, "---Thread num: %d got mutex\n", arg->num);
-// 	if ((result = pthread_mutex_unlock(&global_mutex)) != 0) {
-// 		errc(1, result, "pthread_mutex_unlock");
-// 	}
+	if ((result = pthread_mutex_unlock(&global_mutex)) != 0) {
+		errc(1, result, "pthread_mutex_unlock");
+	}
 	fprintf(stderr, "---Thread num: %d finished\n", arg->num);
 	return NULL;
 }
@@ -81,18 +81,18 @@ main(void)
 	fprintf(stderr, "---About to start cheri_pthreads\n");
 	self = pthread_self();
 	fprintf(stderr, "---Main thread is %p\n", self);
-// 	if ((result = pthread_mutex_init(&global_mutex, NULL)) != 0) {
-// 		errc(1, result, "pthread_create");
-// 	}
-//	fprintf(stderr, "---Global mutex initialized\n");
-// 	if ((result = pthread_mutex_lock(&global_mutex)) != 0) {
-// 		errc(1, result, "pthread_mutex_lock");
-// 	}
-//	fprintf(stderr, "---Main thread locked global mutex\n");
-// 	if ((result = pthread_mutex_unlock(&global_mutex)) != 0) {
-// 		errc(1, result, "pthread_mutex_lock");
-// 	}
-//	fprintf(stderr, "---Main thread unlocked global mutex\n");
+	if ((result = pthread_mutex_init(&global_mutex, NULL)) != 0) {
+		errc(1, result, "pthread_create");
+	}
+	fprintf(stderr, "---Global mutex initialized\n");
+	if ((result = pthread_mutex_lock(&global_mutex)) != 0) {
+		errc(1, result, "pthread_mutex_lock");
+	}
+	fprintf(stderr, "---Main thread locked global mutex\n");
+	if ((result = pthread_mutex_unlock(&global_mutex)) != 0) {
+		errc(1, result, "pthread_mutex_lock");
+	}
+	fprintf(stderr, "---Main thread unlocked global mutex\n");
 	fprintf(stderr, "---About to spawn threads\n");
 	if ((result = pthread_create(&thread1, NULL, thread_func, &t1args)) != 0) {
 		errc(1, result, "pthread_create 1");
