@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <link.h>
+#include <string.h>
 
 #include "thr_private.h"
 
@@ -265,13 +266,18 @@ _thr_stack_alloc(struct pthread_attr *attr)
 		 * Allocate a stack from or below usrstack, depending
 		 * on the LIBPTHREAD_BIGSTACK_MAIN env variable.
 		 */
-		if (last_stack == NULL)
+		if (last_stack == NULL) {
+			stderr_debug("last_stack == NULL\n");
 			last_stack = (void*)(_usrstack - _thr_stack_initial -
 			    _thr_guard_default);
+			stderr_debug("last_stack = _usrstack(%lx) - _thr_stack_initial(0x%lx) - _thr_guard_default(0x%lx) -> " CHERI_CAP_FMT_STR "\n",
+			    _usrstack, _thr_stack_initial, _thr_guard_default, CHERI_CAP_FMT_ARG(last_stack));
+		}
 
 		/* Allocate a new stack. */
 		stackaddr = last_stack - stacksize - guardsize;
-
+		stderr_debug("stackaddr = last_stack(" CHERI_CAP_FMT_STR ") - stacksize(0x%lx) - guardsize(0x%lx) -> " CHERI_CAP_FMT_STR "\n",
+			CHERI_CAP_FMT_ARG(last_stack), stacksize, guardsize, CHERI_CAP_FMT_ARG(stackaddr));
 		/*
 		 * Even if stack allocation fails, we don't want to try to
 		 * use this location again, so unconditionally decrement
@@ -280,15 +286,19 @@ _thr_stack_alloc(struct pthread_attr *attr)
 		 * the adjacent thread stack.
 		 */
 		last_stack -= (stacksize + guardsize);
+		stderr_debug("last_stack -= (stacksize(0x%lx) + guardsize(0x%lx)) -> " CHERI_CAP_FMT_STR "\n",
+			stacksize, guardsize, CHERI_CAP_FMT_ARG(last_stack));
 #endif /* !defined(__CHERI_PURE_CAPABILITY__) */
 
 		/* Release the lock before mmap'ing it. */
 		THREAD_LIST_UNLOCK(curthread);
 
+		stderr_debug("mmap(" CHERI_CAP_FMT_STR ", 0x%lx, 0x%x, 0x%x, -1, 0))\n", CHERI_CAP_FMT_ARG(stackaddr), (uint64_t)(stacksize + guardsize), _rtld_get_stack_prot(), MAP_STACK);
 		/* Map the stack and guard page together, and split guard
 		   page from allocated space: */
 		stackaddr = mmap(stackaddr, stacksize + guardsize,
 		     _rtld_get_stack_prot(), MAP_STACK, -1, 0);
+		stderr_debug("stackaddr = " CHERI_CAP_FMT_STR "\n", CHERI_CAP_FMT_ARG(stackaddr));
 		if (stackaddr == MAP_FAILED) {
 			stackaddr = NULL;
 		} else if (guardsize > 0) {
@@ -297,9 +307,11 @@ _thr_stack_alloc(struct pthread_attr *attr)
 			    "is not required on CHERIABI\n", guardsize);
 #endif
 			if (mprotect(stackaddr, guardsize, PROT_NONE) == 0) {
+				stderr_debug("mprotect(stackaddr, 0x%lx, PROT_NONE)) -> success\n", guardsize);
 				stackaddr += guardsize;
 			} else {
 				/* XXX-AR: add munmup return value check? */
+				stderr_debug("mprotect(stackaddr, 0x%lx, PROT_NONE)) -> %d (%s)\n", guardsize, errno, strerror(errno));
 				munmap(stackaddr, stacksize + guardsize);
 				stackaddr = NULL;
 			}

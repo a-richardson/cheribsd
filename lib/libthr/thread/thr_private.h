@@ -88,6 +88,16 @@ TAILQ_HEAD(mutex_queue, pthread_mutex);
 #define PANIC(string)		_thread_exit(__FILE__,__LINE__,string)
 
 /* Output debug messages like this: */
+#ifdef __CHERI_PURE_CAPABILITY__
+#include <machine/cheric.h>
+#define CHERI_CAP_FMT_STR "0x%p{v:%d s:%d p:%x b:%lx l:%lx o:%lx t:%d}"
+#define CHERI_CAP_FMT_ARG(cap) cap, (int)cheri_gettag(cap), (int)cheri_getsealed(cap),		\
+	(int)cheri_getperm(cap), (uint64_t)cheri_getbase(cap), (uint64_t)cheri_getlen(cap),	\
+	(uint64_t)cheri_getoffset(cap), (int)cheri_gettype(cap)
+#else
+#define CHERI_CAP_FMT_STR "0x%p"
+#define CHERI_CAP_FMT_ARG(cap) cap
+#endif
 #define stdout_debug(args...)	_thread_printf(STDOUT_FILENO, ##args)
 #define stderr_debug(args...)	_thread_printf(STDERR_FILENO, ##args)
 
