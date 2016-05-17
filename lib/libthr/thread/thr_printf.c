@@ -37,6 +37,46 @@
 static void	pchar(int fd, char c);
 static void	pstr(int fd, const char *s);
 
+static volatile uint32_t _thread_printf_spinlock = 0;
+
+// static inline char*
+// atomic_flag_str(volatile uint32_t* val)
+// {
+// 	return atomic_load_acq_32(val) ? "true" : "false";
+// }
+
+static inline void
+_thread_printf_spinlock_acquire(void)
+{
+// 	pstr(2, "_thread_printf_spinlock_acquire(): _thread_printf_spinlock = ");
+// 	pstr(2, atomic_flag_str(&_thread_printf_spinlock));
+// 	pchar(2, '\n');
+	while(atomic_cmpset_acq_32(&_thread_printf_spinlock, 0, 1)) {
+		/* XXX: sleep? */
+// 		pstr(2, "looping: _thread_printf_spinlock = ");
+// 		pstr(2, atomic_flag_str(&_thread_printf_spinlock));
+// 		pchar(2, '\n');
+	}
+// 	pstr(2, "got lock: _thread_printf_spinlock = ");
+// 	pstr(2, atomic_flag_str(&_thread_printf_spinlock));
+// 	pchar(2, '\n');
+}
+
+static inline void
+_thread_printf_spinlock_release(void)
+{
+// 	pstr(2, "about to release lock: _thread_printf_spinlock = ");
+// 	pstr(2, atomic_flag_str(&_thread_printf_spinlock));
+// 	pchar(2, '\n');
+	THR_ASSERT(atomic_load_acq_32(&_thread_printf_spinlock) == 1, "Spinlock must be held!");
+	atomic_set_rel_32(&_thread_printf_spinlock, 0);
+	// WTF does this always print true???
+// 	pstr(2, "released lock: _thread_printf_spinlock = ");
+// 	pstr(2, atomic_flag_str(&_thread_printf_spinlock));
+// 	pchar(2, '\n');
+}
+
+
 /*
  * Write formatted output to stdout, in a thread-safe manner.
  *
@@ -51,7 +91,7 @@ static void	pstr(int fd, const char *s);
 void
 _thread_printf(int fd, const char *fmt, ...)
 {
-	//WTF is going on here? it causes a capability violation at -O0 but not at -O1???
+
 	static const char digits[16] = "0123456789abcdef";
 	va_list	 ap;
 	/* XXX_AR: we should print capabilities not vaddr_t -> increase size */
@@ -65,6 +105,8 @@ _thread_printf(int fd, const char *fmt, ...)
 	void* pointer;
 
 	va_start(ap, fmt);
+	/* Make sure that we don't get mixed [stderr/stdout]_debug messages */
+	_thread_printf_spinlock_acquire();
 	while ((c = *fmt++)) {
 		islong = 0;
 		isptr = 0;
@@ -130,6 +172,7 @@ next:			c = *fmt++;
 		pchar(fd, c);
 	}
 out:	
+	_thread_printf_spinlock_release();
 	va_end(ap);
 }
 
