@@ -603,6 +603,8 @@ cpu_set_user_tls(struct thread *td, void *tls_base)
 	td->td_md.md_tls = (char*)tls_base;
 	/* Why doesn't the CHERIABI version check for curthread == td */
 	if (td == curthread && cpuinfo.userlocal_reg == true) {
+		printf("mips_wr_userlocal(%p + %lx= %lx)\n", td->td_md.md_tls, td->td_md.md_tls_tcb_offset,
+			(unsigned long)((caddr_t)td->td_md.md_tls + td->td_md.md_tls_tcb_offset));
 		mips_wr_userlocal((unsigned long)tls_base +
 		    td->td_md.md_tls_tcb_offset);
 	}
