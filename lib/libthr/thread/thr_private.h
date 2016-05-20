@@ -891,6 +891,20 @@ _thr_check_init(void)
 		_libpthread_init(NULL);
 }
 
+static inline void
+_thr_check_tid_matches(struct pthread *curthread, const char *func, int line)
+{
+	long tid;
+
+	__sys_thr_self(&tid);
+	/* _thread_printf(2, "_thr_check_tid_matches() from %lx = %p\n", tid, result); */
+	if (tid != curthread->tid) {
+		stderr_debug("ERROR, TLS is broken at %s():%d!!!!\n"
+		    "\t__sys_thr_self (%lx) != curthread->tid (%lx)\n",
+		    func, line, tid, result->tid);
+	}
+}
+
 struct wake_addr *_thr_alloc_wake_addr(void);
 void	_thr_release_wake_addr(struct wake_addr *);
 int	_thr_sleep(struct pthread *, int, const struct timespec *);

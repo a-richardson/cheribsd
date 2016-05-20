@@ -88,6 +88,10 @@ join_common(pthread_t pthread, void **thread_return,
 	}
 
 	if (pthread == curthread) {
+		/* FIXME: this case is sometimes triggered but it doesn't make any sense:
+		 * ---Main thread 0x16043f000 waiting for thread 0x16043fe00 to join
+		 * join: EDEADLK 16043fe00 == 16043fe00
+		 */
 		stderr_debug("join: EDEADLK %p == %p\n", pthread, curthread);
 		return (EDEADLK);
 	}

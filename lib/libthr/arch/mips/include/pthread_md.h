@@ -135,12 +135,19 @@ _tcb_get(void)
 
 extern struct pthread *_thr_initial;
 
+void _thr_check_tid_matches(struct pthread *curthread, const char *func, int line);
+
 static __inline struct pthread *
-_get_curthread(void)
+__get_curthread(const char *func, int line)
 {
-	if (_thr_initial)
-		return (_tcb_get()->tcb_thread);
+	if (_thr_initial) {
+		struct pthread *result = _tcb_get()->tcb_thread;
+		_thr_check_tid_matches(result, func, line);
+		return (result);
+	}
 	return (NULL);
 }
+
+#define _get_curthread() __get_curthread(__func__, __LINE__)
 
 #endif /* _PTHREAD_MD_H_ */
