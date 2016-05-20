@@ -297,10 +297,7 @@ sys_thr_self(struct thread *td, struct thr_self_args *uap)
 {
 	int error;
 
-	/* FIXME: some error here? */
 	error = suword_lwpid(uap->id, (unsigned)td->td_tid);
-	printf("sys_thr_self(0x%p) = 0x%x, uap->id = 0x%p, *(uap->id)=%lx\n", td, td->td_tid, uap->id, *(uap->id));
-
 	if (error == -1)
 		return (EFAULT);
 	return (0);

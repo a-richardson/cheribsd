@@ -74,15 +74,12 @@ sysarch(struct thread *td, struct sysarch_args *uap)
 		 * with the '_thread' attribute).
 		 */
 		if (cpuinfo.userlocal_reg == true) {
-			printf("sysarch(MIPS_SET_TLS, %p), curthread=%p -> mips_wr_userlocal(0x%lx (0x%p + 0x%lx))\n",
-			       td, curthread, (unsigned long)(uap->parms + td->td_md.md_tls_tcb_offset), uap->parms, td->td_md.md_tls_tcb_offset);
 			mips_wr_userlocal((unsigned long)(uap->parms +
 			    td->td_md.md_tls_tcb_offset));
 		}
 		return (0);
 
 	case MIPS_GET_TLS:
-		printf("sysarch(MIPS_GET_TLS, %p), curthread=%p -> 0x%p\n", td, curthread, td->td_md.md_tls);
 		tlsbase = td->td_md.md_tls;
 		error = copyout(&tlsbase, uap->parms, sizeof(tlsbase));
 		return (error);

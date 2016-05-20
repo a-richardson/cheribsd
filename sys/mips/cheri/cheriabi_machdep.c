@@ -414,6 +414,7 @@ cheriabi_set_syscall_retval(struct thread *td, int error)
 			cheriabi_mmap_set_retcap(td, &locr0->c3,
 			&locr0->c3, locr0->a0, locr0->a1, locr0->a2);
 			break;
+
 		default:
 			panic("%s: unsupported syscall (%u) returning pointer",
 			    __func__, code);
@@ -907,7 +908,7 @@ cheriabi_set_user_tls(struct thread *td, struct chericap *tls_base)
 	 */
 	error = cheriabi_cap_to_ptr((caddr_t *)&td->td_md.md_tls, tls_base,
 	    0, 0, 1);
-	printf("cheriabi_set_user_tls(%p), curthread=%p: td->td_md.md_tls_tcb_offset = 0x%zx, tls base: ", td, curthread, td->td_md.md_tls_tcb_offset);
+	printf("cheriabi_set_user_tls(%p): td->td_md.md_tls_tcb_offset = 0x%zx, tls base: ", td, td->td_md.md_tls_tcb_offset);
 	CHERI_CLC(CHERI_CR_CTEMP0, CHERI_CR_KDC, tls_base, 0);
 	CHERI_CAP_PRINT(CHERI_CR_CTEMP0);
 	if (error)
