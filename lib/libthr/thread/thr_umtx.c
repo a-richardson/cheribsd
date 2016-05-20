@@ -89,12 +89,10 @@ int
 __thr_umutex_lock(struct umutex *mtx, uint32_t id)
 {
 	uint32_t owner;
-	stderr_debug("__thr_umutex_lock %p: id=%d, flags=0x%x\n", mtx, id, mtx->m_flags);
 
 	if ((mtx->m_flags & (UMUTEX_PRIO_PROTECT | UMUTEX_PRIO_INHERIT)) == 0) {
 		for (;;) {
 			/* wait in kernel */
-			stderr_debug("calling _umtx_op_err(%p, UMTX_OP_MUTEX_WAIT)\n", mtx);
 			_umtx_op_err(mtx, UMTX_OP_MUTEX_WAIT, 0, 0, 0);
 
 			owner = mtx->m_owner;
@@ -103,7 +101,6 @@ __thr_umutex_lock(struct umutex *mtx, uint32_t id)
 				return (0);
 		}
 	}
-	stderr_debug("calling _umtx_op_err(%p, UMTX_OP_MUTEX_LOCK)\n", mtx);
 	return	_umtx_op_err(mtx, UMTX_OP_MUTEX_LOCK, 0, 0, 0);
 }
 
@@ -114,9 +111,7 @@ __thr_umutex_lock_spin(struct umutex *mtx, uint32_t id)
 {
 	uint32_t owner;
 
-	stderr_debug("__thr_umutex_lock_spin %p: id=%d, flags=0x%x\n", mtx, id, mtx->m_flags);
 	if (!_thr_is_smp) {
-		stderr_debug("__thr_umutex_lock_spin: !_thr_is_smp!\n");
 		return __thr_umutex_lock(mtx, id);
 	}
 
@@ -151,9 +146,6 @@ __thr_umutex_timedlock(struct umutex *mtx, uint32_t id,
 	size_t tm_size;
 	uint32_t owner;
 	int ret;
-
-	stderr_debug("__thr_umutex_timedlock %p, id %d time %p\n", mtx, id, abstime);
-
 
 	if (abstime == NULL) {
 		tm_p = NULL;
@@ -195,14 +187,12 @@ __thr_umutex_timedlock(struct umutex *mtx, uint32_t id,
 int
 __thr_umutex_unlock(struct umutex *mtx, uint32_t id)
 {
-	stderr_debug("__thr_umutex_unlock %p, id %d\n", mtx, id);
 	return _umtx_op_err(mtx, UMTX_OP_MUTEX_UNLOCK, 0, 0, 0);
 }
 
 int
 __thr_umutex_trylock(struct umutex *mtx)
 {
-	stderr_debug("__thr_umutex_trylock %p\n", mtx);
 	return _umtx_op_err(mtx, UMTX_OP_MUTEX_TRYLOCK, 0, 0, 0);
 }
 
@@ -210,15 +200,12 @@ int
 __thr_umutex_set_ceiling(struct umutex *mtx, uint32_t ceiling,
 	uint32_t *oldceiling)
 {
-	stderr_debug("__thr_umutex_set_ceiling %p, ceiling %d, oldceil %p\n", mtx, ceiling, oldceiling);
 	return _umtx_op_err(mtx, UMTX_OP_SET_CEILING, ceiling, oldceiling, 0);
 }
 
 int
 _thr_umtx_wait(volatile long *mtx, long id, const struct timespec *timeout)
 {
-	stderr_debug("_thr_umtx_wait_uint %p, id %d, timeout %p\n", mtx, id, timeout);
-
 	if (timeout && (timeout->tv_sec < 0 || (timeout->tv_sec == 0 &&
 		timeout->tv_nsec <= 0)))
 		return (ETIMEDOUT);
@@ -229,7 +216,6 @@ _thr_umtx_wait(volatile long *mtx, long id, const struct timespec *timeout)
 int
 _thr_umtx_wait_uint(volatile u_int *mtx, u_int id, const struct timespec *timeout, int shared)
 {
-	stderr_debug("_thr_umtx_wait_uint %p, id %d, shared %d\n", mtx, id, shared);
 	if (timeout && (timeout->tv_sec < 0 || (timeout->tv_sec == 0 &&
 		timeout->tv_nsec <= 0)))
 		return (ETIMEDOUT);
@@ -242,8 +228,6 @@ int
 _thr_umtx_timedwait_uint(volatile u_int *mtx, u_int id, int clockid,
 	const struct timespec *abstime, int shared)
 {
-	stderr_debug("_thr_umtx_timedwait_uint %p, id %d, shared %d\n", mtx, id, shared);
-
 	struct _umtx_time *tm_p, timeout;
 	size_t tm_size;
 
@@ -266,7 +250,6 @@ _thr_umtx_timedwait_uint(volatile u_int *mtx, u_int id, int clockid,
 int
 _thr_umtx_wake(volatile void *mtx, int nr_wakeup, int shared)
 {
-	stderr_debug("_thr_umtx_wake %p, nr %d, shared %d\n", mtx, nr_wakeup, shared);
 	return _umtx_op_err(__DEVOLATILE(void *, mtx), shared ? UMTX_OP_WAKE : UMTX_OP_WAKE_PRIVATE,
 		nr_wakeup, 0, 0);
 }
@@ -281,7 +264,6 @@ int
 _thr_ucond_wait(struct ucond *cv, struct umutex *m,
 	const struct timespec *timeout, int flags)
 {
-	stderr_debug("_thr_ucond_wait %p, c_has_waiters: %d, mtx %p\n", cv, cv->c_has_waiters, m);
 	if (timeout && (timeout->tv_sec < 0 || (timeout->tv_sec == 0 &&
 	    timeout->tv_nsec <= 0))) {
 		struct pthread *curthread = _get_curthread();
@@ -295,7 +277,6 @@ _thr_ucond_wait(struct ucond *cv, struct umutex *m,
 int
 _thr_ucond_signal(struct ucond *cv)
 {
-	stderr_debug("_thr_ucond_signal %p, c_has_waiters: %d\n", cv, cv->c_has_waiters);
 	if (!cv->c_has_waiters)
 		return (0);
 	return _umtx_op_err(cv, UMTX_OP_CV_SIGNAL, 0, NULL, NULL);
@@ -304,7 +285,6 @@ _thr_ucond_signal(struct ucond *cv)
 int
 _thr_ucond_broadcast(struct ucond *cv)
 {
-	stderr_debug("_thr_ucond_broadcast %p, c_has_waiters: %d\n", cv, cv->c_has_waiters);
 	if (!cv->c_has_waiters)
 		return (0);
 	return _umtx_op_err(cv, UMTX_OP_CV_BROADCAST, 0, NULL, NULL);
