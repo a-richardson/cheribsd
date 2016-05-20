@@ -135,7 +135,7 @@ _tcb_get(void)
 
 extern struct pthread *_thr_initial;
 
-void _thr_check_tid_matches(struct pthread *curthread, const char *func, int line);
+static void _thr_check_tid_matches(struct pthread *curthread, const char *func, int line);
 
 static __inline struct pthread *
 __get_curthread(const char *func, int line)

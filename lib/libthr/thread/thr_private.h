@@ -872,6 +872,9 @@ ssize_t __sys_read(int, void *, size_t);
 void	__sys_exit(int);
 #endif
 
+int	__sys_thr_self(long*);
+
+
 static inline int
 _thr_isthreaded(void)
 {
@@ -894,14 +897,16 @@ _thr_check_init(void)
 static inline void
 _thr_check_tid_matches(struct pthread *curthread, const char *func, int line)
 {
-	long tid;
+	long tid = 0;
+	int err = -1;
 
-	__sys_thr_self(&tid);
-	/* _thread_printf(2, "_thr_check_tid_matches() from %lx = %p\n", tid, result); */
+	err = __sys_thr_self(&tid);
+	THR_ASSERT(err == 0, "ERROR CALLING thr_self()\n");
+	stderr_debug("%s():%d _get_curthread() from %lx = %p\n", func, line, tid, curthread);
 	if (tid != curthread->tid) {
 		stderr_debug("ERROR, TLS is broken at %s():%d!!!!\n"
-		    "\t__sys_thr_self (%lx) != curthread->tid (%lx)\n",
-		    func, line, tid, result->tid);
+		    "\t__sys_thr_self (%lx) != curthread->tid (%lx), &tid=%p\n",
+		    func, line, tid, curthread->tid, &tid);
 	}
 }
 
