@@ -4,10 +4,10 @@ PROG?=	cheri_pthreads
 SRCS?=	cheri_pthreads.c
 
 MAN=
-NEED_CHERI?=	pure
+WANT_CHERI?=	pure
 WANT_DUMP?=	yes
 
-LIBADD=  pthread
+LIBADD=	pthread
 
 NO_SHARED=	YES
 
