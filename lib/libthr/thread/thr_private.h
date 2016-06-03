@@ -98,8 +98,8 @@ TAILQ_HEAD(mutex_queue, pthread_mutex);
 #define CHERI_CAP_FMT_STR "0x%p"
 #define CHERI_CAP_FMT_ARG(cap) cap
 #endif
-#define stdout_debug(args...)	_thread_printf(STDOUT_FILENO, ##args)
-#define stderr_debug(args...)	_thread_printf(STDERR_FILENO, ##args)
+#define stdout_debug(args...)	_thread_printf(stdout, ##args)
+#define stderr_debug(args...)	_thread_printf(stderr, ##args)
 
 #ifdef _PTHREADS_INVARIANTS
 #define THR_ASSERT(cond, msg) do {	\
@@ -786,7 +786,7 @@ void	_thr_stack_free(struct pthread_attr *) __hidden;
 void	_thr_free(struct pthread *, struct pthread *) __hidden;
 void	_thr_gc(struct pthread *) __hidden;
 void    _thread_cleanupspecific(void) __hidden;
-void	_thread_printf(int, const char *, ...) __hidden __printflike(2, 3);
+void	_thread_printf(FILE *, const char *, ...) __hidden __printflike(2, 3);
 void	_thr_spinlock_init(void) __hidden;
 void	_thr_cancel_enter(struct pthread *) __hidden;
 void	_thr_cancel_enter2(struct pthread *, int) __hidden;
