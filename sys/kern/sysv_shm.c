@@ -64,6 +64,7 @@ __FBSDID("$FreeBSD$");
 
 #include "opt_compat.h"
 #include "opt_sysvipc.h"
+#include "opt_ktrace.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -80,11 +81,15 @@ __FBSDID("$FreeBSD$");
 #include <sys/racct.h>
 #include <sys/resourcevar.h>
 #include <sys/rwlock.h>
+#include <sys/signal.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/syscallsubr.h>
 #include <sys/sysent.h>
 #include <sys/sysproto.h>
+#include <sys/uio.h>
+#include <sys/ktrace.h>		/* Requires sys/signal.h, sys/uio.h */
+
 #include <sys/jail.h>
 
 #ifdef COMPAT_CHERIABI
@@ -337,18 +342,18 @@ kern_shmdt_locked(struct thread *td, const void *shmaddr)
 {
 	struct proc *p = td->td_proc;
 	struct shmmap_state *shmmap_s;
+	int error;
 #ifdef MAC
 	struct shmid_kernel *shmsegptr;
-	int error;
 #endif
 	int i;
 
 	SYSVSHM_ASSERT_LOCKED();
 	if (shm_find_prison(td->td_ucred) == NULL)
-		return (ENOSYS);
+		KTR_SYSERR_RETURN(ENOSYS, "shm_find_prison() == NULL");
 	shmmap_s = p->p_vmspace->vm_shm;
  	if (shmmap_s == NULL)
-		return (EINVAL);
+		KTR_SYSERR_RETURN(EINVAL, "shmmap_s == NULL");
 	for (i = 0; i < shminfo.shmseg; i++, shmmap_s++) {
 		if (shmmap_s->shmid != -1 &&
 		    shmmap_s->va == (vm_offset_t)shmaddr) {
@@ -356,14 +361,17 @@ kern_shmdt_locked(struct thread *td, const void *shmaddr)
 		}
 	}
 	if (i == shminfo.shmseg)
-		return (EINVAL);
+		KTR_SYSERR_RETURN(EINVAL, "could not find shm segment");
 #ifdef MAC
 	shmsegptr = &shmsegs[IPCID_TO_IX(shmmap_s->shmid)];
 	error = mac_sysvshm_check_shmdt(td->td_ucred, shmsegptr);
 	if (error != 0)
-		return (error);
+		KTR_SYSERR_RETURN(error, "MAC checks failed");
 #endif
-	return (shm_delete_mapping(p->p_vmspace, shmmap_s));
+	error = shm_delete_mapping(p->p_vmspace, shmmap_s);
+	if (error)
+		KTR_SYSERR_RETURN(error, "shm_delete_mapping");
+	return (error);
 }
 
 #ifndef _SYS_SYSPROTO_H_
@@ -402,7 +410,7 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 	SYSVSHM_ASSERT_LOCKED();
 	rpr = shm_find_prison(td->td_ucred);
 	if (rpr == NULL)
-		return (ENOSYS);
+		KTR_SYSERR_RETURN(ENOSYS, "shm_find_prison == NULL");
 	shmmap_s = p->p_vmspace->vm_shm;
 	if (shmmap_s == NULL) {
 		shmmap_s = malloc(shminfo.shmseg * sizeof(struct shmmap_state),
@@ -414,15 +422,16 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 	}
 	shmseg = shm_find_segment(rpr, shmid, true);
 	if (shmseg == NULL)
-		return (EINVAL);
+		KTR_SYSERR_RETURN(EINVAL, "shmseg == NULL");
 	error = ipcperm(td, &shmseg->u.shm_perm,
 	    (shmflg & SHM_RDONLY) ? IPC_R : IPC_R|IPC_W);
 	if (error != 0)
-		return (error);
+		KTR_SYSERR_RETURN(error, "Invalid ipcperm for flags 0x%x",
+		    shmflg);
 #ifdef MAC
 	error = mac_sysvshm_check_shmat(td->td_ucred, shmseg, shmflg);
 	if (error != 0)
-		return (error);
+		KTR_SYSERR_RETURN(error, "mac_sysvshm_check_shmat");
 #endif
 	for (i = 0; i < shminfo.shmseg; i++) {
 		if (shmmap_s->shmid == -1)
@@ -430,7 +439,7 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 		shmmap_s++;
 	}
 	if (i >= shminfo.shmseg)
-		return (EMFILE);
+		KTR_SYSERR_RETURN(EMFILE, "DUNNO WHATS WRONG HERE shminfo.shmseg");
 	size = round_page(shmseg->u.shm_segsz);
 #ifdef COMPAT_CHERIABI
 	if (SV_CURPROC_FLAG(SV_CHERI))
@@ -454,16 +463,23 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 				return (EINVAL);
 		}
 #endif
-		if ((shmflg & SHM_RND) != 0)
+		if ((shmflg & SHM_RND) != 0) {
 			attach_va = rounddown2((vm_offset_t)shmaddr, SHMLBA);
-		else if (((vm_offset_t)shmaddr & (SHMLBA-1)) == 0)
+			printf("attach_va = rounddown2((vm_offset_t)shmaddr (%p), SHMLBA (%x))\n", shmaddr, SHMLBA);
+		}
+		else if (((vm_offset_t)shmaddr & (SHMLBA-1)) == 0) {
 			attach_va = (vm_offset_t)shmaddr;
+			printf("shmaddr(%p) & (SHMLBA-1)(%x)) == 0 -> attach_va = %lx\n", shmaddr, SHMLBA-1, attach_va);
+		}
 		else
-			return (EINVAL);
+			KTR_SYSERR_RETURN(EINVAL, "Invalid shmaddr %p", shmaddr);
 #ifdef COMPAT_CHERIABI
+		// TODO: should this come before the checks? I have no idea what the function does
 		if (SV_CURPROC_FLAG(SV_CHERI)) {
 			cheriabi_fetch_syscall_arg(td, &shmaddr_cap,
 			    CHERIABI_SYS_shmat, 1);
+			printf("shmat CHERIABI fetching arg, shmaddr = %p, shmaddr_cap:\n", shmaddr);
+			cheri_capability_print(&shmaddr_cap);
 		}
 #endif
 	} else {
@@ -480,6 +496,7 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 			    lim_max(td, RLIMIT_DATA));
 #ifdef COMPAT_CHERIABI
 		} else {
+			printf("shmat CHERIABI: shmaddr == NULL\n");
 			/*
 			 * Require representable alignment for large objects
 			 * and preserve the fragmentation promoting default
@@ -493,6 +510,8 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 			PROC_LOCK(td->td_proc);
 			cheri_capability_copy(&shmaddr_cap,
 			    &td->td_proc->p_md.md_cheri_mmap_cap);
+			printf("setting shmaddr_cap to md_cheri_mmap_cap:");
+			cheri_capability_print(&shmaddr_cap);
 			PROC_UNLOCK(td->td_proc);
 		}
 #endif
@@ -501,21 +520,30 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 	if (SV_CURPROC_FLAG(SV_CHERI)) {
 		size_t cap_len, cap_offset;
 		register_t	usertag;
+		printf("CHERIABI shmat checks for shmaddr = %p, shmaddr_cap:\n", shmaddr);
 		CHERI_CLC(CHERI_CR_CTEMP0, CHERI_CR_KDC, &shmaddr_cap, 0);
+		CHERI_CAP_PRINT(CHERI_CR_CTEMP0);
 		CHERI_CGETTAG(usertag, CHERI_CR_CTEMP0);
 		if (!usertag)
-			return (EINVAL);
+			KTR_SYSERR_RETURN(EINVAL, "shmaddr cap missing tag");
 		CHERI_CGETBASE(cap_base, CHERI_CR_CTEMP0);
 		CHERI_CGETLEN(cap_len, CHERI_CR_CTEMP0);
 		CHERI_CGETOFFSET(cap_offset, CHERI_CR_CTEMP0);
 		if (attach_va == 0) {
+			printf("attach_va == 0 -> setting to cap_base: %lx\n", cap_base);
 			attach_va = cap_base;
 		} else {
 			size_t shift = (vaddr_t)shmaddr - attach_va;
-			if (cap_offset > cap_len || \
-			    cap_offset < shift || \
-			    cap_len - cap_offset + shift < size)
-				return (EINVAL);
+			printf("shift = %p - %lx = %lx\n", shmaddr, attach_va, shift);
+			if (cap_offset > cap_len)
+				KTR_SYSERR_RETURN(EINVAL, "cap_offset > cap_len: "
+				    "%zd > %zd", cap_offset, cap_len);
+			if (cap_offset < shift)
+				KTR_SYSERR_RETURN(EINVAL, "cap_offset < shift: "
+				    "%zd < %zd (which is %p - %zd)", cap_offset, shift, shmaddr, attach_va);
+			if (cap_len - cap_offset + shift < size)
+				KTR_SYSERR_RETURN(EINVAL, "cap_len - cap_offset + shift < size: "
+				    "%zd - %zd + %zd (%zd) < %ld", cap_len, cap_offset, shift, cap_len - cap_offset + shift, size);
 		}
 		max_va = cap_base + cap_len;
 		/* XXX-BD: what to do about perms? */
@@ -528,7 +556,7 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 	    prot, prot, MAP_INHERIT_SHARE | MAP_PREFAULT_PARTIAL);
 	if (rv != KERN_SUCCESS) {
 		vm_object_deallocate(shmseg->object);
-		return (ENOMEM);
+		KTR_SYSERR_RETURN(ENOMEM, "vm_map_find");
 	}
 
 	shmmap_s->va = attach_va;
@@ -596,7 +624,7 @@ kern_shmctl_locked(struct thread *td, int shmid, int cmd, void *buf,
 
 	rpr = shm_find_prison(td->td_ucred);
 	if (rpr == NULL)
-		return (ENOSYS);
+		KTR_SYSERR_RETURN(ENOSYS, "shm_find_prison() == NULL");
 
 	switch (cmd) {
 	/*
@@ -630,11 +658,11 @@ kern_shmctl_locked(struct thread *td, int shmid, int cmd, void *buf,
 	}
 	shmseg = shm_find_segment(rpr, shmid, cmd != SHM_STAT);
 	if (shmseg == NULL)
-		return (EINVAL);
+		KTR_SYSERR_RETURN(EINVAL, "shmseg == NULL");
 #ifdef MAC
 	error = mac_sysvshm_check_shmctl(td->td_ucred, shmseg, cmd);
 	if (error != 0)
-		return (error);
+		KTR_SYSERR_RETURN(error, "MAC checks failed");
 #endif
 	switch (cmd) {
 	case SHM_STAT:
@@ -642,7 +670,7 @@ kern_shmctl_locked(struct thread *td, int shmid, int cmd, void *buf,
 		shmidp = (struct shmid_ds *)buf;
 		error = ipcperm(td, &shmseg->u.shm_perm, IPC_R);
 		if (error != 0)
-			return (error);
+			KTR_SYSERR_RETURN(error, "ipcperm failed for IPC_STAT");
 		memcpy(shmidp, &shmseg->u, sizeof(struct shmid_ds));
 		if (td->td_ucred->cr_prison != shmseg->cred->cr_prison)
 			shmidp->shm_perm.key = IPC_PRIVATE;
@@ -657,7 +685,7 @@ kern_shmctl_locked(struct thread *td, int shmid, int cmd, void *buf,
 		shmidp = (struct shmid_ds *)buf;
 		error = ipcperm(td, &shmseg->u.shm_perm, IPC_M);
 		if (error != 0)
-			return (error);
+			KTR_SYSERR_RETURN(error, "icpperm failed for IPC_SET");
 		shmseg->u.shm_perm.uid = shmidp->shm_perm.uid;
 		shmseg->u.shm_perm.gid = shmidp->shm_perm.gid;
 		shmseg->u.shm_perm.mode =
@@ -668,7 +696,7 @@ kern_shmctl_locked(struct thread *td, int shmid, int cmd, void *buf,
 	case IPC_RMID:
 		error = ipcperm(td, &shmseg->u.shm_perm, IPC_M);
 		if (error != 0)
-			return (error);
+			KTR_SYSERR_RETURN(error, "icpperm failed for IPC_RMID");
 		shm_remove(shmseg, IPCID_TO_IX(shmid));
 		break;
 #if 0
@@ -677,6 +705,11 @@ kern_shmctl_locked(struct thread *td, int shmid, int cmd, void *buf,
 #endif
 	default:
 		error = EINVAL;
+#ifdef KTRACE
+		printf("%s: invalid cmd %d\n", __func__, cmd); // XXXAR remove
+		if (KTRPOINT(td, KTR_SYSERRCAUSE))
+			ktrsyserrcause("%s: invalid cmd %d ", __func__, cmd);
+#endif
 		break;
 	}
 	return (error);

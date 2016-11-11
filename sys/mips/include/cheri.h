@@ -721,6 +721,13 @@ cheri_get_cyclecount(void)
 	CHERI_CAP_PRINT(crn);						\
 } while (0)
 
+static inline void
+cheri_capability_print(struct chericap *cp)
+{
+       CHERI_CLC(CHERI_CR_CTEMP0, CHERI_CR_KDC, cp, 0);
+       CHERI_CAP_PRINT(CHERI_CR_CTEMP0);
+}
+
 #ifdef DDB
 #define	DB_CHERI_CAP_PRINT(crn) do {					\
 	uintmax_t c_perms, c_otype, c_base, c_length, c_offset;		\

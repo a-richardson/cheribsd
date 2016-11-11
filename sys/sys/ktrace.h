@@ -323,6 +323,17 @@ void	ktrcreturn(struct pcb *);
 void	ktrcexception(struct trapframe *);
 void	ktrsyserrcause(const char *format, ...) __printflike(1, 2);
 
+#ifdef KTRACE
+#define KTR_SYSERR_RETURN(err, fmt, ...) do {				\
+        printf("ERROR %d: %s: " fmt "\n", err, __func__, ##__VA_ARGS__);\
+	if (KTRPOINT(td, KTR_SYSERRCAUSE)) 				\
+		ktrsyserrcause("%s: " fmt, __func__, ##__VA_ARGS__);	\
+	return (err);							\
+} while(0)
+#else
+#define KTR_SYSERR_RETURN(err) return (err)
+#endif
+
 #else
 
 #include <sys/cdefs.h>
