@@ -330,8 +330,14 @@ void	ktrsyserrcause(const char *format, ...) __printflike(1, 2);
 		ktrsyserrcause("%s: " fmt, __func__, ##__VA_ARGS__);	\
 	return (err);							\
 } while(0)
+#define KTR_SYSERR(fmt, ...) do { \
+	if (KTRPOINT(td, KTR_SYSERRCAUSE)) {				\
+		printf("ERROR %s: " fmt "\n", __func__, ##__VA_ARGS__);	\
+		ktrsyserrcause("%s: " fmt, __func__, ##__VA_ARGS__);	\
+} } while (0)
 #else
-#define KTR_SYSERR_RETURN(err) return (err)
+#define KTR_SYSERR_RETURN(err, fmt, ...) return (err)
+#define KTR_SYSERR(fmt, ...)
 #endif
 
 #else

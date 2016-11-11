@@ -422,7 +422,8 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 	}
 	shmseg = shm_find_segment(rpr, shmid, true);
 	if (shmseg == NULL)
-		KTR_SYSERR_RETURN(EINVAL, "shmseg == NULL");
+		KTR_SYSERR_RETURN(EINVAL, "Cannot find segment for shmid %d",
+		    shmid);
 	error = ipcperm(td, &shmseg->u.shm_perm,
 	    (shmflg & SHM_RDONLY) ? IPC_R : IPC_R|IPC_W);
 	if (error != 0)
@@ -478,7 +479,7 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 		if (SV_CURPROC_FLAG(SV_CHERI)) {
 			cheriabi_fetch_syscall_arg(td, &shmaddr_cap,
 			    CHERIABI_SYS_shmat, 1);
-			printf("shmat CHERIABI fetching arg, shmaddr = %p, shmaddr_cap:\n", shmaddr);
+			printf("shmat CHERIABI fetching arg, shmaddr = %p, shmaddr_cap: ", shmaddr);
 			cheri_capability_print(&shmaddr_cap);
 		}
 #endif
@@ -496,7 +497,7 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 			    lim_max(td, RLIMIT_DATA));
 #ifdef COMPAT_CHERIABI
 		} else {
-			printf("shmat CHERIABI: shmaddr == NULL\n");
+			printf("shmat CHERIABI: shmid %d, shmaddr == NULL\n", shmid);
 			/*
 			 * Require representable alignment for large objects
 			 * and preserve the fragmentation promoting default
@@ -510,7 +511,7 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 			PROC_LOCK(td->td_proc);
 			cheri_capability_copy(&shmaddr_cap,
 			    &td->td_proc->p_md.md_cheri_mmap_cap);
-			printf("setting shmaddr_cap to md_cheri_mmap_cap:");
+			printf("setting shmaddr_cap to md_cheri_mmap_cap: ");
 			cheri_capability_print(&shmaddr_cap);
 			PROC_UNLOCK(td->td_proc);
 		}
@@ -520,7 +521,7 @@ kern_shmat_locked(struct thread *td, int shmid, const void *shmaddr,
 	if (SV_CURPROC_FLAG(SV_CHERI)) {
 		size_t cap_len, cap_offset;
 		register_t	usertag;
-		printf("CHERIABI shmat checks for shmaddr = %p, shmaddr_cap:\n", shmaddr);
+		printf("CHERIABI shmat checks for shmid %d, shmaddr = %p, shmaddr_cap: ", shmid, shmaddr);
 		CHERI_CLC(CHERI_CR_CTEMP0, CHERI_CR_KDC, &shmaddr_cap, 0);
 		CHERI_CAP_PRINT(CHERI_CR_CTEMP0);
 		CHERI_CGETTAG(usertag, CHERI_CR_CTEMP0);
@@ -705,11 +706,7 @@ kern_shmctl_locked(struct thread *td, int shmid, int cmd, void *buf,
 #endif
 	default:
 		error = EINVAL;
-#ifdef KTRACE
-		printf("%s: invalid cmd %d\n", __func__, cmd); // XXXAR remove
-		if (KTRPOINT(td, KTR_SYSERRCAUSE))
-			ktrsyserrcause("%s: invalid cmd %d ", __func__, cmd);
-#endif
+		KTR_SYSERR("invalid shmctl command %d", cmd);
 		break;
 	}
 	return (error);
@@ -748,12 +745,16 @@ sys_shmctl(struct thread *td, struct shmctl_args *uap)
 	 */
 	if (uap->cmd == IPC_INFO || uap->cmd == SHM_INFO ||
 	    uap->cmd == SHM_STAT)
-		return (EINVAL);
+		KTR_SYSERR_RETURN(EINVAL, "Linux command %d called from FreeBSD ABI",
+		    uap->cmd);
 
 	/* IPC_SET needs to copyin the buffer before calling kern_shmctl */
 	if (uap->cmd == IPC_SET) {
-		if ((error = copyin(uap->buf, &buf, sizeof(struct shmid_ds))))
+		if ((error = copyin(uap->buf, &buf, sizeof(struct shmid_ds)))) {
+			KTR_SYSERR("Failed to copy %zu bytes from user buffer"
+			    " %p", sizeof(struct shmid_ds), uap->buf);
 			goto done;
+		}
 	}
 
 	error = kern_shmctl(td, uap->shmid, uap->cmd, (void *)&buf, &bufsz);
@@ -764,6 +765,9 @@ sys_shmctl(struct thread *td, struct shmctl_args *uap)
 	switch (uap->cmd) {
 	case IPC_STAT:
 		error = copyout(&buf, uap->buf, bufsz);
+		if (error)
+			KTR_SYSERR("Failed to copy %zu bytes to user buffer %p",
+			    bufsz, uap->buf);
 		break;
 	}
 
@@ -790,14 +794,15 @@ shmget_existing(struct thread *td, struct shmget_args *uap, int mode,
 	    ("segnum %d shmalloced %d", segnum, shmalloced));
 	shmseg = &shmsegs[segnum];
 	if ((uap->shmflg & (IPC_CREAT | IPC_EXCL)) == (IPC_CREAT | IPC_EXCL))
-		return (EEXIST);
+		KTR_SYSERR_RETURN(EEXIST, "SHM segment %d exists", segnum);
 #ifdef MAC
 	error = mac_sysvshm_check_shmget(td->td_ucred, shmseg, uap->shmflg);
 	if (error != 0)
-		return (error);
+		KTR_SYSERR_RETURN(error, "MAC checks failed");
 #endif
 	if (uap->size != 0 && uap->size > shmseg->u.shm_segsz)
-		return (EINVAL);
+		KTR_SYSERR_RETURN(EINVAL, "size (%zu) > shmseg.size (%zu)",
+		    uap->size, shmseg->u.shm_segsz);
 	td->td_retval[0] = IXSEQ_TO_IPCID(segnum, shmseg->u.shm_perm);
 	return (0);
 }
@@ -814,23 +819,25 @@ shmget_allocate_segment(struct thread *td, struct shmget_args *uap, int mode)
 	SYSVSHM_ASSERT_LOCKED();
 
 	if (uap->size < shminfo.shmmin || uap->size > shminfo.shmmax)
-		return (EINVAL);
+		KTR_SYSERR_RETURN(EINVAL, "size %zd not in range [%zd, %zd]",
+		    uap->size, shminfo.shmmin, shminfo.shmmax);
 	if (shm_nused >= shminfo.shmmni) /* Any shmids left? */
-		return (ENOSPC);
+		KTR_SYSERR_RETURN(ENOSPC, "no more shmids remaining");
 	size = round_page(uap->size);
 #ifdef COMPAT_CHERIABI
 	if (SV_CURPROC_FLAG(SV_CHERI))
 		size = roundup2(size, 1 << CHERI_ALIGN_SHIFT(size));
 #endif
 	if (shm_committed + btoc(size) > shminfo.shmall)
-		return (ENOMEM);
+		KTR_SYSERR_RETURN(ENOMEM, "New size would exceed shmall 0x%zx",
+		    shminfo.shmall);
 	if (shm_last_free < 0) {
 		shmrealloc();	/* Maybe expand the shmsegs[] array. */
 		for (i = 0; i < shmalloced; i++)
 			if (shmsegs[i].u.shm_perm.mode & SHMSEG_FREE)
 				break;
 		if (i == shmalloced)
-			return (ENOSPC);
+			KTR_SYSERR_RETURN(ENOSPC, "No more space for shmseg");
 		segnum = i;
 	} else  {
 		segnum = shm_last_free;
@@ -844,12 +851,12 @@ shmget_allocate_segment(struct thread *td, struct shmget_args *uap, int mode)
 		PROC_LOCK(td->td_proc);
 		if (racct_add(td->td_proc, RACCT_NSHM, 1)) {
 			PROC_UNLOCK(td->td_proc);
-			return (ENOSPC);
+			KTR_SYSERR_RETURN(ENOSPC, "RACCT_NSHM exceeded");
 		}
 		if (racct_add(td->td_proc, RACCT_SHMSIZE, size)) {
 			racct_sub(td->td_proc, RACCT_NSHM, 1);
 			PROC_UNLOCK(td->td_proc);
-			return (ENOMEM);
+			KTR_SYSERR_RETURN(ENOMEM, "RACCT_SHMSIZE exceeded");
 		}
 		PROC_UNLOCK(td->td_proc);
 	}
@@ -870,7 +877,7 @@ shmget_allocate_segment(struct thread *td, struct shmget_args *uap, int mode)
 			PROC_UNLOCK(td->td_proc);
 		}
 #endif
-		return (ENOMEM);
+		KTR_SYSERR_RETURN(ENOMEM, "Cannot allocate shm_object");
 	}
 	shm_object->pg_color = 0;
 	VM_OBJECT_WLOCK(shm_object);
@@ -914,7 +921,7 @@ sys_shmget(struct thread *td, struct shmget_args *uap)
 	int error;
 
 	if (shm_find_prison(td->td_ucred) == NULL)
-		return (ENOSYS);
+		KTR_SYSERR_RETURN(ENOSYS, "shm_find_prison() == NULL");
 	mode = uap->shmflg & ACCESSPERMS;
 	SYSVSHM_LOCK();
 	if (uap->key == IPC_PRIVATE) {
@@ -924,9 +931,10 @@ sys_shmget(struct thread *td, struct shmget_args *uap)
 		    uap->key);
 		if (segnum >= 0)
 			error = shmget_existing(td, uap, mode, segnum);
-		else if ((uap->shmflg & IPC_CREAT) == 0)
+		else if ((uap->shmflg & IPC_CREAT) == 0) {
+			KTR_SYSERR("segnum < 0 but flag IPC_CREAT missing");
 			error = ENOENT;
-		else
+		} else
 			error = shmget_allocate_segment(td, uap, mode);
 	}
 	SYSVSHM_UNLOCK();
@@ -1171,6 +1179,7 @@ shmunload(void)
 static int
 sysctl_shmsegs(SYSCTL_HANDLER_ARGS)
 {
+	/* XXXAR KTRACE? */
 	struct shmid_kernel tshmseg;
 	struct prison *pr, *rpr;
 	int error, i;
