@@ -116,7 +116,7 @@ cheri_codeptr(const void *ptr, size_t len)
 	__capability void (*c)(void) = ptr;
 #else
 	__capability void *c = cheri_setoffset(cheri_getpcc(),
-	    (register_t)ptr);
+	    (vaddr_t)ptr);
 #endif
 
 	/* Assume CFromPtr without base set, availability of CSetBounds. */
