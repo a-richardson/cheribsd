@@ -76,7 +76,7 @@ bcopy(const void *src0, void *dst0, size_t length)
 {
 	__CAPABILITY char *dst = dst0;
 	__CAPABILITY const char *src = src0;
-	size_t t;
+	vaddr_t t;
 
 	if (length == 0 || dst == src)		/* nothing to do */
 		goto done;
@@ -91,13 +91,13 @@ bcopy(const void *src0, void *dst0, size_t length)
 		/*
 		 * Copy forward.
 		 */
-		t = (size_t)src;	/* only need low bits */
-		if ((t | (size_t)dst) & wmask) {
+		t = (vaddr_t)src;	/* only need low bits */
+		if ((t | (vaddr_t)dst) & wmask) {
 			/*
 			 * Try to align operands.  This cannot be done
 			 * unless the low bits match.
 			 */
-			if ((t ^ (size_t)dst) & wmask || length < wsize)
+			if ((t ^ (vaddr_t)dst) & wmask || length < wsize)
 				t = length;
 			else
 				t = wsize - (t & wmask);
@@ -108,7 +108,7 @@ bcopy(const void *src0, void *dst0, size_t length)
 		 * Copy whole words, then mop up any trailing bytes.
 		 */
 		t = length / wsize;
-		TLOOP(*(word *)dst = *(word *)src; src += wsize; dst += wsize);
+		TLOOP(*(__CAPABILITY word *)dst = *(__CAPABILITY word *)src; src += wsize; dst += wsize);
 		t = length & wmask;
 		TLOOP(*dst++ = *src++);
 	} else {
@@ -119,9 +119,9 @@ bcopy(const void *src0, void *dst0, size_t length)
 		 */
 		src += length;
 		dst += length;
-		t = (size_t)src;
-		if ((t | (size_t)dst) & wmask) {
-			if ((t ^ (size_t)dst) & wmask || length <= wsize)
+		t = (vaddr_t)src;
+		if ((t | (vaddr_t)dst) & wmask) {
+			if ((t ^ (vaddr_t)dst) & wmask || length <= wsize)
 				t = length;
 			else
 				t &= wmask;
@@ -129,7 +129,7 @@ bcopy(const void *src0, void *dst0, size_t length)
 			TLOOP1(*--dst = *--src);
 		}
 		t = length / wsize;
-		TLOOP(src -= wsize; dst -= wsize; *(word *)dst = *(word *)src);
+		TLOOP(src -= wsize; dst -= wsize; *(__CAPABILITY word *)dst = *(__CAPABILITY word *)src);
 		t = length & wmask;
 		TLOOP(*--dst = *--src);
 	}
