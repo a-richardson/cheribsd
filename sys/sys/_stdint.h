@@ -87,10 +87,16 @@ typedef	__uintmax_t		uintmax_t;
 #define	_UINTMAX_T_DECLARED
 #endif
 
-#ifndef __CHERI_PURE_CAPABILITY__
-typedef	__uintptr_t		vaddr_t;
+#if __has_attribute(memory_address)
+#define	__memory_address __attribute__((memory_address))
 #else
-typedef	__uint64_t		vaddr_t;
+#define	__memory_address
+#endif
+
+#ifdef __CHERI_PURE_CAPABILITY__
+typedef	__memory_address __uintcap_t	vaddr_t;
+#else
+typedef	__memory_address __uintptr_t	vaddr_t;
 #endif
 
 #endif /* !_SYS__STDINT_H_ */
