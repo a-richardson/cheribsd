@@ -1031,6 +1031,7 @@ int ZEXPORT deflateCopy (dest, source)
 
     ss = source->state;
 
+    // FIXME: this casts away __capability
     zmemcpy((voidpf)dest, (voidpf)source, sizeof(z_stream));
 
     ds = (deflate_state *) ZALLOC(dest, 1, sizeof(deflate_state));
