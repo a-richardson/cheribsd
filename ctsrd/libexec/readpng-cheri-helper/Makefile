@@ -8,6 +8,11 @@ SRCS=	readpng-cheri.c				\
 NEED_CHERI=	sandbox
 WANT_DUMP=	yes
 
+# objdump -xrsSD readpng-cheri-helper.full > readpng-cheri-helper.dump
+# BFD: readpng-cheri-helper.full: don't know how to handle processor specific section `.preinit_array' [0x7000000d]
+# objdump: readpng-cheri-helper.full: File format not recognized
+CHERI_LLD_BROKEN=yes
+
 .PATH: ${.CURDIR}/../../lib/libimagebox
 SRCS+=	decode_png.c
 

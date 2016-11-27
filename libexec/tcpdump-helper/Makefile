@@ -34,6 +34,13 @@ LDFLAGS+=	-Wl,-T,${.CURDIR}/../../lib/libc_cheri/sandbox.ld \
 		-nostdlib
 WARNS=	3
 
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: warning: cannot find entry symbol __start; defaulting to 0x8800
+# objcopy --only-keep-debug tcpdump-helper.full tcpdump-helper.debug
+# objdump -xrsSD tcpdump-helper.full > tcpdump-helper.dump
+# BFD: tcpdump-helper.full: don't know how to handle processor specific section `.preinit_array' [0x7000000d]
+# objdump: tcpdump-helper.full: File format not recognized
+CHERI_LLD_BROKEN=yes
+
 # Contains a table of formats selected by a function so safe-ish
 CFLAGS.print-icmp.c=	-Wno-format-nonliteral
 CFLAGS.util-print.c=	-Wno-format-nonliteral
