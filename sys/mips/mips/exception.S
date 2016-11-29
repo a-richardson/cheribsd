@@ -690,6 +690,21 @@ END(MipsKernGenException)
 NESTED_NOPROFILE(MipsUserGenException, CALLFRAME_SIZ, ra)
 	.set	noat
 	.mask	0x80000000, (CALLFRAME_RA - CALLFRAME_SIZ)
+
+#ifdef CPU_QEMU_MALTA
+	/*
+	 * If hw.qemu_trace_perthread is set to 2 then disable ISA tracing
+	 * while in kernel-mode.  It will be re-enabled at the end of this
+	 * function if td->md_flags contains MDTD_QTRACE
+	 */
+	PTR_LA	k0, _C_LABEL(qemu_trace_perthread)	# Load address of var
+	PTR_L	k0, 0(k0)				# Load var value
+	li	k1, 2
+	bne	k0, k1, no_change_to_qemu_tracing	# Skip if value is not 2
+	nop
+	li	$0, 0xdead				# disable tracing
+no_change_to_qemu_tracing:
+#endif
 	GET_CPU_PCPU(k1)
 	PTR_L	k1, PC_CURPCB(k1)
 	SAVE_REGS_TO_PCB(k1)
@@ -762,6 +777,23 @@ NESTED_NOPROFILE(MipsUserGenException, CALLFRAME_SIZ, ra)
 	sync
 #ifdef CPU_CHERI
 	CHERI_EXCEPTION_RETURN(k0)
+#ifdef CPU_QEMU_MALTA
+	GET_CPU_PCPU(k1)
+	PTR_L	k0, PC_CURTHREAD(k1)		# k0 = curthread
+	lw	k0, TD_MDFLAGS(k0)		# Get k0->md_flags
+	andi	k0, k0, MDTD_QTRACE		# Mask Qemu trace bit
+	beqz	k0, qemu_no_trace		# Branch if not set
+	nop
+	/*
+	 * We can enable tracing here unconditionally because MDTD_QTRACE is
+	 * set so we know that this thread should be traced. Even if we didn't
+	 * disable tracing on entry (hw.qemu_trace_perthread != 2) enabling it
+	 * again does no harm and makes this code simpler as we don't have to
+	 * check the value of qemu_trace_perthread again
+	 */
+	li	$0, 0xbeef
+qemu_no_trace:
+#endif
 #endif
 	eret
 	.set	at
