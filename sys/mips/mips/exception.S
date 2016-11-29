@@ -750,6 +750,24 @@ no_change_to_qemu_tracing:
  * by the interrupt code.
  */
 	GET_CPU_PCPU(k1)
+#ifdef CPU_QEMU_MALTA
+	/* XXXAR: can this be moved any further down? */
+	/* GET_CPU_PCPU(k1) */
+	PTR_L	k0, PC_CURTHREAD(k1)		# k0 = curthread
+	lw	k0, TD_MDFLAGS(k0)		# Get k0->md_flags
+	andi	k0, k0, MDTD_QTRACE		# Mask Qemu trace bit
+	beqz	k0, qemu_no_trace		# Branch if not set
+	nop
+	/*
+	 * We can enable tracing here unconditionally because MDTD_QTRACE is
+	 * set so we know that this thread should be traced. Even if we didn't
+	 * disable tracing on entry (hw.qemu_trace_perthread != 2) enabling it
+	 * again does no harm and makes this code simpler as we don't have to
+	 * check the value of qemu_trace_perthread again
+	 */
+	li	$0, 0xbeef
+qemu_no_trace:
+#endif
 	PTR_L	k1, PC_CURPCB(k1)
 
 	/*
@@ -777,23 +795,6 @@ no_change_to_qemu_tracing:
 	sync
 #ifdef CPU_CHERI
 	CHERI_EXCEPTION_RETURN(k0)
-#ifdef CPU_QEMU_MALTA
-	GET_CPU_PCPU(k1)
-	PTR_L	k0, PC_CURTHREAD(k1)		# k0 = curthread
-	lw	k0, TD_MDFLAGS(k0)		# Get k0->md_flags
-	andi	k0, k0, MDTD_QTRACE		# Mask Qemu trace bit
-	beqz	k0, qemu_no_trace		# Branch if not set
-	nop
-	/*
-	 * We can enable tracing here unconditionally because MDTD_QTRACE is
-	 * set so we know that this thread should be traced. Even if we didn't
-	 * disable tracing on entry (hw.qemu_trace_perthread != 2) enabling it
-	 * again does no harm and makes this code simpler as we don't have to
-	 * check the value of qemu_trace_perthread again
-	 */
-	li	$0, 0xbeef
-qemu_no_trace:
-#endif
 #endif
 	eret
 	.set	at
