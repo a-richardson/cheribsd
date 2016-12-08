@@ -36,6 +36,7 @@
 #include <sys/proc.h>
 #include <sys/sysctl.h>
 #include <sys/sysent.h>
+#include <sys/mutex.h>
 
 #include <ddb/ddb.h>
 #include <sys/kdb.h>
@@ -328,6 +329,20 @@ cheri_exec_setregs(struct thread *td, unsigned long entry_addr)
 	cheri_capability_set_user_stc(&frame->stc);
 	cheri_capability_set_user_idc(&frame->idc);
 	cheri_capability_set_user_pcc(&frame->pcc);
+	
+	struct proc* p = td->td_proc;
+	PROC_LOCK(p);
+	printf("Setting C12 (entry addr) to 0x%lx: %s\n", entry_addr, p->p_comm);
+#if 0
+	// causes TLB misses
+	for (int i = 0; i < (int)p->p_args->ar_length; i++) {
+		if (p->p_args->ar_args[i] == '\0')
+			printf(" ");
+		else
+			printf("%c", p->p_args->ar_args[i]);
+	}
+#endif
+	PROC_UNLOCK(p);
 	cheri_capability_set_user_entry(&frame->c12, entry_addr);
 
 	/*
