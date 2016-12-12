@@ -17,4 +17,7 @@ MAN=
 
 BINDIR=	/usr/libcheri
 
+# cheri-unknown-freebsd-ld.lld: error: helloworld.c:50: undefined symbol 'abort'
+CHERI_LLD_BROKEN=yes
+
 .include <bsd.prog.mk>
