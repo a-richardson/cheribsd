@@ -42,6 +42,16 @@ extern void _init(void) __hidden;
 extern int _DYNAMIC;
 #pragma weak _DYNAMIC
 
+//XXXAR: HACK: lld creates an undefined symbol for all of these if the sections don't exist
+#pragma weak __preinit_array_start
+#pragma weak __preinit_array_end
+#pragma weak __init_array_start
+#pragma weak __init_array_end
+#pragma weak __fini_array_start
+#pragma weak __fini_array_end
+#define weak_array_size(name)	\
+	((name##_start) ? ((name##_end) - (name##_start)) : 0)
+
 char **environ;
 const char *__progname = "";
 
@@ -51,7 +61,7 @@ finalizer(void)
 	void (*fn)(void);
 	size_t array_size, n;
 
-	array_size = __fini_array_end - __fini_array_start;
+	array_size = weak_array_size(__fini_array);
 	for (n = array_size; n > 0; n--) {
 		fn = __fini_array_start[n - 1];
 		if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
@@ -73,7 +83,7 @@ handle_static_init(int argc, char **argv, char **env)
 
 	atexit(finalizer);
 
-	array_size = __preinit_array_end - __preinit_array_start;
+	array_size = weak_array_size(__preinit_array);
 	for (n = 0; n < array_size; n++) {
 		fn = __preinit_array_start[n];
 		if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
@@ -82,7 +92,7 @@ handle_static_init(int argc, char **argv, char **env)
 #ifndef __CHERI_PURE_CAPABILITY__
 	_init();
 #endif
-	array_size = __init_array_end - __init_array_start;
+	array_size = weak_array_size(__init_array);
 	for (n = 0; n < array_size; n++) {
 		fn = __init_array_start[n];
 		if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
