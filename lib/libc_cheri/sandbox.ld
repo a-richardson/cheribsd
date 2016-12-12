@@ -117,6 +117,7 @@ SECTIONS
 	.data ALIGN(CAP_ALIGN): {
 		*(.data)
 	}
+	/* XXXAR: broken with lld until https://reviews.llvm.org/D27276 lands */
 	_gp = ALIGN(CAP_ALIGN) + 0x7fc0;
 	.got : {
 		*(.got.plt)
@@ -131,7 +132,6 @@ SECTIONS
 	}
 
 	__bss_start = ADDR(.bss);
-	/* work around https://llvm.org/bugs/show_bug.cgi?id=31129 */
-	/* __bss_end = ALIGN(__bss_start + SIZEOF(.bss), 0x8); */
-	__bss_end = ((__bss_start + SIZEOF(.bss)) | 7) + 1;
+	/* XXXAR: broken with lld: https://llvm.org/bugs/show_bug.cgi?id=31129 */
+	__bss_end = ALIGN(__bss_start + SIZEOF(.bss), 0x8);
 }
