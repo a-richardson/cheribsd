@@ -32,6 +32,29 @@ LIBC_ARCH=${MACHINE_CPUARCH}
 LIB?=c
 SHLIB_MAJOR= 7
 .ifdef LIBCHERI
+
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_setaffinity.S:3: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '$tmp6' defined in numa_setaffinity.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_setaffinity.S:3: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '$tmp6' defined in numa_setaffinity.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_setaffinity.S:3: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '$tmp6' defined in numa_setaffinity.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_setaffinity.S:3: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_setaffinity.S:3: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_setaffinity.S:3: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_getaffinity.S:3: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '$tmp6' defined in numa_getaffinity.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_getaffinity.S:3: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '$tmp6' defined in numa_getaffinity.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_getaffinity.S:3: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '$tmp6' defined in numa_getaffinity.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_getaffinity.S:3: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_getaffinity.S:3: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: numa_getaffinity.S:3: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: procctl.S:3: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '$tmp6' defined in procctl.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: procctl.S:3: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '$tmp6' defined in procctl.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: procctl.S:3: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '$tmp6' defined in procctl.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: procctl.S:3: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: procctl.S:3: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: procctl.S:3: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '__cerror' defined in cerror.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: aio_mlock.S:3: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '$tmp6' defined in aio_mlock.pico
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: aio_mlock.S:3: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '$tmp6' defined in aio_mlock.pico
+CHERI_LLD_BROKEN=yes
+
 SHLIB_LDSCRIPT=libc-cheri.ldscript
 .else
 .if ${MK_SSP} != "no"
