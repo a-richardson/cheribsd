@@ -74,7 +74,10 @@ NESTED_NOPROFILE(__cerror, CALLFRAME_SIZ, ra)
 	/* CheriABI saves ra (for now) and fp */
 	.mask	0xc0000000, (CALLFRAME_RA - CALLFRAME_SIZ)
 	PTR_SUBU	sp, sp, CALLFRAME_SIZ
-
+#ifdef PIC
+	SETUP_GP64(CALLFRAME_GP, __cerror)
+	SAVE_GP(CALLFRAME_GP)
+#endif
 	csd		ra, sp, CALLFRAME_RA($c11)
 	csd		s8, sp, CALLFRAME_FP($c11)
 	csd		v0, sp, CALLFRAME_S0($c11)	# save errno value
@@ -102,6 +105,9 @@ NESTED_NOPROFILE(__cerror, CALLFRAME_SIZ, ra)
 	clc		$c17, sp, CALLFRAME_C17($c11)
 	cld		s8, sp, CALLFRAME_FP($c11)
 	cld		ra, sp, CALLFRAME_RA($c11)
+#ifdef PIC
+	RESTORE_GP64
+#endif
 	PTR_ADDU	sp, sp, CALLFRAME_SIZ
 
 	li		v0, -1

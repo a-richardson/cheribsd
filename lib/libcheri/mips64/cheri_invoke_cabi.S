@@ -66,6 +66,7 @@
 #
 # - Floating-point registers.
 # - The compiler needs to handle unused argument/return registers.
+# - PIC code
 #
 
 	.text
@@ -226,6 +227,7 @@ cheri_invoke_restore_regs:
 
 	#
 	# Return to C-language caller.
+
 	#
 cheri_invoke_return:
 	cjr	$c17

@@ -96,18 +96,20 @@
 #endif /* __ABICALLS__ */
 #else /* defined(__CHERI_PURE_CAPABILITY__) */
 #ifdef PIC
-# define PIC_PROLOGUE(x)
+# define PIC_PROLOGUE(x)	SETUP_GP64(t3, x)
 # define PIC_TAILCALL(l)			\
 	dla		t0, 1f;			\
 1:	cgetpcc		$c12;			\
 	cgetoffset	t1, $c12;		\
 	dsub		t0, t1, t0;		\
 	csetoffset	$c12, $c12, t0;		\
-	dla		t9, _C_LABEL(l);	\
+	PTR_LA		t9, _C_LABEL(l);	\
 	cincoffset	$c12, $c12, t9;		\
+	RESTORE_GP64;				\
 	cjr		$c12;
-# define PIC_RETURN()		cjr $c17
+# define PIC_RETURN()		RESTORE_GP64; cjr $c17
 #else
+#warning "ndef pic"
 # define PIC_PROLOGUE(x)
 # define PIC_TAILCALL(l)	j _C_LABEL(l)
 # define PIC_RETURN()		cjr $c17
@@ -171,7 +173,7 @@ err:									\
 END(__sys_ ## x)
 
 /* Do a system call where the _ioctl() is also custom */
-#define NO_UNDERSCORE(x)							\
+#define NO_UNDERSCORE(x)						\
 LEAF(__sys_ ## x);							\
 	PIC_PROLOGUE(__sys_ ## x);					\
 	SYSTRAP(x);							\
