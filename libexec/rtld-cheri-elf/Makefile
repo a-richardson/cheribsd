@@ -40,6 +40,32 @@ CFLAGS+=	-DPIC $(DEBUG)
 LDFLAGS+=	-shared -Wl,-Bsymbolic
 LIBADD=		c_pic
 
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:69: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '$tmp9' defined in rtld_start.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:69: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '$tmp9' defined in rtld_start.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:69: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '$tmp9' defined in rtld_start.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:77: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '_DYNAMIC' defined in (internal)
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:77: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '_DYNAMIC' defined in (internal)
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:77: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '_DYNAMIC' defined in (internal)
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:82: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '_rtld_relocate_nonplt_self' defined in reloc.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:82: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '_rtld_relocate_nonplt_self' defined in reloc.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:82: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '_rtld_relocate_nonplt_self' defined in reloc.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:97: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '_rtld' defined in rtld.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:97: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '_rtld' defined in rtld.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:97: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '_rtld' defined in rtld.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:180: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '$tmp77' defined in rtld_start.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:180: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '$tmp77' defined in rtld_start.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:180: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '$tmp77' defined in rtld_start.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:185: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '_mips_rtld_bind' defined in reloc.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:185: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '_mips_rtld_bind' defined in reloc.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/mips/rtld_start.S:185: can't create dynamic relocation R_MIPS_HI16 (5) against symbol '_mips_rtld_bind' defined in reloc.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/write.S:2: can't create dynamic relocation R_MIPS_HIGHEST (29) against symbol '$tmp6' defined in write.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: /home/alr48/cheri/sources/cheribsd/libexec/rtld-cheri-elf/write.S:2: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol '$tmp6' defined in write.o
+# /home/alr48/cheri/output/sdk256/bin/cheri-unknown-freebsd-ld.lld: error: too many errors emitted, stopping now (use -error-limit=0 to see all errors)
+# LLD can't deal with the relocations in the .S files
+CHERI_LLD_BROKEN=yes
+
+
+
 .if defined(NOT_YET)
 .if ${MK_SYMVER} == "yes"
 VERSION_DEF=	${LIBCSRCDIR}/Versions.def

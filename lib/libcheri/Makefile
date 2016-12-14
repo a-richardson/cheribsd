@@ -38,6 +38,10 @@ INCS=	cheri_class.h			\
 CFLAGS+=	-I${.CURDIR}
 CFLAGS+=	-I${.CURDIR}/${MACHINE_ARCH}
 
+# Non-PIC relocations
+# CHERI_LLD_BROKEN=yes
+NO_PIC=yes
+
 INCSDIR=	${INCLUDEDIR}/cheri
 
 CFLAGS+=	-I${.CURDIR}/../libc/include \

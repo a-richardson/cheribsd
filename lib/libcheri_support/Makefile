@@ -13,6 +13,8 @@ LIBCHERI_DIR=${.CURDIR}/../libcheri
 # cheri-unknown-freebsd-ld.lld: error: lib/libcheri_support/../libcheri/mips64/cheri_invoke_cabi.S:256: can't create dynamic relocation R_MIPS_HIGHER (28) against symbol 'cherierrno' defined in cheri_invoke_cabi.pico
 # cheri-unknown-freebsd-ld.lld: error: lib/libcheri_support/../libcheri/mips64/cheri_invoke_cabi.S:256: can't create dynamic relocation R_MIPS_HI16 (5) against symbol 'cherierrno' defined in cheri_invoke_cabi.pico
 # cheri-unknown-freebsd-ld.lld: error: lib/libcheri_support/../libcheri/mips64/cheri_invoke_cabi.S:256: can't create dynamic relocation R_MIPS_LO16 (6) against symbol 'cherierrno' defined in cheri_invoke_cabi.pico
-CHERI_LLD_BROKEN=yes
+# CHERI_LLD_BROKEN=yes
+NO_PIC=yes
+
 
 .include <bsd.lib.mk>

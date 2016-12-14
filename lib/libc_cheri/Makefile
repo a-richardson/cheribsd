@@ -319,6 +319,7 @@ CFLAGS+= ${CFLAGS.${.IMPSRC:T}}
 
 SCRIPTDIR=	/usr/libdata/ldscripts
 LDSCRIPTS=	sandbox.ld
+INSTALL_PIC_ARCHIVE=
 
 afterinstall:
 	${INSTALL} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \

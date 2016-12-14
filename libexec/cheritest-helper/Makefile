@@ -17,5 +17,8 @@ NEED_CHERI=	sandbox
 WANT_DUMP=	yes
 
 NO_SHARED=	yes
+# LLD doesn't understand 2arg ALIGN():
+# __bss_end = ALIGN(__bss_start + SIZEOF(.bss), 0x8);
+CHERI_LLD_BROKEN=yes
 
 .include <bsd.prog.mk>
