@@ -32,6 +32,7 @@
 
 #include <machine/asm.h>
 #include <machine/cherireg.h>
+#include "SYS.h"
 
 .globl _C_LABEL(_rtld_relocate_nonplt_self)
 .globl _C_LABEL(_rtld)
@@ -66,23 +67,15 @@ LEAF(rtld_start)
 
 	move		s8, sp
 
-	dla		a0, 1f
-1:	cgetpcc		$c12
-	cgetoffset	a1, $c12
-	dsubu		a1, a1, a0
-	csd		a1, sp, 24($c11)
-	cgetdefault	$c4
-	csetoffset	$c4, $c4, a1	/* relocbase */
-
-	dla		a0, _DYNAMIC
-	cincoffset	$c3, $c4, a0	/* dynp */
-
-	/* XXX: Assume PCC and DDC share an offset. */
-	csetoffset	$c12, $c12, a1
-	dla		t0, _C_LABEL(_rtld_relocate_nonplt_self)
-	cincoffset	$c12, $c12, t0
-	cjalr		$c12, $c17
-	nop
+	/* load dynp into $c4 (dynp) */
+	/* XXXAR: This assumes that PCC and DDC share the same base address */
+	PIC_LOAD_CODE_PTR($c3, a0, _DYNAMIC)
+	cgetoffset	a0, $c3
+	cgetdefault	$c3
+	csetoffset	$c3, $c3, a0
+	/* load address of rtld .text segment into $c4 (relocbase) */
+	PIC_LOAD_CODE_PTR($c4, a0, .text)
+	PIC_CALL(_rtld_relocate_nonplt_self)
 
 	clc		$c3, sp, 2*CHERICAP_SIZE($c11)	/* execdata */
 	/* XXX-BD: Should allocate cleanup and objp outside stack. */
@@ -94,12 +87,8 @@ LEAF(rtld_start)
 	csetoffset	$c5, $c11, t0			/* &objp */
 	csetbounds	$c5, $c5, t1
 	cld		t0, sp, 24($c11)	/* relocbase */
-	dla		t9, _C_LABEL(_rtld)
-	daddu		t0, t0, t9
-	cgetpcc		$c12
-	csetoffset	$c12, $c12, t0
-	cjalr		$c12, $c17	/* v0 = _rtld(execdata, cleanup, objp) */
-	nop
+
+	PIC_CALL(_rtld)		/* v0 = _rtld(execdata, cleanup, objp) */
 
 	cmove		$c12, $c3
 	clc		$c3, sp, 2*CHERICAP_SIZE($c11)	/* execdata */
@@ -177,16 +166,8 @@ _rtld_bind_start:
 	csetoffset	$c3, $c3, a0
 	move	a0, t8			/* symbol index */
 
-	/* XXX-BD: hacky PIC call */
-	dla		t0, 1f
-1:	cgetpcc		$c12
-	cgetoffset	t1, $c12
-	dsub		t0, t1, t0
-	csetoffset	$c12, $c12, t0
-	dla		t9, _C_LABEL(_mips_rtld_bind)
-	cincoffset	$c12, $c12, t9
-	cjalr	$c12, $c17
-	nop
+	PIC_CALL(_mips_rtld_bind)
+
 	cgetpccsetoffset $c12, v0
 
 	move	sp, s0
