@@ -78,6 +78,7 @@ LEAF(rtld_start)
 	PIC_LOAD_CODE_PTR($c4, a0, .text)
 	cgetoffset	a0, $c4
 	csetoffset	$c4, $c4, a0
+	csd		a0, sp, 24($c11)
 	PIC_CALL(_rtld_relocate_nonplt_self)
 
 	clc		$c3, sp, 2*CHERICAP_SIZE($c11)	/* execdata */
