@@ -66,6 +66,7 @@ LEAF(rtld_start)
 
 	cmove		$c24, $c11
 
+#if 0
 	dla		a0, 1f
 1:	cgetpcc		$c12
 	cgetoffset	a1, $c12
@@ -74,10 +75,13 @@ LEAF(rtld_start)
 	cgetdefault	$c4
 	csetoffset	$c4, $c4, a1	/* relocbase */
 
-#if 0
 	dla		a0, _DYNAMIC
 	cincoffset	$c3, $c4, a0	/* dynp */
 #else
+	/* relocbase is passed in $c4 by the kernel */
+	cgetoffset	a1, $c4
+	csd		a1, zero, SFRAME_RELOCBASE($c11)
+
 	/* load _DYNAMIC into $c3 (dynp) */
 	/* XXXAR: This assumes that PCC and DDC share the same base address */
 	PIC_LOAD_CODE_PTR($c3, a0, _DYNAMIC)
