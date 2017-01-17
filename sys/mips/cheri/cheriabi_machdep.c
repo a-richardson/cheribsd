@@ -871,6 +871,7 @@ cheriabi_exec_setregs(struct thread *td, struct image_params *imgp, u_long stack
 	    MIPS_SR_PX | MIPS_SR_UX | MIPS_SR_KX | MIPS_SR_COP_2_BIT;
 	cheri_exec_setregs(td, imgp->entry_addr);
 	cheri_stack_init(td->td_pcb);
+	printf("Setting up args for %s, reloc_base: 0x%lx, entry: 0x%lx\n", imgp->execpath, imgp->reloc_base, imgp->entry_addr);
 
 	/*
 	 * Pass a pointer to the struct cheriabi_execdata at the top of the
@@ -880,7 +881,8 @@ cheriabi_exec_setregs(struct thread *td, struct image_params *imgp, u_long stack
 	 */
 	cheri_capability_set(&td->td_frame->c3, CHERI_CAP_USER_DATA_PERMS,
 	    (void *)stack, sizeof(struct cheriabi_execdata), 0);
-
+	cheri_capability_set(&td->td_frame->c4, CHERI_CAP_USER_DATA_PERMS,
+	    (void *)imgp->reloc_base, CHERI_CAP_USER_DATA_LENGTH, 0);
 	/*
 	 * Restrict the stack capability to the maximum region allowed for
 	 * this process and adjust sp accordingly.

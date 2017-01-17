@@ -67,17 +67,14 @@ LEAF(rtld_start)
 
 	move		s8, sp
 
-	/* load dynp into $c4 (dynp) */
+	/* load dynp into $c3 (dynp) */
 	/* XXXAR: This assumes that PCC and DDC share the same base address */
-	cgetdefault	$c4	# load DDC to convert code to data pointers
 	PIC_LOAD_CODE_PTR($c3, a0, _DYNAMIC)
 	cgetoffset	a0, $c3
-	csetoffset	$c3, $c4, a0
-	/* load address of rtld .text segment into $c4 (relocbase) */
-	/* XXXAR: or should this be the load address? */
-	PIC_LOAD_CODE_PTR($c4, a0, .text)
+	cgetdefault	$c3
+	csetoffset	$c3, $c3, a0
+	/* relocbase is passed in $c4 by the kernel */
 	cgetoffset	a0, $c4
-	csetoffset	$c4, $c4, a0
 	csd		a0, sp, 24($c11)
 	PIC_CALL(_rtld_relocate_nonplt_self)
 
