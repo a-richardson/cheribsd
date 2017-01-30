@@ -271,18 +271,196 @@ _mips_rtld_bind(Obj_Entry *obj, Elf_Size reloff)
 	return (Elf_Addr)target;
 }
 
+
+static __inline int
+_rtld_process_rela(const Elf_Rela *rel, Obj_Entry *obj, Elf_Addr *got,
+    const Obj_Entry *defobj, int flags, RtldLockState *lockstate)
+{
+	Elf_Word	r_symndx, r_type;
+	const Elf_Sym	*def;
+	void		*where;
+
+	where = obj->relocbase + rel->r_offset;
+	r_symndx = ELF_R_SYM(rel->r_info);
+	r_type = ELF_R_TYPE(rel->r_info);
+
+	switch (r_type & 0xff) {
+	case R_TYPE(NONE):
+		break;
+
+	case R_TYPE(REL32): {
+		/* 32-bit PC-relative reference */
+		const size_t rlen =
+			ELF_R_NXTTYPE_64_P(r_type)
+			? sizeof(Elf_Sxword)
+			: sizeof(Elf_Sword);
+		Elf_Sxword old = load_ptr(where, rlen);
+		Elf_Sxword val = old;
+
+		def = obj->symtab + r_symndx;
+
+		if (r_symndx >= obj->gotsym) {
+			val += got[obj->local_gotno + r_symndx - obj->gotsym];
+#ifdef DEBUG_VERBOSE
+			dbg("REL32/G(%p) %p --> %p (%s) in %s",
+				where, (void *)(uintptr_t)old, (void *)(uintptr_t)val,
+				obj->strtab + def->st_name,
+				obj->path);
+#endif
+		} else {
+			/*
+				* XXX: ABI DIFFERENCE!
+				*
+				* Old NetBSD binutils would generate shared
+				* libs with section-relative relocations being
+				* already adjusted for the start address of
+				* the section.
+				*
+				* New binutils, OTOH, generate shared libs
+				* with the same relocations being based at
+				* zero, so we need to add in the start address
+				* of the section.
+				*
+				* --rkb, Oct 6, 2001
+				*/
+
+			if (def->st_info ==
+				ELF_ST_INFO(STB_LOCAL, STT_SECTION)
+#ifdef SUPPORT_OLD_BROKEN_LD
+				&& !broken
+#endif
+				)
+				val += (Elf_Addr)def->st_value;
+
+			val += (Elf_Addr)obj->relocbase;
+
+#ifdef DEBUG_VERBOSE
+			dbg("REL32/L(%p) %p -> %p (%s) in %s",
+				where, (void *)(uintptr_t)old, (void *)(uintptr_t)val,
+				obj->strtab + def->st_name, obj->path);
+#endif
+		}
+		val += rel->r_addend;
+		store_ptr(where, val, rlen);
+		break;
+	}
+
+#ifdef __mips_n64
+	case R_TYPE(TLS_DTPMOD64):
+#else
+	case R_TYPE(TLS_DTPMOD32):
+#endif
+	{
+
+		const size_t rlen = sizeof(Elf_Addr);
+		Elf_Addr old = load_ptr(where, rlen);
+		Elf_Addr val = old;
+
+		def = find_symdef(r_symndx, obj, &defobj, flags, NULL,
+			lockstate);
+		if (def == NULL)
+			return -1;
+
+		val += (Elf_Addr)defobj->tlsindex;
+		val += rel->r_addend;
+		store_ptr(where, val, rlen);
+		dbg("DTPMOD %s in %s %p --> %p in %s",
+			obj->strtab + obj->symtab[r_symndx].st_name,
+			obj->path, (void *)(uintptr_t)old, (void*)(uintptr_t)val, defobj->path);
+		break;
+	}
+
+#ifdef __mips_n64
+	case R_TYPE(TLS_DTPREL64):
+#else
+	case R_TYPE(TLS_DTPREL32):
+#endif
+	{
+		const size_t rlen = sizeof(Elf_Addr);
+		Elf_Addr old = load_ptr(where, rlen);
+		Elf_Addr val = old;
+
+		def = find_symdef(r_symndx, obj, &defobj, flags, NULL,
+			lockstate);
+		if (def == NULL)
+			return -1;
+
+		if (!defobj->tls_done && allocate_tls_offset(obj))
+			return -1;
+
+		val += (Elf_Addr)def->st_value - TLS_DTP_OFFSET;
+		val += rel->r_addend;
+		store_ptr(where, val, rlen);
+
+		dbg("DTPREL %s in %s %p --> %p in %s",
+			obj->strtab + obj->symtab[r_symndx].st_name,
+			obj->path, (void*)(uintptr_t)old, (void *)(uintptr_t)val, defobj->path);
+		break;
+	}
+
+#ifdef __mips_n64
+	case R_TYPE(TLS_TPREL64):
+#else
+	case R_TYPE(TLS_TPREL32):
+#endif
+	{
+		const size_t rlen = sizeof(Elf_Addr);
+		Elf_Addr old = load_ptr(where, rlen);
+		Elf_Addr val = old;
+
+		def = find_symdef(r_symndx, obj, &defobj, flags, NULL,
+			lockstate);
+
+		if (def == NULL)
+			return -1;
+
+		if (!defobj->tls_done && allocate_tls_offset(obj))
+			return -1;
+
+		val += (Elf_Addr)(def->st_value + defobj->tlsoffset
+			- TLS_TP_OFFSET - TLS_TCB_SIZE);
+		val += rel->r_addend;
+		store_ptr(where, val, rlen);
+
+		dbg("TPREL %s in %s %p --> %p in %s",
+			obj->strtab + obj->symtab[r_symndx].st_name,
+			obj->path, (void*)(uintptr_t)old, (void *)(uintptr_t)val, defobj->path);
+		break;
+	}
+
+	default:
+		dbg("sym = %lu, type = %lu, offset = %p, addend = %p, "
+			"contents = %p, symbol = %s",
+			(u_long)r_symndx, (u_long)ELF_R_TYPE(rel->r_info),
+			(void *)(uintptr_t)rel->r_offset,
+			(void *)(uintptr_t)rel->r_addend,
+			(void *)(uintptr_t)load_ptr(where, sizeof(Elf_Sword)),
+			obj->strtab + obj->symtab[r_symndx].st_name);
+		_rtld_error("%s: Unsupported relocation type %ld "
+			"in non-PLT relocations",
+			obj->path, (u_long) ELF_R_TYPE(rel->r_info));
+		return -1;
+	}
+	return 0;
+}
+
+
+
 int
 reloc_non_plt(Obj_Entry *obj, Obj_Entry *obj_rtld, int flags,
     RtldLockState *lockstate)
 {
-	const Elf_Rel *rel;
-	const Elf_Rel *rellim;
+	const Elf_Rel *rel = NULL;
+	const Elf_Rel *rellim = NULL;
+	const Elf_Rela *rela = NULL;
+	const Elf_Rela *relalim = NULL;
 	Elf_Addr *got = obj->pltgot;
 	const Elf_Sym *sym, *def;
 	const Obj_Entry *defobj;
 	Elf_Word i;
 	char symbuf[64];
 	SymLook req, defreq;
+	int err;
 #ifdef SUPPORT_OLD_BROKEN_LD
 	int broken;
 #endif
@@ -443,172 +621,26 @@ reloc_non_plt(Obj_Entry *obj, Obj_Entry *obj_rtld, int flags,
 	}
 
 	got = obj->pltgot;
+	/* LLD generates RELA, BFD REL sections so we have to support both */
+	relalim = (const Elf_Rela *)((caddr_t)obj->rela + obj->relasize);
+	for (; rela < relalim; rela++) {
+		err = _rtld_process_rela(rela, obj, got, defobj, flags,
+		    lockstate);
+		if (err)
+			return err;
+	}
 	rellim = (const Elf_Rel *)((caddr_t)obj->rel + obj->relsize);
 	for (rel = obj->rel; rel < rellim; rel++) {
-		Elf_Word	r_symndx, r_type;
-		void		*where;
-
-		where = obj->relocbase + rel->r_offset;
-		r_symndx = ELF_R_SYM(rel->r_info);
-		r_type = ELF_R_TYPE(rel->r_info);
-
-		switch (r_type & 0xff) {
-		case R_TYPE(NONE):
-			break;
-
-		case R_TYPE(REL32): {
-			/* 32-bit PC-relative reference */
-			const size_t rlen =
-			    ELF_R_NXTTYPE_64_P(r_type)
-				? sizeof(Elf_Sxword)
-				: sizeof(Elf_Sword);
-			Elf_Sxword old = load_ptr(where, rlen);
-			Elf_Sxword val = old;
-
-			def = obj->symtab + r_symndx;
-
-			if (r_symndx >= obj->gotsym) {
-				val += got[obj->local_gotno + r_symndx - obj->gotsym];
-#ifdef DEBUG_VERBOSE
-				dbg("REL32/G(%p) %p --> %p (%s) in %s",
-				    where, (void *)(uintptr_t)old, (void *)(uintptr_t)val,
-				    obj->strtab + def->st_name,
-				    obj->path);
-#endif
-			} else {
-				/*
-				 * XXX: ABI DIFFERENCE!
-				 *
-				 * Old NetBSD binutils would generate shared
-				 * libs with section-relative relocations being
-				 * already adjusted for the start address of
-				 * the section.
-				 *
-				 * New binutils, OTOH, generate shared libs
-				 * with the same relocations being based at
-				 * zero, so we need to add in the start address
-				 * of the section.
-				 *
-				 * --rkb, Oct 6, 2001
-				 */
-
-				if (def->st_info ==
-				    ELF_ST_INFO(STB_LOCAL, STT_SECTION)
-#ifdef SUPPORT_OLD_BROKEN_LD
-				    && !broken
-#endif
-				    )
-					val += (Elf_Addr)def->st_value;
-
-				val += (Elf_Addr)obj->relocbase;
-
-#ifdef DEBUG_VERBOSE
-				dbg("REL32/L(%p) %p -> %p (%s) in %s",
-				    where, (void *)(uintptr_t)old, (void *)(uintptr_t)val,
-				    obj->strtab + def->st_name, obj->path);
-#endif
-			}
-			store_ptr(where, val, rlen);
-			break;
-		}
-
-#ifdef __mips_n64
-		case R_TYPE(TLS_DTPMOD64):
-#else
-		case R_TYPE(TLS_DTPMOD32):
-#endif
-		{
-
-			const size_t rlen = sizeof(Elf_Addr);
-			Elf_Addr old = load_ptr(where, rlen);
-			Elf_Addr val = old;
-
-			def = find_symdef(r_symndx, obj, &defobj, flags, NULL,
-			    lockstate);
-			if (def == NULL)
-				return -1;
-
-			val += (Elf_Addr)defobj->tlsindex;
-
-			store_ptr(where, val, rlen);
-			dbg("DTPMOD %s in %s %p --> %p in %s",
-			    obj->strtab + obj->symtab[r_symndx].st_name,
-			    obj->path, (void *)(uintptr_t)old, (void*)(uintptr_t)val, defobj->path);
-			break;
-		}
-
-#ifdef __mips_n64
-		case R_TYPE(TLS_DTPREL64):
-#else
-		case R_TYPE(TLS_DTPREL32):
-#endif
-		{
-			const size_t rlen = sizeof(Elf_Addr);
-			Elf_Addr old = load_ptr(where, rlen);
-			Elf_Addr val = old;
-
-			def = find_symdef(r_symndx, obj, &defobj, flags, NULL,
-			    lockstate);
-			if (def == NULL)
-				return -1;
-
-			if (!defobj->tls_done && allocate_tls_offset(obj))
-				return -1;
-
-			val += (Elf_Addr)def->st_value - TLS_DTP_OFFSET;
-			store_ptr(where, val, rlen);
-
-			dbg("DTPREL %s in %s %p --> %p in %s",
-			    obj->strtab + obj->symtab[r_symndx].st_name,
-			    obj->path, (void*)(uintptr_t)old, (void *)(uintptr_t)val, defobj->path);
-			break;
-		}
-
-#ifdef __mips_n64
-		case R_TYPE(TLS_TPREL64):
-#else
-		case R_TYPE(TLS_TPREL32):
-#endif
-		{
-			const size_t rlen = sizeof(Elf_Addr);
-			Elf_Addr old = load_ptr(where, rlen);
-			Elf_Addr val = old;
-
-			def = find_symdef(r_symndx, obj, &defobj, flags, NULL,
-			    lockstate);
-
-			if (def == NULL)
-				return -1;
-
-			if (!defobj->tls_done && allocate_tls_offset(obj))
-				return -1;
-
-			val += (Elf_Addr)(def->st_value + defobj->tlsoffset
-			    - TLS_TP_OFFSET - TLS_TCB_SIZE);
-			store_ptr(where, val, rlen);
-
-			dbg("TPREL %s in %s %p --> %p in %s",
-			    obj->strtab + obj->symtab[r_symndx].st_name,
-			    obj->path, (void*)(uintptr_t)old, (void *)(uintptr_t)val, defobj->path);
-			break;
-		}
-
-
-
-		default:
-			dbg("sym = %lu, type = %lu, offset = %p, "
-			    "contents = %p, symbol = %s",
-			    (u_long)r_symndx, (u_long)ELF_R_TYPE(rel->r_info),
-			    (void *)(uintptr_t)rel->r_offset,
-			    (void *)(uintptr_t)load_ptr(where, sizeof(Elf_Sword)),
-			    obj->strtab + obj->symtab[r_symndx].st_name);
-			_rtld_error("%s: Unsupported relocation type %ld "
-			    "in non-PLT relocations",
-			    obj->path, (u_long) ELF_R_TYPE(rel->r_info));
-			return -1;
-		}
+		_Alignas(CHERICAP_SIZE) Elf_Rela converted = {
+			.r_info = rel->r_info,
+			.r_offset = rel->r_offset,
+			.r_addend = 0
+		};
+		err = _rtld_process_rela(&converted, obj, got, defobj, flags,
+		    lockstate);
+		if (err)
+			return err;
 	}
-
 	return 0;
 }
 
