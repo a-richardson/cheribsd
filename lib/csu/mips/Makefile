@@ -22,7 +22,6 @@ FILESDIR=	${LIBDIR}
 .undef LIBRARIES_ONLY
 
 CLEANFILES=	${OBJS} crt1_c.o crt1_s.o gcrt1_c.o Scrt1_c.o
-CLEANFILES+=	crt1_c.s gcrt1_c.s Scrt1_c.s
 
 .if defined(LIBCHERI)
 # We don't support .init and .fini on CheriABI so don't build the files.
@@ -50,35 +49,24 @@ crt1_s.o: crt1_s.S
 	${CTFCONVERT_CMD}
 	${STRIP_EXCEPTIONS}
 
-# Compile crt1_c.c with -DGCRT
-gcrt1_c.s: crt1_c.c
-	${CC} ${CFLAGS} -DGCRT -S -o ${.TARGET} ${.CURDIR}/crt1_c.c
-	sed ${SED_FIX_NOTE} ${.TARGET}
 
-gcrt1_c.o: gcrt1_c.s
-	${CC} ${ACFLAGS} -c -o ${.TARGET} gcrt1_c.s
+# Compile crt1_c.c with -DGCRT
+gcrt1_c.o: crt1_c.c
+	${CC} ${CFLAGS} -DGCRT -c -o ${.TARGET} ${.CURDIR}/crt1_c.c
 
 gcrt1.o: gcrt1_c.o crt1_s.o
 	${LD} ${_LDFLAGS} -o gcrt1.o -r crt1_s.o gcrt1_c.o
 
 # Compile crt1_c.c without -DGCRT
-crt1_c.s: crt1_c.c
-	${CC} ${CFLAGS} -S -o ${.TARGET} ${.CURDIR}/crt1_c.c
-	sed ${SED_FIX_NOTE} ${.TARGET}
-
-crt1_c.o: crt1_c.s
-	${CC} ${ACFLAGS} -c -o ${.TARGET} crt1_c.s
+crt1_c.o: crt1_c.c
+	${CC} ${CFLAGS} -c -o ${.TARGET} ${.CURDIR}/crt1_c.c
 
 crt1.o:	crt1_c.o crt1_s.o
 	${LD} ${_LDFLAGS} -o crt1.o -r crt1_s.o crt1_c.o
 
 # Compile crt1_c.c with -fPIC -DPIC
-Scrt1_c.s: crt1_c.c
-	${CC} ${CFLAGS} -fPIC -DPIC -S -o ${.TARGET} ${.CURDIR}/crt1_c.c
-	sed ${SED_FIX_NOTE} ${.TARGET}
-
-Scrt1_c.o: Scrt1_c.s
-	${CC} ${ACFLAGS} -c -o ${.TARGET} Scrt1_c.s
+Scrt1_c.o: crt1_c.c
+	${CC} ${CFLAGS} -fPIC -DPIC -c -o ${.TARGET} ${.CURDIR}/crt1_c.c
 
 Scrt1.o: Scrt1_c.o crt1_s.o
 	${LD} ${_LDFLAGS} -o Scrt1.o -r crt1_s.o Scrt1_c.o
