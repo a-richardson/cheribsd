@@ -1,7 +1,12 @@
 #include <machine/asm.h>
 __FBSDID("$FreeBSD$");
-
+# XXXAR: do we need this with clang?
+# Tag_GNU_MIPS_ABI_FP (4)
+# The floating-point ABI used by this object file. The value will be:
+# 0 for files not affected by the floating-point ABI.
+#ifndef __clang__
 	.gnu_attribute 4, 0
+#endif
 	.section .init,"ax",%progbits
 	.align 4
 	.set noreorder
