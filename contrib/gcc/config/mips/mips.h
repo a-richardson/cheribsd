@@ -2737,6 +2737,20 @@ while (0)
 	dla $t9, " USER_LABEL_PREFIX #FUNC "\n\
 	jalr $t9\n\
 	" TEXT_SECTION_ASM_OP);
+
+#ifdef __clang__
+#undef CRT_CALL_STATIC_FUNCTION
+#define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)	\
+   asm (SECTION_OP "\n\
+	.set noreorder\n\
+	bal 1f\n\
+	nop\n\
+1:	.set reorder\n\
+	.cpsetup $31, $2, 1b\n\
+	ld $t9, %got_disp(" USER_LABEL_PREFIX #FUNC ")\n\
+	jalr $t9\n\
+	" TEXT_SECTION_ASM_OP);
+#endif
 #endif
 #endif
 
