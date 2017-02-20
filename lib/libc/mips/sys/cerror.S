@@ -57,7 +57,7 @@ NESTED_NOPROFILE(__cerror, CALLFRAME_SIZ, ra)
 	PTR_S		ra, CALLFRAME_RA(sp)
 	REG_S		v0, CALLFRAME_S0(sp)	# save errno value
 
-	PTR_LA		t9, _C_LABEL(__error)	# locate address of errno
+	PIC_LOAD_CODE_PTR(t9, _C_LABEL(__error))	# locate address of errno
 	jalr		t9
 
 	REG_L		t0, CALLFRAME_S0(sp)

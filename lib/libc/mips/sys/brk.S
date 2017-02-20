@@ -54,7 +54,7 @@ LEAF(__sys_brk)
 	WEAK_ALIAS(brk, __sys_brk)
 	WEAK_ALIAS(_brk, __sys_brk)
 	PIC_PROLOGUE(__sys_brk)
-	PTR_LA	v0, _C_LABEL(minbrk)
+	PIC_LOAD_DATA_PTR(v0, _C_LABEL(minbrk))
 	PTR_L	v0, 0(v0)
 	bgeu	a0, v0, 1f
 	move	a0, v0		# dont allow break < minbrk
@@ -62,7 +62,7 @@ LEAF(__sys_brk)
 	li	v0, SYS_break
 	syscall
 	bne	a3, zero, 2f
-	PTR_LA	t0, _C_LABEL(__curbrk)
+	PIC_LOAD_DATA_PTR(t0, _C_LABEL(__curbrk))
 	PTR_S	a0, 0(t0)
 	move	v0, zero
 	PIC_RETURN()

@@ -243,7 +243,7 @@ botch:
 	 * We know we aren't returning so we don't care about restoring
 	 * our caller's GP.
 	 */
-	PTR_LA	t9, _C_LABEL(longjmperror)
+	PIC_LOAD_CODE_PTR(t9, _C_LABEL(longjmperror))
 	jalr	t9
 	nop
 

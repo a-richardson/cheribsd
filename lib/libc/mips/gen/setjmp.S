@@ -75,7 +75,7 @@ NESTED(setjmp, SETJMP_FRAME_SIZE, ra)
 	PTR_ADDU a2, a0, _JB_SIGMASK * SZREG	# &oenv
 	li	a0, 1				# SIG_SETBLOCK
 	move	a1, zero			# &env == 0
-	PTR_LA	t9, _C_LABEL(sigprocmask)	# get current signal mask
+	PIC_LOAD_CODE_PTR(t9, _C_LABEL(sigprocmask))	# get current signal mask
 	jalr	t9
 
 	RESTORE_GP64
@@ -191,7 +191,7 @@ NESTED(longjmp, LONGJMP_FRAME_SIZE, ra)
 	PTR_ADDU a1, a0, _JB_SIGMASK * SZREG	# &set
 	move	a2, zero			# &oset == NULL
 	li	a0, 3				# SIG_SETMASK
-	PTR_LA	t9,_C_LABEL(sigprocmask)	# set current signal mask
+	PIC_LOAD_CODE_PTR(t9, _C_LABEL(sigprocmask))	# set current signal mask
 	jal	t9
 	nop
 
@@ -284,7 +284,7 @@ botch:
 	 * We know we aren't returning so we don't care about restoring
 	 * our caller's GP.
 	 */
-	PTR_LA	t9, _C_LABEL(longjmperror)
+	PIC_LOAD_CODE_PTR(t9, _C_LABEL(longjmperror))
 	jalr	t9
 	nop
 

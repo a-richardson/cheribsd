@@ -53,7 +53,7 @@ LEAF(__sys_sbrk)
 	WEAK_ALIAS(sbrk, __sys_sbrk)
 	WEAK_ALIAS(_sbrk, __sys_sbrk)
 	PIC_PROLOGUE(__sys_sbrk)
-	PTR_LA	t0, _C_LABEL(__curbrk)
+	PIC_LOAD_DATA_PTR(t0, _C_LABEL(__curbrk))
 	PTR_L	t0, 0(t0)
 	PTR_ADDU a0, a0, t0
 
@@ -63,7 +63,7 @@ LEAF(__sys_sbrk)
 	bne	a3, zero, 1f
 	nop
 	move	v0, t0			# return old val of curbrk from above
-	PTR_LA	t0, _C_LABEL(__curbrk)
+	PIC_LOAD_DATA_PTR(t0, _C_LABEL(__curbrk))
 	PTR_S	a0, 0(t0)		# save current val of curbrk from above
 	PIC_RETURN()
 	j	ra

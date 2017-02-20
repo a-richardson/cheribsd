@@ -89,18 +89,48 @@
 	.abicalls
 # if defined(__mips_o32) || defined(__mips_o64)
 #  define PIC_PROLOGUE(x)	SETUP_GP
-#  define PIC_TAILCALL(l)	PTR_LA t9, _C_LABEL(l); jr t9
+#  define PIC_TAILCALL(l)	PIC_LOAD_CODE_PTR(t9, _C_LABEL(l)); jr t9
 #  define PIC_RETURN()		j ra
 # else
 #  define PIC_PROLOGUE(x)	SETUP_GP64(t3, x)
-#  define PIC_TAILCALL(l)	PTR_LA t9, _C_LABEL(l); RESTORE_GP64; jr t9
+#  define PIC_TAILCALL(l)	PIC_LOAD_CODE_PTR(t9, _C_LABEL(l)); RESTORE_GP64; jr t9
 #  define PIC_RETURN()		RESTORE_GP64; j ra
 # endif
 #else
+#warning no abi calls
 # define PIC_PROLOGUE(x)
 # define PIC_TAILCALL(l)	j  _C_LABEL(l)
 # define PIC_RETURN()		j ra
 #endif /* __ABICALLS__ */
+
+#ifdef PIC
+/* Code generated from llvm/test/CodeGen/Mips/biggot.ll:
+	lui     $1, %hi(%neg(%gp_rel(foo1)))
+	daddu   $1, $1, $25
+	daddiu  $gp, $1, %lo(%neg(%gp_rel(foo1)))
+	lui     $1, %got_hi(v0)
+	daddu   $1, $1, $gp
+	ld      $1, %got_lo(v0)($1)
+	lw      $4, 0($1)
+	lui     $1, %call_hi(foo0)
+	daddu   $1, $1, $gp
+	ld      $25, %call_lo(foo0)($1)
+	jalr    $25
+*/
+# define PIC_LOAD_DATA_PTR(reg, label)		\
+	lui 		reg, %got_hi(label); 	\
+	PTR_ADDU 	reg, reg, gp;		\
+	PTR_L		reg, %got_lo(label)(reg);
+
+# define PIC_LOAD_CODE_PTR(reg, label)		\
+	lui 		reg, %call_hi(label); 	\
+	PTR_ADDU	reg, reg, gp;		\
+	PTR_L		reg, %call_lo(label)(reg);
+#else /* !defined(PIC) */
+# define PIC_LOAD_CODE_PTR(reg, label) PTR_LA reg, label
+# define PIC_LOAD_DATA_PTR(reg, label) PTR_LA reg, label
+#endif
+
 #else /* defined(__CHERI_PURE_CAPABILITY__) */
 #ifdef __PIC__
 # define PIC_PROLOGUE(x)

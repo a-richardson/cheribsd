@@ -36,7 +36,7 @@ ENTRY(_ctx_start)
 
 	move	a0, s0
 #ifndef __CHERI_PURE_CAPABILITY__
-	PTR_LA	t9, _ctx_done
+	PIC_LOAD_CODE_PTR(t9, _ctx_done)
 	jalr	t9
 #else
 	PIC_CALL(_ctx_done)
