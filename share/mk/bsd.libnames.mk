@@ -43,6 +43,7 @@ LIBCHERI_SUPPORT?=	${DESTDIR}${LIBDIR}/libcheri_support.a
 LIBCHERI_SYSCALLS?=	${DESTDIR}${LIBDIR}/libcheri_syscalls.a
 LIBCOMPAT?=	${DESTDIR}${LIBDIR}/libcompat.a
 LIBCOMPILER_RT?=${DESTDIR}${LIBDIR}/libcompiler_rt.a
+LIBCOMPILER_RT_PIC?=${DESTDIR}${LIBDIR}/libcompiler_rt_pic.a
 LIBCOM_ERR?=	${DESTDIR}${LIBDIR}/libcom_err.a
 LIBCPLUSPLUS?=	${DESTDIR}${LIBDIR}/libc++.a
 LIBCRYPT?=	${DESTDIR}${LIBDIR}/libcrypt.a

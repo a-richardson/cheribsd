@@ -4,7 +4,8 @@
 
 PACKAGE=	lib${LIB}
 LIB=		compiler_rt
-NO_PIC=
+INSTALL_PIC_ARCHIVE=yes
+NO_SHARED=yes
 WARNS?=		2
 
 CFLAGS+=	${PICFLAG}

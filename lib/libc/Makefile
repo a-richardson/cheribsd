@@ -60,7 +60,7 @@ CFLAGS+=${CANCELPOINTS_CFLAGS}
 # Link with static libcompiler_rt.a.
 #
 LDFLAGS+= -nodefaultlibs
-LIBADD+=	compiler_rt
+LIBADD+=	compiler_rt_pic
 
 .if ${MK_SSP} != "no"
 LIBADD+=	ssp_nonshared

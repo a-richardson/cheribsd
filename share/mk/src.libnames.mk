@@ -82,6 +82,7 @@ _LIBRARIES=	\
 		cap_sysctl \
 		com_err \
 		compiler_rt \
+		compiler_rt_pic \
 		crypt \
 		crypto \
 		css \
@@ -332,8 +333,8 @@ _DP_dtrace=	ctf elf proc pthread rtld_db
 _DP_xo=		util
 # The libc dependencies are not strictly needed but are defined to make the
 # assert happy.
-_DP_c=		compiler_rt
-_DP_c_nosyscalls=		compiler_rt
+_DP_c=		compiler_rt_pic
+_DP_c_nosyscalls=		compiler_rt_pic
 .if ${MK_SSP} != "no"
 _DP_c+=		ssp_nonshared
 _DP_c_nosyscalls+=		ssp_nonshared
