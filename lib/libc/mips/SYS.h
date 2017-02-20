@@ -70,6 +70,13 @@
 
 #include <machine/asm.h>
 
+#if defined(PIC) && !(defined(__PIC__) || defined(__pic__))
+#error "PIC defined but not generating PIC code (pass -fpic or remove -DPIC)"
+#error "-DPIC passed but -fpic is missing"
+#elif !defined(PIC) && (defined(__PIC__) || defined(__pic__))
+#error "Compiling PIC code but -DPIC is missing (pass -fno-pic or add -DPIC)"
+#endif
+
 /*
  * If compiling for shared libs, Emit sysV ABI PIC segment pseudo-ops.
  *
