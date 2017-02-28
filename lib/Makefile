@@ -226,7 +226,7 @@ SUBDIR+=	libcheri_syscalls
 SUBDIR+=	libcheri_support
 SUBDIR_BOOTSTRAP:=	libgcc_s libgcc_eh ${SUBDIR_BOOTSTRAP}
 # No C++ support in cheri clang
-SUBDIR:=	${SUBDIR:Nlibdevdctl}
+SUBDIR:=	${SUBDIR:Nlibdevdctl:Nlibc++:Nlibcxxrt}
 # header issue in ioctl.c, probably needs more porting for CheriABI
 SUBDIR:=	${SUBDIR:Nlibsysdecode}
 .endif
