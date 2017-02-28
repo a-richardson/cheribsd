@@ -53,11 +53,11 @@ __FBSDID("$FreeBSD$");
  * alphabets and digits are each contiguous.
  */
 long
-__CAPSUFFIX(strtol_l)(__CAPABILITY const char * __restrict nptr,
+__CAPSUFFIX(strtol_l)(const char * __CAPABILITY __restrict nptr,
 		      char * __CAPABILITY * __CAPABILITY __restrict endptr,
 		      int base, locale_t locale)
 {
-	__CAPABILITY const char *s;
+	const char * __CAPABILITY s;
 	unsigned long acc;
 	char c;
 	unsigned long cutoff;
@@ -150,12 +150,12 @@ noconv:
 		 *	*endptr = (__CAPABILITY char *)(any ? s - 1 : nptr);
 		 * is fairly easy to prove safe.
 		 */
-		*endptr = (__CAPABILITY char *)(any ? nptr + ((s - nptr) - 1) :
+		*endptr = (char * __CAPABILITY)(any ? nptr + ((s - nptr) - 1) :
 		    nptr);
 	return (acc);
 }
 long
-__CAPSUFFIX(strtol)(__CAPABILITY const char * __restrict nptr,
+__CAPSUFFIX(strtol)(const char * __CAPABILITY __restrict nptr,
 		    char * __CAPABILITY * __CAPABILITY __restrict endptr,
 		    int base)
 {
