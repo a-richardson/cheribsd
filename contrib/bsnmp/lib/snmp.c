@@ -357,8 +357,8 @@ static enum snmp_code
 pdu_encode_secparams(struct asn_buf *b, struct snmp_pdu *pdu)
 {
 	u_char buf[256], *sptr;
-        struct asn_buf tb;
-        size_t auth_off, moved = 0;
+	struct asn_buf tb;
+	size_t auth_off, moved = 0;
 
 	auth_off = 0;
 	memset(buf, 0, 256);
@@ -1154,8 +1154,11 @@ snmp_pdu_dump(const struct snmp_pdu *pdu)
 void
 snmp_value_free(struct snmp_value *value)
 {
-	if (value->syntax == SNMP_SYNTAX_OCTETSTRING)
+
+	if (value->syntax == SNMP_SYNTAX_OCTETSTRING) {
 		free(value->v.octetstring.octets);
+		value->v.octetstring.octets = NULL;
+	}
 	value->syntax = SNMP_SYNTAX_NULL;
 }
 
@@ -1216,6 +1219,7 @@ snmp_pdu_free(struct snmp_pdu *pdu)
 
 	for (i = 0; i < pdu->nbindings; i++)
 		snmp_value_free(&pdu->bindings[i]);
+	pdu->nbindings = 0;
 }
 
 /*

@@ -328,8 +328,6 @@
         ..
         libnv
         ..
-        libpam
-        ..
         libproc
         ..
         librt
@@ -423,6 +421,10 @@
                 uzip
                     etalon
                     ..
+                ..
+            ..
+            eli
+                pbkdf2
                 ..
             ..
         ..
@@ -594,8 +596,8 @@
                 ..
             ..
         ..
-	bsdcat
-	..
+        bsdcat
+        ..
         calendar
         ..
         cmp
@@ -644,6 +646,8 @@
         ..
         soelim
         ..
+        tail
+        ..
         tar
         ..
         timeout
@@ -657,6 +661,8 @@
         uudecode
         ..
         uuencode
+        ..
+        uniq
         ..
         xargs
         ..

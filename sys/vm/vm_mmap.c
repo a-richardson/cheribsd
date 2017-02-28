@@ -119,14 +119,8 @@ struct sbrk_args {
 };
 #endif
 
-/*
- * MPSAFE
- */
-/* ARGSUSED */
 int
-sys_sbrk(td, uap)
-	struct thread *td;
-	struct sbrk_args *uap;
+sys_sbrk(struct thread *td, struct sbrk_args *uap)
 {
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
@@ -138,14 +132,8 @@ struct sstk_args {
 };
 #endif
 
-/*
- * MPSAFE
- */
-/* ARGSUSED */
 int
-sys_sstk(td, uap)
-	struct thread *td;
-	struct sstk_args *uap;
+sys_sstk(struct thread *td, struct sstk_args *uap)
 {
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
@@ -159,11 +147,9 @@ struct getpagesize_args {
 #endif
 
 int
-ogetpagesize(td, uap)
-	struct thread *td;
-	struct getpagesize_args *uap;
+ogetpagesize(struct thread *td, struct getpagesize_args *uap)
 {
-	/* MP SAFE */
+
 	td->td_retval[0] = PAGE_SIZE;
 	return (0);
 }
@@ -195,31 +181,31 @@ struct mmap_args {
 };
 #endif
 
-/*
- * MPSAFE
- */
 int
 sys_mmap(struct thread *td, struct mmap_args *uap)
 {
 
-	return (kern_mmap(td, (vm_offset_t)uap->addr, 0, uap->len, uap->prot,
-	    uap->flags, uap->fd, uap->pos));
+	return (kern_mmap(td, (uintptr_t)uap->addr, 0, uap->len,
+	    uap->prot, uap->flags, uap->fd, uap->pos));
 }
 
 int
-kern_mmap(struct thread *td, vm_offset_t addr, vm_offset_t max_addr,
-    vm_size_t size, int prot, int flags, int fd, off_t pos)
+kern_mmap(struct thread *td, uintptr_t addr0, uintptr_t max_addr0,
+    size_t size, int prot, int flags, int fd, off_t pos)
 {
+	struct vmspace *vms;
 	struct file *fp;
-	vm_size_t pageoff;
-	vm_offset_t addr_mask = PAGE_MASK;
+	vm_size_t addr_mask, pageoff;
+	vm_offset_t addr, max_addr;
 	vm_prot_t cap_maxprot;
 	int align, error;
-	struct vmspace *vms = td->td_proc->p_vmspace;
 	cap_rights_t rights;
 
+	vms = td->td_proc->p_vmspace;
 	fp = NULL;
 	AUDIT_ARG_FD(fd);
+	addr = addr0;
+	max_addr = max_addr0;
 
 	/*
 	 * Ignore old flags that used to be defined but did not do anything.
@@ -551,7 +537,7 @@ int
 freebsd6_mmap(struct thread *td, struct freebsd6_mmap_args *uap)
 {
 
-	return (kern_mmap(td, (vm_offset_t)uap->addr, 0, uap->len, uap->prot,
+	return (kern_mmap(td, (uintptr_t)uap->addr, 0, uap->len, uap->prot,
 	    uap->flags, uap->fd, uap->pos));
 }
 #endif
@@ -570,7 +556,6 @@ struct ommap_args {
 int
 ommap(struct thread *td, struct ommap_args *uap)
 {
-	int prot, flags;
 	static const char cvtbsdprot[8] = {
 		0,
 		PROT_EXEC,
@@ -581,6 +566,7 @@ ommap(struct thread *td, struct ommap_args *uap)
 		PROT_WRITE | PROT_READ,
 		PROT_EXEC | PROT_WRITE | PROT_READ,
 	};
+	int flags, prot;
 
 #define	OMAP_ANON	0x0002
 #define	OMAP_COPY	0x0020
@@ -606,8 +592,8 @@ ommap(struct thread *td, struct ommap_args *uap)
 		flags |= MAP_PRIVATE;
 	if (uap->flags & OMAP_FIXED)
 		flags |= MAP_FIXED;
-	return (kern_mmap(td, (vm_offset_t)uap->addr, 0, uap->len, prot,
-	    flags, uap->fd, uap->pos));
+	return (kern_mmap(td, (uintptr_t)uap->addr, 0, uap->len, prot, flags,
+	    uap->fd, uap->pos));
 }
 #endif				/* COMPAT_43 */
 
@@ -619,24 +605,22 @@ struct msync_args {
 	int flags;
 };
 #endif
-/*
- * MPSAFE
- */
 int
-sys_msync(td, uap)
-	struct thread *td;
-	struct msync_args *uap;
+sys_msync(struct thread *td, struct msync_args *uap)
+{
+
+	return (kern_msync(td, (uintptr_t)uap->addr, uap->len, uap->flags));
+}
+
+int
+kern_msync(struct thread *td, uintptr_t addr0, size_t size, int flags)
 {
 	vm_offset_t addr;
-	vm_size_t size, pageoff;
-	int flags;
+	vm_size_t pageoff;
 	vm_map_t map;
 	int rv;
 
-	addr = (vm_offset_t) uap->addr;
-	size = uap->len;
-	flags = uap->flags;
-
+	addr = addr0;
 	pageoff = (addr & PAGE_MASK);
 	addr -= pageoff;
 	size += pageoff;
@@ -678,27 +662,29 @@ struct munmap_args {
 	size_t len;
 };
 #endif
-/*
- * MPSAFE
- */
 int
-sys_munmap(td, uap)
-	struct thread *td;
-	struct munmap_args *uap;
+sys_munmap(struct thread *td, struct munmap_args *uap)
+{
+
+	return (kern_munmap(td, (uintptr_t)uap->addr, uap->len));
+}
+
+int
+kern_munmap(struct thread *td, uintptr_t addr0, size_t size)
 {
 #ifdef HWPMC_HOOKS
 	struct pmckern_map_out pkm;
 	vm_map_entry_t entry;
+	bool pmc_handled;
 #endif
 	vm_offset_t addr;
-	vm_size_t size, pageoff;
+	vm_size_t pageoff;
 	vm_map_t map;
 
-	addr = (vm_offset_t) uap->addr;
-	size = uap->len;
 	if (size == 0)
 		return (EINVAL);
 
+	addr = addr0;
 	pageoff = (addr & PAGE_MASK);
 	addr -= pageoff;
 	size += pageoff;
@@ -714,20 +700,24 @@ sys_munmap(td, uap)
 		return (EINVAL);
 	vm_map_lock(map);
 #ifdef HWPMC_HOOKS
-	/*
-	 * Inform hwpmc if the address range being unmapped contains
-	 * an executable region.
-	 */
-	pkm.pm_address = (uintptr_t) NULL;
-	if (vm_map_lookup_entry(map, addr, &entry)) {
-		for (;
-		     entry != &map->header && entry->start < addr + size;
-		     entry = entry->next) {
-			if (vm_map_check_protection(map, entry->start,
-				entry->end, VM_PROT_EXECUTE) == TRUE) {
-				pkm.pm_address = (uintptr_t) addr;
-				pkm.pm_size = (size_t) size;
-				break;
+	pmc_handled = false;
+	if (PMC_HOOK_INSTALLED(PMC_FN_MUNMAP)) {
+		pmc_handled = true;
+		/*
+		 * Inform hwpmc if the address range being unmapped contains
+		 * an executable region.
+		 */
+		pkm.pm_address = (uintptr_t) NULL;
+		if (vm_map_lookup_entry(map, addr, &entry)) {
+			for (;
+			    entry != &map->header && entry->start < addr + size;
+			    entry = entry->next) {
+				if (vm_map_check_protection(map, entry->start,
+					entry->end, VM_PROT_EXECUTE) == TRUE) {
+					pkm.pm_address = (uintptr_t) addr;
+					pkm.pm_size = (size_t) size;
+					break;
+				}
 			}
 		}
 	}
@@ -735,14 +725,16 @@ sys_munmap(td, uap)
 	vm_map_delete(map, addr, addr + size);
 
 #ifdef HWPMC_HOOKS
-	/* downgrade the lock to prevent a LOR with the pmc-sx lock */
-	vm_map_lock_downgrade(map);
-	if (pkm.pm_address != (uintptr_t) NULL)
-		PMC_CALL_HOOK(td, PMC_FN_MUNMAP, (void *) &pkm);
-	vm_map_unlock_read(map);
-#else
-	vm_map_unlock(map);
+	if (__predict_false(pmc_handled)) {
+		/* downgrade the lock to prevent a LOR with the pmc-sx lock */
+		vm_map_lock_downgrade(map);
+		if (pkm.pm_address != (uintptr_t) NULL)
+			PMC_CALL_HOOK(td, PMC_FN_MUNMAP, (void *) &pkm);
+		vm_map_unlock_read(map);
+	} else
 #endif
+		vm_map_unlock(map);
+
 	/* vm_map_delete returns nothing but KERN_SUCCESS anyway */
 	return (0);
 }
@@ -754,36 +746,30 @@ struct mprotect_args {
 	int prot;
 };
 #endif
-/*
- * MPSAFE
- */
 int
 sys_mprotect(struct thread *td, struct mprotect_args *uap)
 {
 
-	return (kern_mprotect(td, uap->addr, uap->len, uap->prot));
+	return (kern_mprotect(td, (uintptr_t)uap->addr, uap->len, uap->prot));
 }
 
 int
-kern_mprotect(struct thread *td, const void *addr, size_t len, int prot)
+kern_mprotect(struct thread *td, uintptr_t addr0, size_t size, int prot)
 {
-	vm_offset_t v_addr;
-	vm_size_t v_size, pageoff;
-	vm_prot_t v_prot;
+	vm_offset_t addr;
+	vm_size_t pageoff;
 
-	v_addr = (vm_offset_t) addr;
-	v_size = len;
-	v_prot = prot & VM_PROT_ALL;
-
-	pageoff = (v_addr & PAGE_MASK);
-	v_addr -= pageoff;
-	v_size += pageoff;
-	v_size = (vm_size_t) round_page(v_size);
-	if (v_addr + v_size < v_addr)
+	addr = addr0;
+	prot = (prot & VM_PROT_ALL);
+	pageoff = (addr & PAGE_MASK);
+	addr -= pageoff;
+	size += pageoff;
+	size = (vm_size_t) round_page(size);
+	if (addr + size < addr)
 		return (EINVAL);
 
-	switch (vm_map_protect(&td->td_proc->p_vmspace->vm_map, v_addr,
-	    v_addr + v_size, v_prot, FALSE)) {
+	switch (vm_map_protect(&td->td_proc->p_vmspace->vm_map, addr,
+	    addr + size, prot, FALSE)) {
 	case KERN_SUCCESS:
 		return (0);
 	case KERN_PROTECTION_FAILURE:
@@ -801,13 +787,8 @@ struct minherit_args {
 	int inherit;
 };
 #endif
-/*
- * MPSAFE
- */
 int
-sys_minherit(td, uap)
-	struct thread *td;
-	struct minherit_args *uap;
+sys_minherit(struct thread *td, struct minherit_args *uap)
 {
 	vm_offset_t addr;
 	vm_size_t size, pageoff;
@@ -846,17 +827,14 @@ int
 sys_madvise(struct thread *td, struct madvise_args *uap)
 {
 
-	return (kern_madvise(td, uap->addr, uap->len, uap->behav));
+	return (kern_madvise(td, (uintptr_t)uap->addr, uap->len, uap->behav));
 }
 
-/*
- * MPSAFE
- */
 int
-kern_madvise(struct thread *td, void * addr, size_t len, int behav)
+kern_madvise(struct thread *td, uintptr_t addr0, size_t len, int behav)
 {
-	vm_offset_t start, end;
 	vm_map_t map;
+	vm_offset_t addr, end, start;
 	int flags;
 
 	/*
@@ -879,18 +857,18 @@ kern_madvise(struct thread *td, void * addr, size_t len, int behav)
 	 * that VM_*_ADDRESS are not constants due to casts (argh).
 	 */
 	map = &td->td_proc->p_vmspace->vm_map;
-	if ((vm_offset_t)addr < vm_map_min(map) ||
-	    (vm_offset_t)addr + len > vm_map_max(map))
+	addr = addr0;
+	if (addr < vm_map_min(map) || addr + len > vm_map_max(map))
 		return (EINVAL);
-	if (((vm_offset_t) addr + len) < (vm_offset_t) addr)
+	if ((addr + len) < addr)
 		return (EINVAL);
 
 	/*
 	 * Since this routine is only advisory, we default to conservative
 	 * behavior.
 	 */
-	start = trunc_page((vm_offset_t) addr);
-	end = round_page((vm_offset_t) addr + len);
+	start = trunc_page(addr);
+	end = round_page(addr + len);
 
 	if (vm_map_madvise(map, start, end, behav))
 		return (EINVAL);
@@ -905,13 +883,8 @@ struct mincore_args {
 };
 #endif
 
-/*
- * MPSAFE
- */
 int
-sys_mincore(td, uap)
-	struct thread *td;
-	struct mincore_args *uap;
+sys_mincore(struct thread *td, struct mincore_args *uap)
 {
 	vm_offset_t addr, first_addr;
 	vm_offset_t end, cend;
@@ -1161,20 +1134,16 @@ struct mlock_args {
 	size_t len;
 };
 #endif
-/*
- * MPSAFE
- */
 int
-sys_mlock(td, uap)
-	struct thread *td;
-	struct mlock_args *uap;
+sys_mlock(struct thread *td, struct mlock_args *uap)
 {
 
-	return (vm_mlock(td->td_proc, td->td_ucred, uap->addr, uap->len));
+	return (kern_mlock(td->td_proc, td->td_ucred,
+	    __DECONST(uintptr_t, uap->addr), uap->len));
 }
 
 int
-vm_mlock(struct proc *proc, struct ucred *cred, const void *addr0, size_t len)
+kern_mlock(struct proc *proc, struct ucred *cred, uintptr_t addr0, size_t len)
 {
 	vm_offset_t addr, end, last, start;
 	vm_size_t npages, size;
@@ -1185,7 +1154,7 @@ vm_mlock(struct proc *proc, struct ucred *cred, const void *addr0, size_t len)
 	error = priv_check_cred(cred, PRIV_VM_MLOCK, 0);
 	if (error)
 		return (error);
-	addr = (vm_offset_t)addr0;
+	addr = addr0;
 	size = len;
 	last = addr + size;
 	start = trunc_page(addr);
@@ -1233,13 +1202,8 @@ struct mlockall_args {
 };
 #endif
 
-/*
- * MPSAFE
- */
 int
-sys_mlockall(td, uap)
-	struct thread *td;
-	struct mlockall_args *uap;
+sys_mlockall(struct thread *td, struct mlockall_args *uap)
 {
 	vm_map_t map;
 	int error;
@@ -1310,13 +1274,8 @@ struct munlockall_args {
 };
 #endif
 
-/*
- * MPSAFE
- */
 int
-sys_munlockall(td, uap)
-	struct thread *td;
-	struct munlockall_args *uap;
+sys_munlockall(struct thread *td, struct munlockall_args *uap)
 {
 	vm_map_t map;
 	int error;
@@ -1351,16 +1310,17 @@ struct munlock_args {
 	size_t len;
 };
 #endif
-/*
- * MPSAFE
- */
 int
-sys_munlock(td, uap)
-	struct thread *td;
-	struct munlock_args *uap;
+sys_munlock(struct thread *td, struct munlock_args *uap)
+{
+
+	return (kern_munlock(td, (uintptr_t)uap->addr, uap->len));
+}
+
+int
+kern_munlock(struct thread *td, uintptr_t addr0, size_t size)
 {
 	vm_offset_t addr, end, last, start;
-	vm_size_t size;
 #ifdef RACCT
 	vm_map_t map;
 #endif
@@ -1369,8 +1329,7 @@ sys_munlock(td, uap)
 	error = priv_check(td, PRIV_VM_MUNLOCK);
 	if (error)
 		return (error);
-	addr = (vm_offset_t)uap->addr;
-	size = uap->len;
+	addr = addr0;
 	last = addr + size;
 	start = trunc_page(addr);
 	end = round_page(last);
@@ -1504,8 +1463,6 @@ done:
 
 /*
  * vm_mmap_cdev()
- *
- * MPSAFE
  *
  * Helper function for vm_mmap.  Perform sanity check specific for mmap
  * operations on cdevs.

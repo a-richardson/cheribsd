@@ -103,6 +103,7 @@ static int load_needed_objects(Obj_Entry *, int);
 static int load_preload_objects(void);
 static Obj_Entry *load_object(const char *, int fd, const Obj_Entry *, int);
 static void map_stacks_exec(RtldLockState *);
+static int obj_enforce_relro(Obj_Entry *);
 static Obj_Entry *obj_from_addr(const void *);
 static void objlist_call_fini(Objlist *, Obj_Entry *, RtldLockState *);
 static void objlist_call_init(Objlist *, RtldLockState *);
@@ -617,6 +618,10 @@ _rtld(Elf_Addr *sp, func_ptr_type *exit_proc, Obj_Entry **objp)
     if (do_copy_relocations(obj_main) == -1)
 	rtld_die();
 
+    dbg("enforcing main obj relro");
+    if (obj_enforce_relro(obj_main) == -1)
+	rtld_die();
+
     if (getenv(_LD("DUMP_REL_POST")) != NULL) {
        dump_relocations(obj_main);
        exit (0);
@@ -759,6 +764,7 @@ _rtld_error(const char *fmt, ...)
     rtld_vsnprintf(buf, sizeof buf, fmt, ap);
     error_message = buf;
     va_end(ap);
+    LD_UTRACE(UTRACE_RTLD_ERROR, NULL, NULL, 0, 0, error_message);
 }
 
 /*
@@ -2746,14 +2752,8 @@ relocate_object(Obj_Entry *obj, bool bind_now, Obj_Entry *rtldobj,
 	    reloc_non_plt(obj, rtldobj, flags | SYMLOOK_IFUNC, lockstate))
 		return (-1);
 
-	if (obj->relro_size > 0) {
-		if (mprotect(obj->relro_page, obj->relro_size,
-		    PROT_READ) == -1) {
-			_rtld_error("%s: Cannot enforce relro protection: %s",
-			    obj->path, rtld_strerror(errno));
-			return (-1);
-		}
-	}
+	if (!obj->mainprog && obj_enforce_relro(obj) == -1)
+		return (-1);
 
 	/*
 	 * Set up the magic number and version in the Obj_Entry.  These
@@ -3957,15 +3957,19 @@ symlook_default(SymLook *req, const Obj_Entry *refobj)
     donelist_init(&donelist);
     symlook_init_from_req(&req1, req);
 
-    /* Look first in the referencing object if linked symbolically. */
-    if (refobj->symbolic && !donelist_check(&donelist, refobj)) {
-	res = symlook_obj(&req1, refobj);
-	if (res == 0) {
-	    req->sym_out = req1.sym_out;
-	    req->defobj_out = req1.defobj_out;
-	    assert(req->defobj_out != NULL);
-	}
+    /*
+     * Look first in the referencing object if linked symbolically,
+     * and similarly handle protected symbols.
+     */
+    res = symlook_obj(&req1, refobj);
+    if (res == 0 && (refobj->symbolic ||
+      ELF_ST_VISIBILITY(req1.sym_out->st_other) == STV_PROTECTED)) {
+	req->sym_out = req1.sym_out;
+	req->defobj_out = req1.defobj_out;
+	assert(req->defobj_out != NULL);
     }
+    if (refobj->symbolic || req->defobj_out != NULL)
+	donelist_check(&donelist, refobj);
 
     symlook_global(req, &donelist);
 
@@ -5122,6 +5126,19 @@ _rtld_is_dlopened(void *arg)
 	res = obj->dlopened ? 1 : 0;
 	lock_release(rtld_bind_lock, &lockstate);
 	return (res);
+}
+
+int
+obj_enforce_relro(Obj_Entry *obj)
+{
+
+	if (obj->relro_size > 0 && mprotect(obj->relro_page, obj->relro_size,
+	    PROT_READ) == -1) {
+		_rtld_error("%s: Cannot enforce relro protection: %s",
+		    obj->path, rtld_strerror(errno));
+		return (-1);
+	}
+	return (0);
 }
 
 static void

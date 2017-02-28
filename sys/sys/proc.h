@@ -315,7 +315,7 @@ struct thread {
 	} td_state;			/* (t) thread state */
 	union {
 		register_t	tdu_retval[2];
-		off_t		tdu_off;	
+		off_t		tdu_off;
 #ifdef CPU_CHERI
 		struct chericap	tdu_retcap;
 #endif
@@ -343,6 +343,7 @@ struct thread {
 	void		*td_emuldata;	/* Emulator state data */
 	int		td_lastcpu;	/* (t) Last cpu we were on. */
 	int		td_oncpu;	/* (t) Which cpu we are on. */
+	void		*td_lkpi_task;	/* LinuxKPI task struct pointer */
 };
 
 struct thread0_storage {
@@ -623,7 +624,7 @@ struct proc {
 	u_int		p_xsig;		/* (c) Stop/kill sig. */
 	uint16_t	p_elf_machine;	/* (x) ELF machine type */
 	uint64_t	p_elf_flags;	/* (x) ELF flags */
-	
+
 /* End area that is copied on creation. */
 #define	p_endcopy	p_elf_flags
 	struct pgrp	*p_pgrp;	/* (c + e) Pointer to process group. */
@@ -1115,6 +1116,15 @@ td_get_sched(struct thread *td)
 {
 
 	return ((struct td_sched *)&td[1]);
+}
+
+extern void (*softdep_ast_cleanup)(struct thread *);
+static __inline void
+td_softdep_cleanup(struct thread *td)
+{
+
+	if (td->td_su != NULL && softdep_ast_cleanup != NULL)
+		softdep_ast_cleanup(td);
 }
 
 #endif	/* _KERNEL */

@@ -232,8 +232,8 @@ SLIST_HEAD(, uld_info) t4_uld_list;
  * Tunables.  See tweak_tunables() too.
  *
  * Each tunable is set to a default value here if it's known at compile-time.
- * Otherwise it is set to -1 as an indication to tweak_tunables() that it should
- * provide a reasonable default when the driver is loaded.
+ * Otherwise it is set to -n as an indication to tweak_tunables() that it should
+ * provide a reasonable default (upto n) when the driver is loaded.
  *
  * Tunables applicable to both T4 and T5 are under hw.cxgbe.  Those specific to
  * T5 are under hw.cxl.
@@ -243,27 +243,27 @@ SLIST_HEAD(, uld_info) t4_uld_list;
  * Number of queues for tx and rx, 10G and 1G, NIC and offload.
  */
 #define NTXQ_10G 16
-int t4_ntxq10g = -1;
+int t4_ntxq10g = -NTXQ_10G;
 TUNABLE_INT("hw.cxgbe.ntxq10g", &t4_ntxq10g);
 
 #define NRXQ_10G 8
-int t4_nrxq10g = -1;
+int t4_nrxq10g = -NRXQ_10G;
 TUNABLE_INT("hw.cxgbe.nrxq10g", &t4_nrxq10g);
 
 #define NTXQ_1G 4
-int t4_ntxq1g = -1;
+int t4_ntxq1g = -NTXQ_1G;
 TUNABLE_INT("hw.cxgbe.ntxq1g", &t4_ntxq1g);
 
 #define NRXQ_1G 2
-int t4_nrxq1g = -1;
+int t4_nrxq1g = -NRXQ_1G;
 TUNABLE_INT("hw.cxgbe.nrxq1g", &t4_nrxq1g);
 
 #define NTXQ_VI 1
-static int t4_ntxq_vi = -1;
+static int t4_ntxq_vi = -NTXQ_VI;
 TUNABLE_INT("hw.cxgbe.ntxq_vi", &t4_ntxq_vi);
 
 #define NRXQ_VI 1
-static int t4_nrxq_vi = -1;
+static int t4_nrxq_vi = -NRXQ_VI;
 TUNABLE_INT("hw.cxgbe.nrxq_vi", &t4_nrxq_vi);
 
 static int t4_rsrv_noflowq = 0;
@@ -271,37 +271,37 @@ TUNABLE_INT("hw.cxgbe.rsrv_noflowq", &t4_rsrv_noflowq);
 
 #ifdef TCP_OFFLOAD
 #define NOFLDTXQ_10G 8
-static int t4_nofldtxq10g = -1;
+static int t4_nofldtxq10g = -NOFLDTXQ_10G;
 TUNABLE_INT("hw.cxgbe.nofldtxq10g", &t4_nofldtxq10g);
 
 #define NOFLDRXQ_10G 2
-static int t4_nofldrxq10g = -1;
+static int t4_nofldrxq10g = -NOFLDRXQ_10G;
 TUNABLE_INT("hw.cxgbe.nofldrxq10g", &t4_nofldrxq10g);
 
 #define NOFLDTXQ_1G 2
-static int t4_nofldtxq1g = -1;
+static int t4_nofldtxq1g = -NOFLDTXQ_1G;
 TUNABLE_INT("hw.cxgbe.nofldtxq1g", &t4_nofldtxq1g);
 
 #define NOFLDRXQ_1G 1
-static int t4_nofldrxq1g = -1;
+static int t4_nofldrxq1g = -NOFLDRXQ_1G;
 TUNABLE_INT("hw.cxgbe.nofldrxq1g", &t4_nofldrxq1g);
 
 #define NOFLDTXQ_VI 1
-static int t4_nofldtxq_vi = -1;
+static int t4_nofldtxq_vi = -NOFLDTXQ_VI;
 TUNABLE_INT("hw.cxgbe.nofldtxq_vi", &t4_nofldtxq_vi);
 
 #define NOFLDRXQ_VI 1
-static int t4_nofldrxq_vi = -1;
+static int t4_nofldrxq_vi = -NOFLDRXQ_VI;
 TUNABLE_INT("hw.cxgbe.nofldrxq_vi", &t4_nofldrxq_vi);
 #endif
 
 #ifdef DEV_NETMAP
 #define NNMTXQ_VI 2
-static int t4_nnmtxq_vi = -1;
+static int t4_nnmtxq_vi = -NNMTXQ_VI;
 TUNABLE_INT("hw.cxgbe.nnmtxq_vi", &t4_nnmtxq_vi);
 
 #define NNMRXQ_VI 2
-static int t4_nnmrxq_vi = -1;
+static int t4_nnmrxq_vi = -NNMRXQ_VI;
 TUNABLE_INT("hw.cxgbe.nnmrxq_vi", &t4_nnmrxq_vi);
 #endif
 
@@ -357,6 +357,24 @@ TUNABLE_STR("hw.cxgbe.config_file", t4_cfg_file, sizeof(t4_cfg_file));
  */
 static int t4_pause_settings = PAUSE_TX | PAUSE_RX;
 TUNABLE_INT("hw.cxgbe.pause_settings", &t4_pause_settings);
+
+/*
+ * Forward Error Correction settings (bit 0, 1, 2 = FEC_RS, FEC_BASER_RS,
+ * FEC_RESERVED respectively).
+ * -1 to run with the firmware default.
+ *  0 to disable FEC.
+ */
+static int t4_fec = -1;
+TUNABLE_INT("hw.cxgbe.fec", &t4_fec);
+
+/*
+ * Link autonegotiation.
+ * -1 to run with the firmware default.
+ *  0 to disable.
+ *  1 to enable.
+ */
+static int t4_autoneg = -1;
+TUNABLE_INT("hw.cxgbe.autoneg", &t4_autoneg);
 
 /*
  * Firmware auto-install by driver during attach (0, 1, 2 = prohibited, allowed,
@@ -493,6 +511,8 @@ static int sysctl_holdoff_pktc_idx(SYSCTL_HANDLER_ARGS);
 static int sysctl_qsize_rxq(SYSCTL_HANDLER_ARGS);
 static int sysctl_qsize_txq(SYSCTL_HANDLER_ARGS);
 static int sysctl_pause_settings(SYSCTL_HANDLER_ARGS);
+static int sysctl_fec(SYSCTL_HANDLER_ARGS);
+static int sysctl_autoneg(SYSCTL_HANDLER_ARGS);
 static int sysctl_handle_t4_reg64(SYSCTL_HANDLER_ARGS);
 static int sysctl_temperature(SYSCTL_HANDLER_ARGS);
 #ifdef SBUF_DRAIN
@@ -603,6 +623,7 @@ struct {
 #endif
 }, t6_pciids[] = {
 	{0xc006, "Chelsio Terminator 6 FPGA"},	/* T6 PE10K6 FPGA (PF0) */
+	{0x6400, "Chelsio T6225-DBG"},		/* 2 x 10/25G, debug */
 	{0x6401, "Chelsio T6225-CR"},		/* 2 x 10/25G */
 	{0x6402, "Chelsio T6225-SO-CR"},	/* 2 x 10/25G, nomem */
 	{0x6407, "Chelsio T62100-LP-CR"},	/* 2 x 40/50/100G */
@@ -922,6 +943,7 @@ t4_attach(device_t dev)
 	n10g = n1g = 0;
 	for_each_port(sc, i) {
 		struct port_info *pi;
+		struct link_config *lc;
 
 		pi = malloc(sizeof(*pi), M_CXGBE, M_ZERO | M_WAITOK);
 		sc->port[i] = pi;
@@ -950,12 +972,19 @@ t4_attach(device_t dev)
 			goto done;
 		}
 
-		pi->link_cfg.requested_fc &= ~(PAUSE_TX | PAUSE_RX);
-		pi->link_cfg.requested_fc |= t4_pause_settings;
-		pi->link_cfg.fc &= ~(PAUSE_TX | PAUSE_RX);
-		pi->link_cfg.fc |= t4_pause_settings;
+		lc = &pi->link_cfg;
+		lc->requested_fc &= ~(PAUSE_TX | PAUSE_RX);
+		lc->requested_fc |= t4_pause_settings;
+		if (t4_fec != -1) {
+			lc->requested_fec = t4_fec &
+			    G_FW_PORT_CAP_FEC(lc->supported);
+		}
+		if (lc->supported & FW_PORT_CAP_ANEG && t4_autoneg != -1) {
+			lc->autoneg = t4_autoneg ? AUTONEG_ENABLE :
+			    AUTONEG_DISABLE;
+		}
 
-		rc = -t4_link_l1cfg(sc, sc->mbox, pi->tx_chan, &pi->link_cfg);
+		rc = -t4_link_l1cfg(sc, sc->mbox, pi->tx_chan, lc);
 		if (rc != 0) {
 			device_printf(dev, "port %d l1cfg failed: %d\n", i, rc);
 			free(pi->vi, M_CXGBE);
@@ -977,8 +1006,6 @@ t4_attach(device_t dev)
 		} else {
 			n1g++;
 		}
-
-		pi->linkdnrc = -1;
 
 		pi->dev = device_add_child(dev, sc->names->ifnet_name, -1);
 		if (pi->dev == NULL) {
@@ -4060,8 +4087,8 @@ cxgbe_uninit_synchronized(struct vi_info *vi)
 
 	pi->link_cfg.link_ok = 0;
 	pi->link_cfg.speed = 0;
-	pi->linkdnrc = -1;
-	t4_os_link_changed(sc, pi->port_id, 0, -1);
+	pi->link_cfg.link_down_rc = 255;
+	t4_os_link_changed(sc, pi->port_id, 0);
 
 	return (0);
 }
@@ -5274,8 +5301,14 @@ cxgbe_sysctls(struct port_info *pi)
 	}
 
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "pause_settings",
-	    CTLTYPE_STRING | CTLFLAG_RW, pi, PAUSE_TX, sysctl_pause_settings,
-	    "A", "PAUSE settings (bit 0 = rx_pause, bit 1 = tx_pause)");
+	    CTLTYPE_STRING | CTLFLAG_RW, pi, 0, sysctl_pause_settings, "A",
+	    "PAUSE settings (bit 0 = rx_pause, bit 1 = tx_pause)");
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "fec",
+	    CTLTYPE_STRING | CTLFLAG_RW, pi, 0, sysctl_fec, "A",
+	    "Forward Error Correction (bit 0 = RS, bit 1 = BASER_RS)");
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "autoneg",
+	    CTLTYPE_INT | CTLFLAG_RW, pi, 0, sysctl_autoneg, "I",
+	    "autonegotiation (-1 = not supported)");
 
 	SYSCTL_ADD_INT(ctx, children, OID_AUTO, "max_speed", CTLFLAG_RD, NULL,
 	    port_top_speed(pi), "max speed (in Gbps)");
@@ -5735,16 +5768,104 @@ sysctl_pause_settings(SYSCTL_HANDLER_ARGS)
 		if (rc)
 			return (rc);
 		if ((lc->requested_fc & (PAUSE_TX | PAUSE_RX)) != n) {
-			int link_ok = lc->link_ok;
-
 			lc->requested_fc &= ~(PAUSE_TX | PAUSE_RX);
 			lc->requested_fc |= n;
 			rc = -t4_link_l1cfg(sc, sc->mbox, pi->tx_chan, lc);
-			lc->link_ok = link_ok;	/* restore */
 		}
 		end_synchronized_op(sc, 0);
 	}
 
+	return (rc);
+}
+
+static int
+sysctl_fec(SYSCTL_HANDLER_ARGS)
+{
+	struct port_info *pi = arg1;
+	struct adapter *sc = pi->adapter;
+	struct link_config *lc = &pi->link_cfg;
+	int rc;
+
+	if (req->newptr == NULL) {
+		struct sbuf *sb;
+		static char *bits = "\20\1RS\2BASER_RS\3RESERVED";
+
+		rc = sysctl_wire_old_buffer(req, 0);
+		if (rc != 0)
+			return(rc);
+
+		sb = sbuf_new_for_sysctl(NULL, NULL, 128, req);
+		if (sb == NULL)
+			return (ENOMEM);
+
+		sbuf_printf(sb, "%b", lc->fec & M_FW_PORT_CAP_FEC, bits);
+		rc = sbuf_finish(sb);
+		sbuf_delete(sb);
+	} else {
+		char s[2];
+		int n;
+
+		s[0] = '0' + (lc->requested_fec & M_FW_PORT_CAP_FEC);
+		s[1] = 0;
+
+		rc = sysctl_handle_string(oidp, s, sizeof(s), req);
+		if (rc != 0)
+			return(rc);
+
+		if (s[1] != 0)
+			return (EINVAL);
+		if (s[0] < '0' || s[0] > '9')
+			return (EINVAL);	/* not a number */
+		n = s[0] - '0';
+		if (n & ~M_FW_PORT_CAP_FEC)
+			return (EINVAL);	/* some other bit is set too */
+
+		rc = begin_synchronized_op(sc, &pi->vi[0], SLEEP_OK | INTR_OK,
+		    "t4fec");
+		if (rc)
+			return (rc);
+		if ((lc->requested_fec & M_FW_PORT_CAP_FEC) != n) {
+			lc->requested_fec = n &
+			    G_FW_PORT_CAP_FEC(lc->supported);
+			rc = -t4_link_l1cfg(sc, sc->mbox, pi->tx_chan, lc);
+		}
+		end_synchronized_op(sc, 0);
+	}
+
+	return (rc);
+}
+
+static int
+sysctl_autoneg(SYSCTL_HANDLER_ARGS)
+{
+	struct port_info *pi = arg1;
+	struct adapter *sc = pi->adapter;
+	struct link_config *lc = &pi->link_cfg;
+	int rc, val, old;
+
+	if (lc->supported & FW_PORT_CAP_ANEG)
+		val = lc->autoneg == AUTONEG_ENABLE ? 1 : 0;
+	else
+		val = -1;
+	rc = sysctl_handle_int(oidp, &val, 0, req);
+	if (rc != 0 || req->newptr == NULL)
+		return (rc);
+	if ((lc->supported & FW_PORT_CAP_ANEG) == 0)
+		return (ENOTSUP);
+
+	val = val ? AUTONEG_ENABLE : AUTONEG_DISABLE;
+	if (lc->autoneg == val)
+		return (0);	/* no change */
+
+	rc = begin_synchronized_op(sc, &pi->vi[0], SLEEP_OK | INTR_OK,
+	    "t4aneg");
+	if (rc)
+		return (rc);
+	old = lc->autoneg;
+	lc->autoneg = val;
+	rc = -t4_link_l1cfg(sc, sc->mbox, pi->tx_chan, lc);
+	if (rc != 0)
+		lc->autoneg = old;
 	return (rc);
 }
 
@@ -6493,6 +6614,7 @@ sysctl_linkdnrc(SYSCTL_HANDLER_ARGS)
 {
 	int rc = 0;
 	struct port_info *pi = arg1;
+	struct link_config *lc = &pi->link_cfg;
 	struct sbuf *sb;
 
 	rc = sysctl_wire_old_buffer(req, 0);
@@ -6502,10 +6624,10 @@ sysctl_linkdnrc(SYSCTL_HANDLER_ARGS)
 	if (sb == NULL)
 		return (ENOMEM);
 
-	if (pi->linkdnrc < 0)
+	if (lc->link_ok || lc->link_down_rc == 255)
 		sbuf_printf(sb, "n/a");
 	else
-		sbuf_printf(sb, "%s", t4_link_down_rc_str(pi->linkdnrc));
+		sbuf_printf(sb, "%s", t4_link_down_rc_str(lc->link_down_rc));
 
 	rc = sbuf_finish(sb);
 	sbuf_delete(sb);
@@ -8973,19 +9095,13 @@ t4_os_portmod_changed(const struct adapter *sc, int idx)
 }
 
 void
-t4_os_link_changed(struct adapter *sc, int idx, int link_stat, int reason)
+t4_os_link_changed(struct adapter *sc, int idx, int link_stat)
 {
 	struct port_info *pi = sc->port[idx];
 	struct vi_info *vi;
 	struct ifnet *ifp;
 	int v;
 
-	if (link_stat)
-		pi->linkdnrc = -1;
-	else {
-		if (reason >= 0)
-			pi->linkdnrc = reason;
-	}
 	for_each_vi(pi, v, vi) {
 		ifp = vi->ifp;
 		if (ifp == NULL)
@@ -9416,6 +9532,22 @@ uld_active(struct adapter *sc, int uld_id)
 #endif
 
 /*
+ * t  = ptr to tunable.
+ * nc = number of CPUs.
+ * c  = compiled in default for that tunable.
+ */
+static void
+calculate_nqueues(int *t, int nc, const int c)
+{
+	int nq;
+
+	if (*t > 0)
+		return;
+	nq = *t < 0 ? -*t : c;
+	*t = min(nc, nq);
+}
+
+/*
  * Come up with reasonable defaults for some of the tunables, provided they're
  * not set by the user (in which case we'll use the values as is).
  */
@@ -9428,7 +9560,7 @@ tweak_tunables(void)
 #ifdef RSS
 		t4_ntxq10g = rss_getnumbuckets();
 #else
-		t4_ntxq10g = min(nc, NTXQ_10G);
+		calculate_nqueues(&t4_ntxq10g, nc, NTXQ_10G);
 #endif
 	}
 
@@ -9437,18 +9569,17 @@ tweak_tunables(void)
 		/* XXX: way too many for 1GbE? */
 		t4_ntxq1g = rss_getnumbuckets();
 #else
-		t4_ntxq1g = min(nc, NTXQ_1G);
+		calculate_nqueues(&t4_ntxq1g, nc, NTXQ_1G);
 #endif
 	}
 
-	if (t4_ntxq_vi < 1)
-		t4_ntxq_vi = min(nc, NTXQ_VI);
+	calculate_nqueues(&t4_ntxq_vi, nc, NTXQ_VI);
 
 	if (t4_nrxq10g < 1) {
 #ifdef RSS
 		t4_nrxq10g = rss_getnumbuckets();
 #else
-		t4_nrxq10g = min(nc, NRXQ_10G);
+		calculate_nqueues(&t4_nrxq10g, nc, NRXQ_10G);
 #endif
 	}
 
@@ -9457,31 +9588,19 @@ tweak_tunables(void)
 		/* XXX: way too many for 1GbE? */
 		t4_nrxq1g = rss_getnumbuckets();
 #else
-		t4_nrxq1g = min(nc, NRXQ_1G);
+		calculate_nqueues(&t4_nrxq1g, nc, NRXQ_1G);
 #endif
 	}
 
-	if (t4_nrxq_vi < 1)
-		t4_nrxq_vi = min(nc, NRXQ_VI);
+	calculate_nqueues(&t4_nrxq_vi, nc, NRXQ_VI);
 
 #ifdef TCP_OFFLOAD
-	if (t4_nofldtxq10g < 1)
-		t4_nofldtxq10g = min(nc, NOFLDTXQ_10G);
-
-	if (t4_nofldtxq1g < 1)
-		t4_nofldtxq1g = min(nc, NOFLDTXQ_1G);
-
-	if (t4_nofldtxq_vi < 1)
-		t4_nofldtxq_vi = min(nc, NOFLDTXQ_VI);
-
-	if (t4_nofldrxq10g < 1)
-		t4_nofldrxq10g = min(nc, NOFLDRXQ_10G);
-
-	if (t4_nofldrxq1g < 1)
-		t4_nofldrxq1g = min(nc, NOFLDRXQ_1G);
-
-	if (t4_nofldrxq_vi < 1)
-		t4_nofldrxq_vi = min(nc, NOFLDRXQ_VI);
+	calculate_nqueues(&t4_nofldtxq10g, nc, NOFLDTXQ_10G);
+	calculate_nqueues(&t4_nofldtxq1g, nc, NOFLDTXQ_1G);
+	calculate_nqueues(&t4_nofldtxq_vi, nc, NOFLDTXQ_VI);
+	calculate_nqueues(&t4_nofldrxq10g, nc, NOFLDRXQ_10G);
+	calculate_nqueues(&t4_nofldrxq1g, nc, NOFLDRXQ_1G);
+	calculate_nqueues(&t4_nofldrxq_vi, nc, NOFLDRXQ_VI);
 
 	if (t4_toecaps_allowed == -1)
 		t4_toecaps_allowed = FW_CAPS_CONFIG_TOE;
@@ -9508,11 +9627,8 @@ tweak_tunables(void)
 #endif
 
 #ifdef DEV_NETMAP
-	if (t4_nnmtxq_vi < 1)
-		t4_nnmtxq_vi = min(nc, NNMTXQ_VI);
-
-	if (t4_nnmrxq_vi < 1)
-		t4_nnmrxq_vi = min(nc, NNMRXQ_VI);
+	calculate_nqueues(&t4_nnmtxq_vi, nc, NNMTXQ_VI);
+	calculate_nqueues(&t4_nnmrxq_vi, nc, NNMRXQ_VI);
 #endif
 
 	if (t4_tmr_idx_10g < 0 || t4_tmr_idx_10g >= SGE_NTIMERS)

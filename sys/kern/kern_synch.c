@@ -152,8 +152,8 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	    "Sleeping on \"%s\"", wmesg);
 	KASSERT(sbt != 0 || mtx_owned(&Giant) || lock != NULL,
 	    ("sleeping without a lock"));
-	KASSERT(p != NULL, ("msleep1"));
-	KASSERT(ident != NULL && TD_IS_RUNNING(td), ("msleep"));
+	KASSERT(ident != NULL, ("_sleep: NULL ident"));
+	KASSERT(TD_IS_RUNNING(td), ("_sleep: curthread not running"));
 	if (priority & PDROP)
 		KASSERT(lock != NULL && lock != &Giant.lock_object,
 		    ("PDROP requires a non-Giant lock"));
@@ -162,7 +162,7 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	else
 		class = NULL;
 
-	if (SCHEDULER_STOPPED()) {
+	if (SCHEDULER_STOPPED_TD(td)) {
 		if (lock != NULL && priority & PDROP)
 			class->lc_unlock(lock);
 		return (0);
@@ -247,10 +247,10 @@ msleep_spin_sbt(void *ident, struct mtx *mtx, const char *wmesg,
 	td = curthread;
 	p = td->td_proc;
 	KASSERT(mtx != NULL, ("sleeping without a mutex"));
-	KASSERT(p != NULL, ("msleep1"));
-	KASSERT(ident != NULL && TD_IS_RUNNING(td), ("msleep"));
+	KASSERT(ident != NULL, ("msleep_spin_sbt: NULL ident"));
+	KASSERT(TD_IS_RUNNING(td), ("msleep_spin_sbt: curthread not running"));
 
-	if (SCHEDULER_STOPPED())
+	if (SCHEDULER_STOPPED_TD(td))
 		return (0);
 
 	sleepq_lock(ident);
@@ -411,7 +411,7 @@ mi_switch(int flags, struct thread *newtd)
 	 */
 	if (kdb_active)
 		kdb_switch();
-	if (SCHEDULER_STOPPED())
+	if (SCHEDULER_STOPPED_TD(td))
 		return;
 	if (flags & SW_VOL) {
 		td->td_ru.ru_nvcsw++;

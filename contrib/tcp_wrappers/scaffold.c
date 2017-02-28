@@ -41,7 +41,6 @@ extern char *malloc();
   */
 int     allow_severity = SEVERITY;
 int     deny_severity = LOG_WARNING;
-int     rfc931_timeout = RFC931_TIMEOUT;
 
 #ifndef INET6
 /* dup_hostent - create hostent in one memory block */
@@ -233,16 +232,6 @@ void    clean_exit(request)
 struct request_info *request;
 {
     exit(0);
-}
-
-/* dummy function  to intercept the real rfc931() */
-
-/* ARGSUSED */
-
-void    rfc931(request)
-struct request_info *request;
-{
-    strcpy(request->user, unknown);
 }
 
 /* check_path - examine accessibility */

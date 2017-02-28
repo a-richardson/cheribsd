@@ -40,6 +40,7 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/types.h>
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -62,16 +63,17 @@ __FBSDID("$FreeBSD$");
 #define UTC              "utc"
 
 static int set_restore_flags(struct cam_device *device, uint8_t *flags,
-			     int set_flag, int retry_count, int timeout);
+			     int set_flag, int task_attr, int retry_count,
+			     int timeout);
 static int report_timestamp(struct cam_device *device, uint64_t *ts,
-			    int retry_count, int timeout);
+			    int task_attr, int retry_count, int timeout);
 static int set_timestamp(struct cam_device *device, char *format_string,
-			 char *timestamp_string,
-			 int retry_count, int timeout);
+			 char *timestamp_string, int task_attr, int retry_count,
+			 int timeout);
 
 static int
 set_restore_flags(struct cam_device *device, uint8_t *flags, int set_flag,
-		  int retry_count, int timeout)
+		  int task_attr, int retry_count, int timeout)
 {
 	unsigned long blk_desc_length, hdr_and_blk_length;
 	int error = 0;
@@ -97,7 +99,7 @@ set_restore_flags(struct cam_device *device, uint8_t *flags, int set_flag,
 	scsi_mode_sense_len(&ccb->csio,
 	    /*retries*/ retry_count,
 	    /*cbfcnp*/ NULL,
-	    /*tag_action*/ MSG_SIMPLE_Q_TAG,
+	    /*tag_action*/ task_attr,
 	    /*dbd*/ 0,
 	    /*page_control*/ SMS_PAGE_CTRL_CURRENT,
 	    /*page*/ SCEP_PAGE_CODE,
@@ -138,6 +140,8 @@ set_restore_flags(struct cam_device *device, uint8_t *flags, int set_flag,
 	 * Create the control page at the correct point in the mode_buf, it
 	 * starts after the header and the blk description.
 	 */
+	assert(hdr_and_blk_length <=
+	    sizeof(mode_buf) - sizeof(struct scsi_control_ext_page));
 	control_page = (struct scsi_control_ext_page *)&mode_buf
 	    [hdr_and_blk_length];
 	if (set_flag != 0) {
@@ -154,7 +158,7 @@ set_restore_flags(struct cam_device *device, uint8_t *flags, int set_flag,
 	scsi_mode_select_len(&ccb->csio,
 	    /*retries*/ retry_count,
 	    /*cbfcnp*/ NULL,
-	    /*tag_action*/ MSG_SIMPLE_Q_TAG,
+	    /*tag_action*/ task_attr,
 	    /*scsi_page_fmt*/ 1,
 	    /*save_pages*/ 0,
 	    /*param_buf*/ &mode_buf[0],
@@ -188,7 +192,7 @@ bailout:
 }
 
 static int
-report_timestamp(struct cam_device *device, uint64_t *ts,
+report_timestamp(struct cam_device *device, uint64_t *ts, int task_attr,
 		 int retry_count, int timeout)
 {
 	int error = 0;
@@ -209,7 +213,7 @@ report_timestamp(struct cam_device *device, uint64_t *ts,
 	scsi_report_timestamp(&ccb->csio,
 	    /*retries*/ retry_count,
 	    /*cbfcnp*/ NULL,
-	    /*tag_action*/ MSG_SIMPLE_Q_TAG,
+	    /*tag_action*/ task_attr,
 	    /*pdf*/ 0,
 	    /*buf*/ report_buf,
 	    /*buf_len*/ report_buf_size,
@@ -240,13 +244,14 @@ report_timestamp(struct cam_device *device, uint64_t *ts,
 bailout:
 	if (ccb != NULL)
 		cam_freeccb(ccb);
+	free(report_buf);
 
 	return error;
 }
 
 static int
 set_timestamp(struct cam_device *device, char *format_string,
-	      char *timestamp_string, int retry_count,
+	      char *timestamp_string, int task_attr, int retry_count,
 	      int timeout)
 {
 	struct scsi_set_timestamp_parameters ts_p;
@@ -258,8 +263,8 @@ set_timestamp(struct cam_device *device, char *format_string,
 	union ccb *ccb = NULL;
 	int do_restore_flags = 0;
 
-	error = set_restore_flags(device, &flags, /*set_flag*/ 1, retry_count,
-				  timeout);
+	error = set_restore_flags(device, &flags, /*set_flag*/ 1, task_attr,
+				  retry_count, timeout);
 	if (error != 0)
 		goto bailout;
 
@@ -288,7 +293,7 @@ set_timestamp(struct cam_device *device, char *format_string,
 	scsi_set_timestamp(&ccb->csio,
 	    /*retries*/ retry_count,
 	    /*cbfcnp*/ NULL,
-	    /*tag_action*/ MSG_SIMPLE_Q_TAG,
+	    /*tag_action*/ task_attr,
 	    /*buf*/ &ts_p,
 	    /*buf_len*/ sizeof(ts_p),
 	    /*sense_len*/ SSD_FULL_SIZE,
@@ -316,7 +321,7 @@ set_timestamp(struct cam_device *device, char *format_string,
 bailout:
 	if (do_restore_flags != 0)
 		error = set_restore_flags(device, &flags, /*set_flag*/ 0,
-					  retry_count, timeout);
+					  task_attr, retry_count, timeout);
 	if (ccb != NULL)
 		cam_freeccb(ccb);
 
@@ -325,7 +330,7 @@ bailout:
 
 int
 timestamp(struct cam_device *device, int argc, char **argv, char *combinedopt,
-	  int retry_count, int timeout, int verbosemode __unused)
+	  int task_attr, int retry_count, int timeout, int verbosemode __unused)
 {
 	int c;
 	uint64_t ts = 0;
@@ -450,7 +455,7 @@ timestamp(struct cam_device *device, int argc, char **argv, char *combinedopt,
 	}
 
 	if (action == TIMESTAMP_REPORT) {
-		error = report_timestamp(device, &ts, retry_count,
+		error = report_timestamp(device, &ts, task_attr, retry_count,
 		    timeout);
 		if (error != 0) {
 			goto bailout;
@@ -486,7 +491,7 @@ timestamp(struct cam_device *device, int argc, char **argv, char *combinedopt,
 		}
 
 		error = set_timestamp(device, format_string, timestamp_string,
-		    retry_count, timeout);
+		    task_attr, retry_count, timeout);
 	}
 
 bailout:

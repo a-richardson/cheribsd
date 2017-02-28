@@ -100,6 +100,8 @@ xhci_pci_match(device_t self)
 
 	case 0x01941033:
 		return ("NEC uPD720200 USB 3.0 controller");
+	case 0x00151912:
+		return ("NEC uPD720202 USB 3.0 controller");
 
 	case 0x10001b73:
 		return ("Fresco Logic FL1000G USB 3.0 controller");
@@ -348,6 +350,7 @@ xhci_pci_detach(device_t self)
 
 	usb_callout_drain(&sc->sc_callout);
 	xhci_halt_controller(sc);
+	xhci_reset_controller(sc);
 
 	pci_disable_busmaster(self);
 

@@ -183,13 +183,11 @@ __DEFAULT_NO_OPTIONS = \
     BSD_GREP \
     CLANG_EXTRAS \
     DTRACE_TESTS \
-    EISA \
     HESIOD \
     LIBSOFT \
     NAND \
     OFED \
     OPENLDAP \
-    RCS \
     REPRODUCIBLE_BUILD \
     SHARED_TOOLCHAIN \
     SORT_THREADS \
@@ -252,9 +250,9 @@ __DEFAULT_YES_OPTIONS+=LLVM_LIBUNWIND
 __DEFAULT_NO_OPTIONS+=LLVM_LIBUNWIND
 .endif
 .if ${__T} == "aarch64"
-__DEFAULT_YES_OPTIONS+=LLD_AS_LD
+__DEFAULT_YES_OPTIONS+=LLD_IS_LD
 .else
-__DEFAULT_NO_OPTIONS+=LLD_AS_LD
+__DEFAULT_NO_OPTIONS+=LLD_IS_LD
 .endif
 .if ${__T} == "aarch64" || ${__T} == "amd64"
 __DEFAULT_YES_OPTIONS+=LLD LLDB
@@ -402,6 +400,21 @@ MK_CLANG_FULL:= no
 .endif
 
 #
+# MK_* options whose default value depends on another option.
+#
+.for vv in \
+    GSSAPI/KERBEROS \
+    MAN_UTILS/MAN
+.if defined(WITH_${vv:H})
+MK_${vv:H}:=	yes
+.elif defined(WITHOUT_${vv:H})
+MK_${vv:H}:=	no
+.else
+MK_${vv:H}:=	${MK_${vv:T}}
+.endif
+.endfor
+
+#
 # Set defaults for the MK_*_SUPPORT variables.
 #
 
@@ -425,21 +438,6 @@ MK_CLANG_FULL:= no
 MK_${var}_SUPPORT:= no
 .else
 MK_${var}_SUPPORT:= yes
-.endif
-.endfor
-
-#
-# MK_* options whose default value depends on another option.
-#
-.for vv in \
-    GSSAPI/KERBEROS \
-    MAN_UTILS/MAN
-.if defined(WITH_${vv:H})
-MK_${vv:H}:=	yes
-.elif defined(WITHOUT_${vv:H})
-MK_${vv:H}:=	no
-.else
-MK_${vv:H}:=	${MK_${vv:T}}
 .endif
 .endfor
 

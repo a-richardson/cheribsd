@@ -29,7 +29,8 @@
 #ifndef _SYS_EVENT_H_
 #define _SYS_EVENT_H_
 
-#include <sys/queue.h> 
+#include <sys/_types.h>
+#include <sys/queue.h>
 
 #define EVFILT_READ		(-1)
 #define EVFILT_WRITE		(-2)
@@ -43,7 +44,8 @@
 #define EVFILT_LIO		(-10)	/* attached to lio requests */
 #define EVFILT_USER		(-11)	/* User events */
 #define EVFILT_SENDFILE		(-12)	/* attached to sendfile requests */
-#define EVFILT_SYSCOUNT		12
+#define EVFILT_EMPTY		(-13)	/* empty send socket buf */
+#define EVFILT_SYSCOUNT		13
 
 #define EV_SET(kevp_, a, b, c, d, e, f) do {	\
 	struct kevent *kevp = (kevp_);		\
@@ -56,12 +58,12 @@
 } while(0)
 
 struct kevent {
-	uintptr_t	ident;		/* identifier for this event */
+	__uintptr_t	ident;		/* identifier for this event */
 	short		filter;		/* filter for event */
-	u_short		flags;
-	u_int		fflags;
+	unsigned short	flags;
+	unsigned int	fflags;
 #ifndef __CHERI_PURE_CAPABILITY__
-	intptr_t	data;
+	__intptr_t	data;
 #else
 	int64_t		data;		/* All consumers use integers */
 #endif
@@ -264,30 +266,30 @@ struct knlist;
 struct mtx;
 struct rwlock;
 
-extern void	knote(struct knlist *list, long hint, int lockflags);
-extern void	knote_fork(struct knlist *list, int pid);
-extern struct knlist *knlist_alloc(struct mtx *lock);
-extern void	knlist_detach(struct knlist *knl);
-extern void	knlist_add(struct knlist *knl, struct knote *kn, int islocked);
-extern void	knlist_remove(struct knlist *knl, struct knote *kn, int islocked);
-extern int	knlist_empty(struct knlist *knl);
-extern void	knlist_init(struct knlist *knl, void *lock,
-    void (*kl_lock)(void *), void (*kl_unlock)(void *),
-    void (*kl_assert_locked)(void *), void (*kl_assert_unlocked)(void *));
-extern void	knlist_init_mtx(struct knlist *knl, struct mtx *lock);
-extern void	knlist_init_rw_reader(struct knlist *knl, struct rwlock *lock);
-extern void	knlist_destroy(struct knlist *knl);
-extern void	knlist_cleardel(struct knlist *knl, struct thread *td,
-	int islocked, int killkn);
+void	knote(struct knlist *list, long hint, int lockflags);
+void	knote_fork(struct knlist *list, int pid);
+struct knlist *knlist_alloc(struct mtx *lock);
+void	knlist_detach(struct knlist *knl);
+void	knlist_add(struct knlist *knl, struct knote *kn, int islocked);
+void	knlist_remove(struct knlist *knl, struct knote *kn, int islocked);
+int	knlist_empty(struct knlist *knl);
+void	knlist_init(struct knlist *knl, void *lock, void (*kl_lock)(void *),
+	    void (*kl_unlock)(void *), void (*kl_assert_locked)(void *),
+	    void (*kl_assert_unlocked)(void *));
+void	knlist_init_mtx(struct knlist *knl, struct mtx *lock);
+void	knlist_init_rw_reader(struct knlist *knl, struct rwlock *lock);
+void	knlist_destroy(struct knlist *knl);
+void	knlist_cleardel(struct knlist *knl, struct thread *td,
+	    int islocked, int killkn);
 #define knlist_clear(knl, islocked)				\
-		knlist_cleardel((knl), NULL, (islocked), 0)
+	knlist_cleardel((knl), NULL, (islocked), 0)
 #define knlist_delete(knl, td, islocked)			\
-		knlist_cleardel((knl), (td), (islocked), 1)
-extern void	knote_fdclose(struct thread *p, int fd);
-extern int 	kqfd_register(int fd, struct kevent *kev, struct thread *p,
-		    int waitok);
-extern int	kqueue_add_filteropts(int filt, struct filterops *filtops);
-extern int	kqueue_del_filteropts(int filt);
+	knlist_cleardel((knl), (td), (islocked), 1)
+void	knote_fdclose(struct thread *p, int fd);
+int 	kqfd_register(int fd, struct kevent *kev, struct thread *p,
+	    int waitok);
+int	kqueue_add_filteropts(int filt, struct filterops *filtops);
+int	kqueue_del_filteropts(int filt);
 
 #else 	/* !_KERNEL */
 
