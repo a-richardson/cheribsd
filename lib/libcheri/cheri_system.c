@@ -118,13 +118,13 @@ cheri_system_clock_gettime(clockid_t clock_id, __capability struct timespec *tp)
 
 int
 cheri_system_calloc(size_t count, size_t size,
-    void __capability * __capability *ptrp)
+    void * __capability * __capability ptrp)
 {
-	__capability void *ptr;
+	void *ptr;
 
-	if ((ptr = (__capability void *)calloc(count, size)) == NULL)
+	if ((ptr = calloc(count, size)) == NULL)
 		return (-1);
-	*ptrp = ptr;
+	*ptrp = cheri_ptr(ptr, size);
 	return (0);
 }
 

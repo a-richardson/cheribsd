@@ -45,17 +45,28 @@ WANT_CHERI=	none
 
 .if ${MK_CHERI} != "no" && defined(WANT_CHERI) && ${WANT_CHERI} != "none"
 .if !defined(CHERI_CC)
-.error CHERI is enabled and request, but CHERI_CC is undefined
+.error CHERI is enabled, but CHERI_CC is undefined
 .endif
 .if !exists(${CHERI_CC}) 
 .error CHERI_CC is defined to ${CHERI_CC} which does not exist
 .endif
+.if !defined(CHERI_CXX)
+.error CHERI is enabled, but CHERI_CXX is undefined
+.endif
+.if !exists(${CHERI_CXX})
+.error CHERI_CXX is defined to ${CHERI_CXX} which does not exist
+.endif
 
 _CHERI_CC=	${CHERI_CC} -g -integrated-as --target=cheri-unknown-freebsd \
 		-msoft-float
+_CHERI_CXX=	${CHERI_CXX} -g -integrated-as --target=cheri-unknown-freebsd \
+		-msoft-float
 .if defined(SYSROOT)
 _CHERI_CC+=	--sysroot=${SYSROOT}
+_CHERI_CXX+=	--sysroot=${SYSROOT}
 .endif
+
+_CHERI_CC+= -Wno-deprecated-declarations
 
 .if ${WANT_CHERI} == "pure" || ${WANT_CHERI} == "sandbox"
 OBJCOPY:=	objcopy
@@ -65,6 +76,7 @@ ROOTOBJDIR=	${.OBJDIR:S,${.CURDIR},,}${SRCTOP}/worldcheri${SRCTOP}
 CFLAGS+=	${CHERI_OPTIMIZATION_FLAGS:U-O1} -ftls-model=local-exec
 .if ${MK_CHERI_LINKER} == "yes"
 _CHERI_CC+=	-cheri-linker
+_CHERI_CXX+=	-cheri-linker
 CFLAGS+=	-Wno-error
 .endif
 ALLOW_SHARED_TEXTREL=	yes
@@ -81,8 +93,10 @@ STATIC_CFLAGS+= -ftls-model=local-exec # MIPS/hybrid case
 
 .if ${MK_CHERI128} == "yes"
 _CHERI_CC+=	-mllvm -cheri128
+_CHERI_CXX+=	-mllvm -cheri128
 # XXX: Needed as Clang rejects -mllvm -cheri128 when using $CC to link.
 _CHERI_CFLAGS+=	-Qunused-arguments
+_CHERI_CXXFLAGS+=	-Qunused-arguments
 .endif
 
 .if ${WANT_CHERI} != "variables"
@@ -92,8 +106,10 @@ NO_SHARED=	yes
 NO_SHARED=	yes
 .endif
 CC:=	${_CHERI_CC}
+CXX:=	${_CHERI_CXX}
 COMPILER_TYPE=	clang
 CFLAGS+=	${_CHERI_CFLAGS}
+CXXFLAGS+=	${_CHERI_CXXFLAGS}
 # Don't remove CHERI symbols from the symbol table
 STRIP_FLAGS+=	-w --keep-symbol=__cheri_callee_method.\* \
 		--keep-symbol=__cheri_method.\*
