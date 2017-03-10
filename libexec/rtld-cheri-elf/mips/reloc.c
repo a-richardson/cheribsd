@@ -46,6 +46,7 @@ __FBSDID("$FreeBSD$");
 
 #include "debug.h"
 #include "rtld.h"
+#include "rtld_printf.h"
 
 #define	GOT1_MASK	0x8000000000000000UL
 
@@ -143,17 +144,46 @@ store_ptr(void *where, Elf_Sxword val, size_t len)
 #endif
 }
 
+
+/* The above two functions are not always inline so define it as a macro */
+#define LOAD_SXWORD(val, type, where) do {				\
+	if (ELF_R_NXTTYPE_64_P(r_type)) { val = *(Elf_Sxword *)where; }	\
+	else { val = *(Elf_Sword *)where; } 				\
+	} while(0)
+#define STORE_SXWORD(type, where, val) do {				\
+	if (ELF_R_NXTTYPE_64_P(r_type)) { *(Elf_Sxword *)where = val; }	\
+	else { *(Elf_Sword *)where = (Elf_Sword)val; }			\
+	} while(0)
+
+static __always_inline void
+rtld_abort()
+{
+	/* FIXME: should use syscall inline assembly instead */
+	*((char*)0xdead001d) = 42;
+}
+
 void
 _rtld_relocate_nonplt_self(Elf_Dyn *dynp, caddr_t relocbase)
 {
 	const Elf_Rel *rel = NULL, *rellim;
-	Elf_Addr relsz = 0;
+	const Elf_Rela *rela = NULL, *relalim;
+	Elf_Addr relsz = 0, relasz = 0;
 	const Elf_Sym *symtab = NULL, *sym;
-	Elf_Addr *where;
 	Elf_Addr *got = NULL;
 	Elf_Word local_gotno = 0, symtabno = 0, gotsym = 0;
 	size_t i;
-
+	/*
+	 * We cannot add any debug output here until after the GOT has been
+	 * processed as that will just result in crashes.
+	 *
+	 * XXXAR: Maybe we could tell clang+lld to use PC-relative calls for
+	 * local symbols
+	 */
+	/*
+	 * This loop must be compiled with -fno-jumptables because we can't
+	 * load the address of the jumptable without a GOT load and the GOT
+	 * can only be fixed up after this loop.
+	 */
 	for (; dynp->d_tag != DT_NULL; dynp++) {
 		switch (dynp->d_tag) {
 		case DT_REL:
@@ -161,6 +191,12 @@ _rtld_relocate_nonplt_self(Elf_Dyn *dynp, caddr_t relocbase)
 			break;
 		case DT_RELSZ:
 			relsz = dynp->d_un.d_val;
+			break;
+		case DT_RELA:
+			rela = (const Elf_Rela *)(relocbase + dynp->d_un.d_ptr);
+			break;
+		case DT_RELASZ:
+			relasz = dynp->d_un.d_val;
 			break;
 		case DT_SYMTAB:
 			symtab = (const Elf_Sym *)(relocbase + dynp->d_un.d_ptr);
@@ -194,51 +230,91 @@ _rtld_relocate_nonplt_self(Elf_Dyn *dynp, caddr_t relocbase)
 		++sym;
 		++got;
 	}
-
-	rellim = (const Elf_Rel *)((char *)rel + relsz);
+	/* LLD generates RELA instead of REL so we need to process both. */
+	rellim = rel ? (const Elf_Rel *)((char *)rel + relsz) : NULL;
 	for (; rel < rellim; rel++) {
-		Elf_Word r_symndx, r_type;
-
-		where = (void *)(relocbase + rel->r_offset);
-
-		r_symndx = ELF_R_SYM(rel->r_info);
-		r_type = ELF_R_TYPE(rel->r_info);
+		Elf_Addr *where = (void *)(relocbase + rel->r_offset);
+		Elf_Word r_symndx = ELF_R_SYM(rel->r_info);
+		Elf_Word r_type = ELF_R_TYPE(rel->r_info);
 
 		switch (r_type & 0xff) {
 		case R_TYPE(REL32): {
-			const size_t rlen =
-			    ELF_R_NXTTYPE_64_P(r_type)
-				? sizeof(Elf_Sxword)
-				: sizeof(Elf_Sword);
-			Elf_Sxword old = load_ptr(where, rlen);
+			/* XXXAR: can't use load_ptr as it will not always be inlined */
+			Elf_Sxword old;
+			LOAD_SXWORD(old, r_type, where);
 			Elf_Sxword val = old;
-#ifdef __mips_n64
 			assert(r_type == R_TYPE(REL32)
-			    || r_type == (R_TYPE(REL32)|(R_TYPE(64) << 8)));
-#endif
+				|| r_type == (R_TYPE(REL32)|(R_TYPE(64) << 8)));
 			assert(r_symndx < gotsym);
 			sym = symtab + r_symndx;
 			assert(ELF_ST_BIND(sym->st_info) == STB_LOCAL);
-			val += (uintptr_t)relocbase;
-#ifdef DEBUG_VERBOSE
-			dbg("REL32/L(%p) %p -> %p in <self>",
-			    where, (void *)(uintptr_t)old,
-			    (void *)(uintptr_t)val);
-#endif
-			store_ptr(where, val, rlen);
+			val += (vaddr_t)relocbase;
+			STORE_SXWORD(r_type, where, val);
 			break;
 		}
-
 		case R_TYPE(GPREL32):
 		case R_TYPE(NONE):
 			break;
-
-
 		default:
-			abort();
+			/* XXXAR: add a marker NOP to see where it crashed */
+			__asm__ __volatile__("li $zero, 0xabcd");
+			/*
+			* FIXME: this printf may or may not work
+			* TODO: PC-relative calls to local symbols??
+			*/
+			rtld_printf("FATAL: Unknown REL relocation: type %d, "
+			    "offset %ld, info %ld\n", r_type,
+			    rel->r_offset, rel->r_info);
+			/* FIXME: This will crash but will it call abort()? */
+			rtld_abort();
 			break;
 		}
 	}
+	relalim = rela ? (const Elf_Rela *)((char *)rela + relasz) : NULL;
+	/*
+	 * We have to copy the loop from above because if we use a shared
+	 * function the compiler will generate code that crashes
+	 */
+	for (; rela < relalim; rela++) {
+		Elf_Addr *where = (void *)(relocbase + rela->r_offset);
+		Elf_Word r_symndx = ELF_R_SYM(rela->r_info);
+		Elf_Word r_type = ELF_R_TYPE(rela->r_info);
+
+		switch (r_type & 0xff) {
+		case R_TYPE(REL32): {
+			/* XXXAR: can't use load_ptr as it will not always be inlined */
+			Elf_Sxword old;
+			LOAD_SXWORD(old, r_type, where);
+			Elf_Sxword val = old;
+			assert(r_type == R_TYPE(REL32)
+				|| r_type == (R_TYPE(REL32)|(R_TYPE(64) << 8)));
+			assert(r_symndx < gotsym);
+			sym = symtab + r_symndx;
+			assert(ELF_ST_BIND(sym->st_info) == STB_LOCAL);
+			val += (vaddr_t)relocbase;
+			val += rela->r_addend;
+			STORE_SXWORD(r_type, where, val);
+			break;
+		}
+		case R_TYPE(GPREL32):
+		case R_TYPE(NONE):
+			break;
+		default:
+			/* XXXAR: add a marker NOP to see where it crashed */
+			__asm__ __volatile__("li $zero, 0xabcd");
+			/*
+			* FIXME: this printf may or may not work
+			* TODO: PC-relative calls to local symbols??
+			*/
+			rtld_printf("FATAL: Unknown RELA relocation: type %d, "
+			    "offset %ld addend %ld, info %ld\n", r_type,
+			    rela->r_offset, rela->r_addend, rela->r_info);
+			/* FIXME: This will crash but will it call abort()? */
+			rtld_abort();
+			break;
+		}
+	}
+	rtld_printf("Finished relocating self!\n");
 }
 
 Elf_Addr
