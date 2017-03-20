@@ -47,6 +47,7 @@ local int gz_load(state, buf, len, have)
 
     *have = 0;
     do {
+        /* XXXAR: this ignores the bounds of buf */
         /* XXX CHERI: Need cread() callgate in sandbox */
         ret = read(state->fd, (unsigned char *)buf + *have, len - *have);
         if (ret <= 0)
