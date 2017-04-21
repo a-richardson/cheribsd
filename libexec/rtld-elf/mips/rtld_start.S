@@ -148,10 +148,13 @@ _rtld_bind_start:
 					/* Simple math as you can see.	*/
 #if defined(__mips_n64)
 	ld	a0, 8(a0)		/* object = pltgot[1] */
-	and	a0, a0, 0x7fffffffffffffff
+	# and	a0, 0x7fffffffffffffff
+	# LLVM: error: expected 32-bit signed immediate
+	# XXXAR: is this what this code is trying to do??
+	abs a0, a0
 #else
 	lw	a0, 4(a0)		/* object = pltgot[1] & 0x7fffffff */
-	and	a0, a0, 0x7fffffff
+	and	a0, 0x7fffffff
 #endif
 	move	a1, t8			/* symbol index */
 

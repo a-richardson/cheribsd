@@ -8,6 +8,7 @@ LDFLAGS+=	-Wl,--script=${.CURDIR}/../../libc_cheri/sandbox.ld \
 		-nostdlib
 
 LIBADD=	c_cheri
+NO_PIC=	yes
 
 NEED_CHERI=sandbox
 WANT_DUMP=yes

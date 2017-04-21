@@ -9,6 +9,7 @@
 PACKAGE=lib${LIB}
 MK_PROFILE=	no
 MK_SSP=		no
+WANT_CHERI=	none
 
 .include <src.opts.mk>
 

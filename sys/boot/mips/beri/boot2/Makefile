@@ -53,10 +53,16 @@ CFLAGS=		-ffreestanding			\
 		-I${.CURDIR}/../../../..	\
 		-D_KERNEL			\
 		-Wall				\
-		-G0 -Xassembler -G0		\
+		-G0				\
 		-fno-pic -mno-abicalls		\
 		-msoft-float			\
 		-g
+
+.if "${COMPILER_TYPE}" != "clang"
+# clang-5.0: error: unsupported argument '-G0' to option 'Xassembler'
+CFLAGS+=	-Xassembler -G0
+.endif
+
 
 # where to get libstand from
 CFLAGS+=	-I${.CURDIR}/../../../../../lib/libstand/

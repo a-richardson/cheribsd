@@ -166,6 +166,16 @@ ${PROGNAME}.dump: ${PROG_FULL}
 	${OBJDUMP} ${OBJDUMP_FLAGS} ${PROG_FULL} > ${.TARGET}
 .endif
 
+.if defined(GENERATE_COMPILATION_JSON)
+CFLAGS+=-MJ ${.TARGET}.commands.json
+COMMANDS_JSON=${OBJS:.o=.o.commands.json}
+CLEANFILES+=${COMMANDS_JSON}
+${PROGNAME}.commands.json: ${PROG_FULL} ${COMMANDS_JSON}
+	echo "[" > ${.TARGET}
+	cat ${COMMANDS_JSON} >> ${.TARGET}
+	echo "]" >> ${.TARGET}
+.endif
+
 .if defined(LLVM_LINK)
 # LLVM bitcode / textual IR representations of the program
 BCOBJS=	${OBJS:.o=.bco}

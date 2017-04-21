@@ -2,6 +2,7 @@
 
 LIB=		vuln_png
 LIBADD=		z
+NO_PIC=		yes
 
 .if ${MK_DEMO_VULNERABILITIES} != "no"
 CFLAGS+=	-DCTSRD_BACKDOOR

@@ -9,6 +9,7 @@ CONTRDIR=	${.CURDIR}/../../../contrib/file
 LIB=	vuln_magic
 SHLIB_MAJOR=	4
 LIBADD=	z
+NO_PIC=		yes
 
 SRCS=	apprentice.c apptype.c ascmagic.c cdf.c cdf_time.c compress.c \
 	der.c encoding.c fsmagic.c funcs.c \

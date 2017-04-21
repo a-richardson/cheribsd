@@ -29,6 +29,15 @@
 #
 
 .if !${.TARGETS:Mbuild-tools} && !defined(BOOTSTRAPPING)
+
+# clang 4.0 supports non-pic code generation for mips
+.if (${COMPILER_TYPE} == "clang" && ${COMPILER_VERSION} >= 40000)
+# -fno-pic is probably broken (also the crti.o / crtn.o files won't work)
+CFLAGS+=-fpic -fcolor-diagnostics
+# LDFLAGS+=-Wl,-error-limit=100 -Wl,-color-diagnostics
+.endif
+
+
 .if defined(NEED_CHERI)
 .if ${MK_CHERI} == "no"
 .error NEED_CHERI defined, but CHERI is not enabled
@@ -52,10 +61,17 @@ WANT_CHERI=	none
 .endif
 
 _CHERI_CC=	${CHERI_CC} -g -integrated-as --target=cheri-unknown-freebsd \
-		-msoft-float
+		-msoft-float -fcolor-diagnostics
 .if defined(SYSROOT)
 _CHERI_CC+=	--sysroot=${SYSROOT}
 .endif
+
+#STATIC_CFLAGS+= -fno-pic
+#.if defined(NO_PIC) || (defined(NO_SHARED) && ${NO_SHARED:tl} != "no")
+#CFLAGS+= -fno-pic
+#.endif
+CFLAGS+=-DPIC
+
 
 .if ${WANT_CHERI} == "pure" || ${WANT_CHERI} == "sandbox"
 OBJCOPY:=	objcopy

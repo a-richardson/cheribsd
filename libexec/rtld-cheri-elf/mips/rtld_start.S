@@ -171,7 +171,11 @@ _rtld_bind_start:
 					/* .got = $gp - 0x7ff0		*/
 					/* Simple math as you can see.	*/
 	ld	a0, 8(a0)		/* object = pltgot[1] */
-	and	a0, a0, 0x7fffffffffffffff
+	# LLVM: error: expected 32-bit signed immediate
+	#and	a0, 0x7fffffffffffffff
+	# XXXAR: is this what this code is trying to do??
+	abs a0, a0
+
 	cgetdefault	$c3
 	csetoffset	$c3, $c3, a0
 	move	a0, t8			/* symbol index */

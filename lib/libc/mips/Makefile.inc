@@ -5,5 +5,8 @@
 CFLAGS+=-DSOFTFLOAT
 .endif
 
+# -fno-pic is currently broken so we always need to use the PIC assembly
+CFLAGS+=-DPIC
+
 MDSRCS+= machdep_ldisd.c
 SYM_MAPS+= ${LIBC_SRCTOP}/mips/Symbol.map

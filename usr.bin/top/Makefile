@@ -7,7 +7,7 @@ PROG=	top
 SRCS=	commands.c display.c machine.c screen.c top.c \
 	username.c utils.c version.c
 SRCS+=	sigdesc.h top.local.h
-CFLAGS+= -DHAVE_GETOPT -DHAVE_STRERROR -DORDER
+CFLAGS+= -DHAVE_GETOPT -DHAVE_STRERROR -DORDER -DFreeBSD
 CFLAGS+= -I${.CURDIR} -I${TOPDIR} -I.
 
 WARNS?=	0

@@ -53,6 +53,19 @@ __code_body__ = __vector_base__ + __vector_size__ * 4;
 CAP_ALIGN = 0x20;
 PAGE_ALIGN = 0x1000;
 
+INPUT(AS_NEEDED(crt_invoke.o crt_rtld.o crtbeginC.o crtendC.o))
+
+/* XXXAR: this breaks the build for libhelloworld (does it need crt_init_globals?):
+/home/alr48/cheri/output-postmerge/sdk256/bin/ld: error: /exports/users/alr48/sources/cheribsd-postmerge/lib/csu/cheri/crt_rtld.S:183: undefined symbol 'crt_init_globals'
+/home/alr48/cheri/output-postmerge/sdk256/bin/ld: error: /exports/users/alr48/sources/cheribsd-postmerge/lib/csu/cheri/crt_rtld.S:183: undefined symbol 'crt_init_globals'
+/home/alr48/cheri/output-postmerge/sdk256/bin/ld: error: /exports/users/alr48/sources/cheribsd-postmerge/lib/csu/cheri/crt_rtld.S:183: undefined symbol 'crt_init_globals'
+/home/alr48/cheri/output-postmerge/sdk256/bin/ld: error: /exports/users/alr48/sources/cheribsd-postmerge/lib/csu/cheri/crt_rtld.S:183: undefined symbol 'crt_init_globals'
+/home/alr48/cheri/output-postmerge/sdk256/bin/ld: error: /exports/users/alr48/sources/cheribsd-postmerge/lib/csu/cheri/crt_rtld.S:195: undefined symbol 'crt_call_constructors'
+/home/alr48/cheri/output-postmerge/sdk256/bin/ld: error: /exports/users/alr48/sources/cheribsd-postmerge/lib/csu/cheri/crt_rtld.S:195: undefined symbol 'crt_call_constructors'
+/home/alr48/cheri/output-postmerge/sdk256/bin/ld: error: /exports/users/alr48/sources/cheribsd-postmerge/lib/csu/cheri/crt_rtld.S:195: undefined symbol 'crt_call_constructors'
+/home/alr48/cheri/output-postmerge/sdk256/bin/ld: error: /exports/users/alr48/sources/cheribsd-postmerge/lib/csu/cheri/crt_rtld.S:195: undefined symbol 'crt_call_constructors'
+INPUT(crt_rtld.o) */
+
 SECTIONS
 {
 	. = __rtld_vector__;
@@ -63,7 +76,7 @@ SECTIONS
 	.text.invoke_vector : {
 		crt_invoke.o(.text .data .bss)
 	}
-	.= __code_body__;
+	. = __code_body__;
 	.init : {
 		KEEP (*(.init))
 	} = 0
