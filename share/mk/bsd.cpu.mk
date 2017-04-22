@@ -305,6 +305,11 @@ MACHINE_CPU = v9 ultrasparc ultrasparc3
 
 .if ${MACHINE_CPUARCH} == "mips"
 CFLAGS += -G0
+# HACK: this pass currently seems to be broken
+CFLAGS += -mllvm -mips-erase-gp-opnd=false
+# TODO: -fuse-ld=lld?
+# TODO: -O0?
+# LDFLAGS+=-z notext
 . if ${MACHINE_ARCH:Mmips*el*} != ""
 ACFLAGS += -EL
 AFLAGS += -EL
