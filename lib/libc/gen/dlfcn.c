@@ -161,7 +161,8 @@ dl_init_phdr_info(void)
 	for (auxp = __elf_aux_vector; auxp->a_type != AT_NULL; auxp++) {
 		switch (auxp->a_type) {
 		case AT_BASE:
-			phdr_info.dlpi_addr = (Elf_Addr)auxp->a_un.a_ptr;
+			/* XXXAR: should I tag Elf_Addr as __memory_address? */
+			phdr_info.dlpi_addr = (Elf_Addr)(vaddr_t)auxp->a_un.a_ptr;
 			break;
 		case AT_EXECPATH:
 			phdr_info.dlpi_name = (const char *)auxp->a_un.a_ptr;
