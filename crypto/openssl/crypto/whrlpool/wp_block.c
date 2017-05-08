@@ -513,7 +513,7 @@ void whirlpool_block(WHIRLPOOL_CTX *ctx, const void *inp, size_t n)
         u64 L0, L1, L2, L3, L4, L5, L6, L7;
 
 # ifdef STRICT_ALIGNMENT
-        if ((size_t)p & 7) {
+        if ((vaddr_t)p & 7) {
             memcpy(S.c, p, 64);
             S.q[0] ^= (K.q[0] = H->q[0]);
             S.q[1] ^= (K.q[1] = H->q[1]);
@@ -757,7 +757,7 @@ void whirlpool_block(WHIRLPOOL_CTX *ctx, const void *inp, size_t n)
         }
 
 # ifdef STRICT_ALIGNMENT
-        if ((size_t)p & 7) {
+        if ((vaddr_t)p & 7) {
             int i;
             for (i = 0; i < 64; i++)
                 H->c[i] ^= S.c[i] ^ p[i];

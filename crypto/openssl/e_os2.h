@@ -322,6 +322,11 @@ extern "C" {
 #  define ossl_ssize_t ssize_t
 # endif
 
+/* XXXAR: openssl is built for bootstrap so vaddr_t might not be defined */
+#if !defined(_VADDR_T_DECLARED) && !defined(__CHERI__)
+typedef unsigned long vaddr_t;
+#endif
+
 #ifdef  __cplusplus
 }
 #endif

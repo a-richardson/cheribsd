@@ -214,7 +214,7 @@ int SHA512_Update(SHA512_CTX *c, const void *_data, size_t len)
 
     if (len >= sizeof(c->u)) {
 # ifndef SHA512_BLOCK_CAN_MANAGE_UNALIGNED_DATA
-        if ((size_t)data % sizeof(c->u.d[0]) != 0)
+        if ((vaddr_t)data % sizeof(c->u.d[0]) != 0)
             while (len >= sizeof(c->u))
                 memcpy(p, data, sizeof(c->u)),
                     sha512_block_data_order(c, p, 1),
@@ -239,7 +239,7 @@ int SHA384_Update(SHA512_CTX *c, const void *data, size_t len)
 void SHA512_Transform(SHA512_CTX *c, const unsigned char *data)
 {
 # ifndef SHA512_BLOCK_CAN_MANAGE_UNALIGNED_DATA
-    if ((size_t)data % sizeof(c->u.d[0]) != 0)
+    if ((vaddr_t)data % sizeof(c->u.d[0]) != 0)
         memcpy(c->u.p, data, sizeof(c->u.p)), data = c->u.p;
 # endif
     sha512_block_data_order(c, data, 1);
