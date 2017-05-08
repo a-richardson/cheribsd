@@ -69,7 +69,7 @@ static int			total_threads;
 LIST_HEAD(thread_hash_head, pthread);
 #define HASH_QUEUES	128
 static struct thread_hash_head	thr_hashtable[HASH_QUEUES];
-#define	THREAD_HASH(thrd)	(((unsigned long)thrd >> 8) % HASH_QUEUES)
+#define	THREAD_HASH(thrd)	(((vaddr_t)thrd >> 8) % HASH_QUEUES)
 
 static void thr_destroy(struct pthread *curthread, struct pthread *thread);
 

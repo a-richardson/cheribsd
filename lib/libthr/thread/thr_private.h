@@ -73,6 +73,11 @@ __NULLABILITY_PRAGMA_PUSH
 #include "thr_umtx.h"
 #include "thread_db.h"
 
+/* XXXAR: libthr is built for bootstrap so vaddr_t might not be defined */
+#if !defined(_VADDR_T_DECLARED) && !defined(__CHERI__)
+typedef size_t vaddr_t;
+#endif
+
 #ifdef _PTHREAD_FORCED_UNWIND
 #define _BSD_SOURCE
 #include <unwind.h>
