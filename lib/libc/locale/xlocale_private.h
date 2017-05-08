@@ -40,6 +40,11 @@
 #include <machine/atomic.h>
 #include "setlocale.h"
 
+/* XXXAR: xlocale is built for bootstrap so vaddr_t might not be defined */
+#if !defined(_VADDR_T_DECLARED) && !defined(__CHERI__)
+typedef size_t vaddr_t;
+#endif
+
 enum {
 	XLC_COLLATE = 0,
 	XLC_CTYPE,
@@ -220,7 +225,7 @@ locale_t __get_locale(void);
  */
 static inline locale_t get_real_locale(locale_t locale)
 {
-	switch ((size_t)locale) {
+	switch ((vaddr_t)locale) {
 		case 0: return (&__xlocale_C_locale);
 		case -1: return (&__xlocale_global_locale);
 		default: return (locale);
