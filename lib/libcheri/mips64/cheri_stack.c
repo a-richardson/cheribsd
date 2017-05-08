@@ -122,7 +122,7 @@ cheri_stack_unwind(ucontext_t *uap, register_t ret, u_int op,
 	stack_frames = (cs.cs_tsize - cs.cs_tsp) / CHERI_FRAME_SIZE;
 	if (op == CHERI_STACK_UNWIND_OP_ALL)
 		num_frames = stack_frames;
-	if ((num_frames < 0) || (stack_frames < num_frames)) {
+	if ((num_frames <= 0) || (stack_frames < num_frames)) {
 		errno = ERANGE;
 		return (-1);
 	}
