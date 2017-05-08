@@ -59,6 +59,8 @@ trap "rm $sysaue $sysdcl $syscompat $syscompatdcl $syscompat4 $syscompat4dcl $sy
 
 touch $sysaue $sysdcl $syscompat $syscompatdcl $syscompat4 $syscompat4dcl $syscompat6 $syscompat6dcl $syscompat7 $syscompat7dcl $syscompat10 $syscompat10dcl $sysent $sysinc $sysarg $sysprotoend $systracetmp $systraceret $sysstubfwd $sysstubstubs
 
+# TODO: fix casting for cheriabi???
+
 case $# in
     0)	echo "usage: $0 input-file <config-file>" 1>&2
 	exit 1
@@ -939,10 +941,11 @@ sed -e '
 					comma = ""
 				else
 					comma = ", "
-				if (isptrtype(argtype[i]) && !(argtype[i] ~ /caddr_t/)) {
+				if (isptrtype(argtype[i]) && !(argtype[i] ~ /caddr_t/) && !(argtype[i] ~ /intptr_t/)) {
 					a_type = argtype[i]
 					sub(/_c /, "", a_type)
-					cast = "(" a_type ")"
+					# THIS IS NOT CORRECT, only works for cheriabi!
+					cast = "(__cheri_cast " a_type ")"
 				} else
 					cast = ""
 				printf("%s%s%s", comma, cast,
