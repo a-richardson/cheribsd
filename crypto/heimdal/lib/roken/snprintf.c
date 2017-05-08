@@ -498,8 +498,14 @@ xyzprintf (struct snprintf_state *state, const char *char_format, va_list ap)
 		break;
 	    }
 	    case 'p' : {
+		/*
+		 * XXXAR: This is built during bootstrap phase so we can't use
+		 * vaddr_t unconditionally
+		 */
+#if !defined(_VADDR_T_DECLARED) && !defined(__CHERI__)
+		typedef u_longest vaddr_t;
+#endif
 		u_longest arg = (vaddr_t)va_arg(ap, void*);
-
 		len += append_number (state, arg, 0x10, "0123456789ABCDEF",
 				      width, prec, flags, 0);
 		break;
