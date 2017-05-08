@@ -50,6 +50,10 @@ typedef __uintcap_t big_primitive_type;
 typedef long big_primitive_type;
 #endif
 
+#if !__has_builtin(assume_aligned)
+#define __builtin_assume_aligned(a, align) (void*)(a)
+#endif
+
 #ifdef I_AM_HEAPSORT_B
 #include "block_abi.h"
 #define COMPAR(x, y) CALL_BLOCK(compar, x, y)
@@ -79,8 +83,10 @@ typedef DECLARE_BLOCK(int, heapsort_block, const void *, const void *);
 		size_t count = (size) / sizeof(big_primitive_type); \
 		big_primitive_type tmp; \
 		big_primitive_type *ap, *bp; \
-		ap = (big_primitive_type *)(a); \
-		bp = (big_primitive_type *)(b); \
+		ap = (big_primitive_type *)__builtin_assume_aligned(a, \
+		    sizeof(big_primitive_type)); \
+		bp = (big_primitive_type *)__builtin_assume_aligned(b, \
+sizeof(big_primitive_type)); \
 		do { \
 			tmp = *ap; \
 			*ap++ = *bp; \
@@ -102,8 +108,10 @@ typedef DECLARE_BLOCK(int, heapsort_block, const void *, const void *);
 	if ((size) % sizeof(big_primitive_type) == 0 && \
 	    (vaddr_t)(a) % sizeof(big_primitive_type) == 0) { \
 		size_t count = size / sizeof(big_primitive_type); \
-		big_primitive_type *tmp1 = (big_primitive_type *)(a); \
-		big_primitive_type *tmp2 = (big_primitive_type *)(b); \
+		big_primitive_type *tmp1 = (big_primitive_type *) \
+		   __builtin_assume_aligned(a, sizeof(big_primitive_type)); \
+		big_primitive_type *tmp2 = (big_primitive_type *) \
+		    __builtin_assume_aligned(b, sizeof(big_primitive_type)); \
 		do { \
 			*tmp1++ = *tmp2++; \
 		} while (--count); \
