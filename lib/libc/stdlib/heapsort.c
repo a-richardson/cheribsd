@@ -40,6 +40,7 @@ __FBSDID("$FreeBSD$");
 
 #include <errno.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -74,7 +75,7 @@ typedef DECLARE_BLOCK(int, heapsort_block, const void *, const void *);
  */
 #define	SWAP(a, b, size) { \
 	if ((size) % sizeof(big_primitive_type) == 0 && \
-	    (size_t)(a) % sizeof(big_primitive_type) == 0) { \
+	    (vaddr_t)(a) % sizeof(big_primitive_type) == 0) { \
 		size_t count = (size) / sizeof(big_primitive_type); \
 		big_primitive_type tmp; \
 		big_primitive_type *ap, *bp; \
@@ -99,7 +100,7 @@ typedef DECLARE_BLOCK(int, heapsort_block, const void *, const void *);
 /* Copy one block of size size to another. */
 #define COPY(a, b, size) { \
 	if ((size) % sizeof(big_primitive_type) == 0 && \
-	    (size_t)(a) % sizeof(big_primitive_type) == 0) { \
+	    (vaddr_t)(a) % sizeof(big_primitive_type) == 0) { \
 		size_t count = size / sizeof(big_primitive_type); \
 		big_primitive_type *tmp1 = (big_primitive_type *)(a); \
 		big_primitive_type *tmp2 = (big_primitive_type *)(b); \
