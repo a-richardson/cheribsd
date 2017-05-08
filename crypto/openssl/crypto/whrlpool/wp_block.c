@@ -37,6 +37,7 @@
 
 #include "wp_locl.h"
 #include <string.h>
+#include <stdint.h>
 
 typedef unsigned char u8;
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(__MINGW32)
