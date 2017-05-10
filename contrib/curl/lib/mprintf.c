@@ -839,7 +839,7 @@ static int dprintf_formatf(
           base = 16;
           digits = (p->flags & FLAGS_UPPER)? upper_digits : lower_digits;
           is_alt = 1;
-          num = (size_t) ptr;
+          num = (vaddr_t) ptr;
           is_neg = 0;
           goto number;
         }
