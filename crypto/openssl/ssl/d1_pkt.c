@@ -144,7 +144,7 @@ static int satsub64be(const unsigned char *v1, const unsigned char *v2)
              * following test is redundant, because input is always aligned,
              * but I take no chances...
              */
-            if (((size_t)v1 | (size_t)v2) & 0x7)
+            if (((vaddr_t)v1 | (vaddr_t)v2) & (sizeof(long) - 1))
                 break;
 
             l = *((long *)v1);

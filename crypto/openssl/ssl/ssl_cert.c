@@ -139,7 +139,7 @@ int SSL_get_ex_data_X509_STORE_CTX_idx(void)
     static volatile int ssl_x509_store_ctx_idx = -1;
     int got_write_lock = 0;
 
-    if (((size_t)&ssl_x509_store_ctx_idx &
+    if (((vaddr_t)&ssl_x509_store_ctx_idx &
          (sizeof(ssl_x509_store_ctx_idx) - 1))
         == 0) {                 /* check alignment, practically always true */
         int ret;

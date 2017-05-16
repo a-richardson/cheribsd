@@ -640,7 +640,7 @@ static void zero_pad(UINT8 *p, int nbytes)
 {
 /* Write "nbytes" of zeroes, beginning at "p" */
     if (nbytes >= (int)sizeof(UWORD)) {
-        while ((ptrdiff_t)p % sizeof(UWORD)) {
+        while ((vaddr_t)p % sizeof(UWORD)) {
             *p = 0;
             nbytes--;
             p++;
@@ -1220,7 +1220,7 @@ struct umac_ctx *umac_new(const u_char key[])
     if (ctx) {
         if (ALLOC_BOUNDARY) {
             bytes_to_add = ALLOC_BOUNDARY -
-                              ((ptrdiff_t)ctx & (ALLOC_BOUNDARY - 1));
+                              ((vaddr_t)ctx & (ALLOC_BOUNDARY - 1));
             ctx = (struct umac_ctx *)((u_char *)ctx + bytes_to_add);
         }
         ctx->free_ptr = octx;

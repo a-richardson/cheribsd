@@ -74,7 +74,7 @@ void CRYPTO_cbc128_encrypt(const unsigned char *in, unsigned char *out,
 
 #if !defined(OPENSSL_SMALL_FOOTPRINT)
     if (STRICT_ALIGNMENT &&
-        ((size_t)in | (size_t)out | (size_t)ivec) % sizeof(size_t) != 0) {
+        ((vaddr_t)in | (vaddr_t)out | (vaddr_t)ivec) % sizeof(size_t) != 0) {
         while (len >= 16) {
             for (n = 0; n < 16; ++n)
                 out[n] = in[n] ^ iv[n];
@@ -130,7 +130,7 @@ void CRYPTO_cbc128_decrypt(const unsigned char *in, unsigned char *out,
         const unsigned char *iv = ivec;
 
         if (STRICT_ALIGNMENT &&
-            ((size_t)in | (size_t)out | (size_t)ivec) % sizeof(size_t) != 0) {
+            ((vaddr_t)in | (vaddr_t)out | (vaddr_t)ivec) % sizeof(size_t) != 0) {
             while (len >= 16) {
                 (*block) (in, out, key);
                 for (n = 0; n < 16; ++n)
@@ -156,7 +156,7 @@ void CRYPTO_cbc128_decrypt(const unsigned char *in, unsigned char *out,
         memcpy(ivec, iv, 16);
     } else {
         if (STRICT_ALIGNMENT &&
-            ((size_t)in | (size_t)out | (size_t)ivec) % sizeof(size_t) != 0) {
+            ((vaddr_t)in | (vaddr_t)out | (vaddr_t)ivec) % sizeof(size_t) != 0) {
             unsigned char c;
             while (len >= 16) {
                 (*block) (in, tmp.c, key);

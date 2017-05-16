@@ -163,7 +163,7 @@ int ssl3_read_n(SSL *s, int n, int max, int extend)
 
     left = rb->left;
 #if defined(SSL3_ALIGN_PAYLOAD) && SSL3_ALIGN_PAYLOAD!=0
-    align = (long)rb->buf + SSL3_RT_HEADER_LENGTH;
+    align = (vaddr_t)rb->buf + SSL3_RT_HEADER_LENGTH;
     align = (-align) & (SSL3_ALIGN_PAYLOAD - 1);
 #endif
 
@@ -949,7 +949,7 @@ static int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
          * multiple of SSL3_ALIGN_PAYLOAD, so if we want to align the real
          * payload, then we can just pretent we simply have two headers.
          */
-        align = (long)wb->buf + 2 * SSL3_RT_HEADER_LENGTH;
+        align = (vaddr_t)wb->buf + 2 * SSL3_RT_HEADER_LENGTH;
         align = (-align) & (SSL3_ALIGN_PAYLOAD - 1);
 #endif
         p = wb->buf + align;
@@ -958,7 +958,7 @@ static int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
         p = wb->buf + wb->offset + prefix_len;
     } else {
 #if defined(SSL3_ALIGN_PAYLOAD) && SSL3_ALIGN_PAYLOAD!=0
-        align = (long)wb->buf + SSL3_RT_HEADER_LENGTH;
+        align = (vaddr_t)wb->buf + SSL3_RT_HEADER_LENGTH;
         align = (-align) & (SSL3_ALIGN_PAYLOAD - 1);
 #endif
         p = wb->buf + align;

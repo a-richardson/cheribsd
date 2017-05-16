@@ -249,7 +249,7 @@ void ssl3_cbc_copy_mac(unsigned char *out,
     OPENSSL_assert(md_size <= EVP_MAX_MD_SIZE);
 
 #if defined(CBC_MAC_ROTATE_IN_PLACE)
-    rotated_mac = rotated_mac_buf + ((0 - (size_t)rotated_mac_buf) & 63);
+    rotated_mac = rotated_mac_buf + ((0 - (vaddr_t)rotated_mac_buf) & 63);
 #endif
 
     /* This information is public so it's safe to branch based on it. */

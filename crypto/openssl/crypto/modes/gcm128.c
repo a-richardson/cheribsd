@@ -1097,7 +1097,7 @@ int CRYPTO_gcm128_encrypt(GCM128_CONTEXT *ctx,
                 }
             }
 # if defined(STRICT_ALIGNMENT)
-            if (((size_t)in | (size_t)out) % sizeof(size_t) != 0)
+            if (((vaddr_t)in | (vaddr_t)out) % sizeof(size_t) != 0)
                 break;
 # endif
 # if defined(GHASH) && defined(GHASH_CHUNK)

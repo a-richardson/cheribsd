@@ -88,7 +88,7 @@ static void ctr128_inc_aligned(unsigned char *counter)
         1
     };
 
-    if (is_endian.little || ((size_t)counter % sizeof(size_t)) != 0) {
+    if (is_endian.little || ((vaddr_t)counter % sizeof(size_t)) != 0) {
         ctr128_inc(counter);
         return;
     }
@@ -140,7 +140,7 @@ void CRYPTO_ctr128_encrypt(const unsigned char *in, unsigned char *out,
             }
 
 # if defined(STRICT_ALIGNMENT)
-            if (((size_t)in | (size_t)out | (size_t)ecount_buf)
+            if (((vaddr_t)in | (vaddr_t)out | (vaddr_t)ecount_buf)
                 % sizeof(size_t) != 0)
                 break;
 # endif

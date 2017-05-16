@@ -92,7 +92,7 @@ void AES_ige_encrypt(const unsigned char *in, unsigned char *out,
     if (AES_ENCRYPT == enc) {
         if (in != out &&
             (UNALIGNED_MEMOPS_ARE_FAST
-             || ((size_t)in | (size_t)out | (size_t)ivec) % sizeof(long) ==
+             || ((vaddr_t)in | (vaddr_t)out | (vaddr_t)ivec) % sizeof(long) ==
              0)) {
             aes_block_t *ivp = (aes_block_t *) ivec;
             aes_block_t *iv2p = (aes_block_t *) (ivec + AES_BLOCK_SIZE);
@@ -144,7 +144,7 @@ void AES_ige_encrypt(const unsigned char *in, unsigned char *out,
     } else {
         if (in != out &&
             (UNALIGNED_MEMOPS_ARE_FAST
-             || ((size_t)in | (size_t)out | (size_t)ivec) % sizeof(long) ==
+             || ((vaddr_t)in | (vaddr_t)out | (vaddr_t)ivec) % sizeof(long) ==
              0)) {
             aes_block_t *ivp = (aes_block_t *) ivec;
             aes_block_t *iv2p = (aes_block_t *) (ivec + AES_BLOCK_SIZE);
