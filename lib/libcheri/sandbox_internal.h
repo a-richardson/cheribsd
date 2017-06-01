@@ -101,7 +101,7 @@ sandbox_object {
 	void			*sbo_stackmem;
 
 	register_t		 sbo_datalen;
-	register_t		 sbo_heapbase;
+	vaddr_t			 sbo_heapbase;
 	register_t		 sbo_heaplen;
 	register_t		 sbo_stacklen;
 	uint			 sbo_flags;	/* Sandbox flags. */

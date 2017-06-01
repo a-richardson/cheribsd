@@ -444,7 +444,7 @@ files_setservent(void *retval, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata) {
+	switch ((enum constants)(vaddr_t)mdata) {
 	case SETSERVENT:
 		f = va_arg(ap,int);
 		if (st->fp == NULL)
@@ -507,7 +507,7 @@ db_servent(void *retval, void *mdata, va_list ap)
 
 	name = NULL;
 	proto = NULL;
-	how = (enum nss_lookup_type)mdata;
+	how = (enum nss_lookup_type)(vaddr_t)mdata;
 	switch (how) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
@@ -624,7 +624,7 @@ db_setservent(void *retval, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata) {
+	switch ((enum constants)(vaddr_t)mdata) {
 	case SETSERVENT:
 		f = va_arg(ap, int);
 		st->stayopen |= f;
@@ -679,7 +679,7 @@ nis_servent(void *retval, void *mdata, va_list ap)
 
 	name = NULL;
 	proto = NULL;
-	how = (enum nss_lookup_type)mdata;
+	how = (enum nss_lookup_type)(vaddr_t)mdata;
 	switch (how) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
@@ -805,7 +805,7 @@ nis_setservent(void *result, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata) {
+	switch ((enum constants)(vaddr_t)mdata) {
 	case SETSERVENT:
 	case ENDSERVENT:
 		free(st->yp_key);
@@ -841,7 +841,7 @@ compat_setservent(void *retval, void *mdata, va_list ap)
 
 	(void)files_setservent(retval, mdata, ap);
 
-	switch ((enum constants)mdata) {
+	switch ((enum constants)(vaddr_t)mdata) {
 	case SETSERVENT:
 		f = va_arg(ap,int);
 		(void)nsdispatch(retval, compat_dtab, NSDB_SERVICES_COMPAT,
@@ -870,7 +870,7 @@ serv_id_func(char *buffer, size_t *buffer_size, va_list ap, void *cache_mdata)
 	enum nss_lookup_type lookup_type;
 	int res = NS_UNAVAIL;
 
-	lookup_type = (enum nss_lookup_type)cache_mdata;
+	lookup_type = (enum nss_lookup_type)(vaddr_t)cache_mdata;
 	switch (lookup_type) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
@@ -952,7 +952,7 @@ serv_marshal_func(char *buffer, size_t *buffer_size, void *retval, va_list ap,
 	size_t size;
 	size_t aliases_size;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(vaddr_t)cache_mdata) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
 		proto = va_arg(ap, char *);
@@ -1049,7 +1049,7 @@ serv_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
 	size_t orig_buf_size;
 	int *ret_errno;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(vaddr_t)cache_mdata) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
 		proto = va_arg(ap, char *);
@@ -1081,9 +1081,9 @@ serv_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
 
 	orig_buf = (char *)_ALIGN(orig_buf);
 	memcpy(orig_buf, buffer + sizeof(struct servent) + sizeof(char *) +
-	    (_ALIGN(p) - (size_t)p),
+	    (_ALIGN(p) - (vaddr_t)p),
 	    buffer_size - sizeof(struct servent) - sizeof(char *) -
-	    (_ALIGN(p) - (size_t)p));
+	    (_ALIGN(p) - (vaddr_t)p));
 	p = (char *)_ALIGN(p);
 
 	NS_APPLY_OFFSET(serv->s_name, orig_buf, p, char *);

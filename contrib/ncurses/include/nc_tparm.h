@@ -43,7 +43,7 @@
 #ifdef NCURSES_TPARM_ARG
 #define TPARM_ARG NCURSES_TPARM_ARG
 #else
-#define TPARM_ARG long
+#define TPARM_ARG vaddr_t
 #endif
 #endif /* TPARAM_ARG */
 

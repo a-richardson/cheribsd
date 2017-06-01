@@ -63,16 +63,45 @@ __FBSDID("$FreeBSD$");
 #include <libprocstat.h>
 #include "common_kvm.h"
 
-int
-kvm_read_all(kvm_t *kd, unsigned long addr, void *buf, size_t nbytes)
+static inline bool
+kvm_read_all(kvm_t *kd, kvaddr_t addr, void *buf, size_t nbytes)
 {
 	ssize_t error;
 
 	if (nbytes >= SSIZE_MAX)
 		return (0);
-	error = kvm_read(kd, addr, buf, nbytes);
+	error = kvm_read2(kd, addr, buf, nbytes);
 	return (error == (ssize_t)(nbytes));
 }
+
+#ifndef __CHERI_PURE_CAPABILITY__
+bool
+kvm_read_ptr(kvm_t *kd, const void* addr, void *buf, size_t nbytes)
+{
+	return (kvm_read_all(kd, (kvaddr_t)addr, buf, nbytes));
+}
+#endif
+
+#if __has_feature(capabilities)
+#include <cheri/cheric.h>
+bool
+kvm_read_cap(kvm_t *kd, const void* __capability addr, void * __capability buf,
+    size_t nbytes)
+{
+	if (nbytes > cheri_buffer_remaining(addr)) {
+		warnx("%s: attempting to read %zd bytes from a "
+		    "capability of length %zd\n", __func__,
+		    nbytes, (size_t)cheri_buffer_remaining(addr));
+	}
+	if (nbytes > cheri_buffer_remaining(buf)) {
+		warnx("%s: attempting to read %zd bytes into a "
+		    "buffer of length %zd\n", __func__,
+		    nbytes, (size_t)cheri_buffer_remaining(buf));
+		return false;
+	}
+	return (kvm_read_all(kd, (kvaddr_t)addr, buf, nbytes));
+}
+#endif
 
 int
 kdevtoname(kvm_t *kd, struct cdev *dev, char *buf)
@@ -80,7 +109,7 @@ kdevtoname(kvm_t *kd, struct cdev *dev, char *buf)
 	struct cdev si;
 
 	assert(buf);
-	if (!kvm_read_all(kd, (unsigned long)dev, &si, sizeof(si)))
+	if (!kvm_read_ptr(kd, dev, &si, sizeof(si)))
 		return (1);
 	strlcpy(buf, si.si_name, SPECNAMELEN + 1);
 	return (0);
@@ -92,11 +121,11 @@ ufs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 	struct inode inode;
 	struct ufsmount um;
 
-	if (!kvm_read_all(kd, (unsigned long)VTOI(vp), &inode, sizeof(inode))) {
+	if (!kvm_read_all(kd, (kvaddr_t)VTOI(vp), &inode, sizeof(inode))) {
 		warnx("can't read inode at %p", (void *)VTOI(vp));
 		return (1);
 	}
-	if (!kvm_read_all(kd, (unsigned long)inode.i_ump, &um, sizeof(um))) {
+	if (!kvm_read_ptr(kd, inode.i_ump, &um, sizeof(um))) {
 		warnx("can't read ufsmount at %p", (void *)inode.i_ump);
 		return (1);
 	}
@@ -118,13 +147,13 @@ devfs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 	struct devfs_dirent devfs_dirent;
 	struct mount mount;
 
-	if (!kvm_read_all(kd, (unsigned long)getvnodedata(vp), &devfs_dirent,
+	if (!kvm_read_ptr(kd, getvnodedata(vp), &devfs_dirent,
 	    sizeof(devfs_dirent))) {
 		warnx("can't read devfs_dirent at %p",
 		    (void *)vp->v_data);
 		return (1);
 	}
-	if (!kvm_read_all(kd, (unsigned long)getvnodemount(vp), &mount,
+	if (!kvm_read_ptr(kd, getvnodemount(vp), &mount,
 	    sizeof(mount))) {
 		warnx("can't read mount at %p",
 		    (void *)getvnodemount(vp));
@@ -143,8 +172,7 @@ nfs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 	struct nfsnode nfsnode;
 	mode_t mode;
 
-	if (!kvm_read_all(kd, (unsigned long)VTONFS(vp), &nfsnode,
-	    sizeof(nfsnode))) {
+	if (!kvm_read_ptr(kd, VTONFS(vp), &nfsnode, sizeof(nfsnode))) {
 		warnx("can't read nfsnode at %p",
 		    (void *)VTONFS(vp));
 		return (1);
@@ -192,8 +220,7 @@ dev2udev(kvm_t *kd, struct cdev *dev)
 	struct cdev_priv priv;
 
 	assert(kd);
-	if (kvm_read_all(kd, (unsigned long)cdev2priv(dev), &priv,
-	    sizeof(priv))) {
+	if (kvm_read_ptr(kd, cdev2priv(dev), &priv, sizeof(priv))) {
 		return ((dev_t)priv.cdp_inode);
 	} else {
 		warnx("can't convert cdev *%p to a dev_t\n", dev);

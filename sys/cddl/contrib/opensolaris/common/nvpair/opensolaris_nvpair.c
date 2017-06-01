@@ -40,7 +40,11 @@
 #endif
 
 #ifndef	offsetof
-#define	offsetof(s, m)		((size_t)(&(((s *)0)->m)))
+# ifdef __offsetof
+#  define	offsetof(s, m)		__offsetof(s, m)
+# else
+#  define	offsetof(s, m)		((size_t)(&(((s *)0)->m)))
+# endif
 #endif
 #define	skip_whitespace(p)	while ((*(p) == ' ') || (*(p) == '\t')) p++
 
@@ -2843,7 +2847,7 @@ static int
 nvs_xdr_create(nvstream_t *nvs, XDR *xdr, char *buf, size_t buflen)
 {
 	/* xdr data must be 4 byte aligned */
-	if ((ulong_t)buf % 4 != 0)
+	if ((vaddr_t)buf % 4 != 0)
 		return (EFAULT);
 
 	switch (nvs->nvs_op) {

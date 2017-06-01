@@ -93,7 +93,7 @@ _map_v4v6_hostent(struct hostent *hp, char **bpp, char *ep) {
 	hp->h_addrtype = AF_INET6;
 	hp->h_length = IN6ADDRSZ;
 	for (ap = hp->h_addr_list; *ap; ap++) {
-		int i = (u_long)*bpp % sizeof(align);
+		int i = (vaddr_t)*bpp % sizeof(align);
 
 		if (i != 0)
 			i = sizeof(align) - i;

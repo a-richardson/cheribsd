@@ -242,7 +242,7 @@ kread(kvm_t *kvm, void *kvm_pointer, void *address, size_t size,
 {
 	ssize_t ret;
 
-	ret = kvm_read(kvm, (unsigned long)kvm_pointer + offset, address,
+	ret = kvm_read2(kvm, (kvaddr_t)kvm_pointer + offset, address,
 	    size);
 	if (ret < 0)
 		return (MEMSTAT_ERROR_KVM);
@@ -258,7 +258,7 @@ kread_string(kvm_t *kvm, const void *kvm_pointer, char *buffer, int buflen)
 	int i;
 
 	for (i = 0; i < buflen; i++) {
-		ret = kvm_read(kvm, (unsigned long)kvm_pointer + i,
+		ret = kvm_read2(kvm, (kvaddr_t)kvm_pointer + i,
 		    &(buffer[i]), sizeof(char));
 		if (ret < 0)
 			return (MEMSTAT_ERROR_KVM);

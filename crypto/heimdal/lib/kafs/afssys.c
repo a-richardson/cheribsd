@@ -244,9 +244,9 @@ k_pioctl(char *a_path,
 #endif
     case LINUX_PROC_POINT: {
 	struct procdata data = { 0, 0, 0, 0, AFSCALL_PIOCTL };
-	data.param1 = (unsigned long)a_path;
+	data.param1 = (vaddr_t)a_path; /* XXXAR: bounds? */
 	data.param2 = (unsigned long)o_opcode;
-	data.param3 = (unsigned long)a_paramsP;
+	data.param3 = (vaddr_t)a_paramsP; /* XXXAR: bounds? */
 	data.param4 = (unsigned long)a_followSymlinks;
 	return do_ioctl(&data);
     }
@@ -254,9 +254,9 @@ k_pioctl(char *a_path,
 	struct devdata data = { AFSCALL_PIOCTL, 0, 0, 0, 0, 0, 0, 0 };
 	int ret;
 
-	data.param1 = (unsigned long)a_path;
+	data.param1 = (vaddr_t)a_path; /* XXXAR: bounds? */
 	data.param2 = (unsigned long)o_opcode;
-	data.param3 = (unsigned long)a_paramsP;
+	data.param3 = (vaddr_t)a_paramsP; /* XXXAR: bounds? */
 	data.param4 = (unsigned long)a_followSymlinks;
 
 	ret = do_ioctl(&data);

@@ -4676,7 +4676,7 @@ free_tls(void *tcb, size_t tcbsize, size_t tcbalign)
     tlsend = tlsstart + tls_static_space;
 
     dtv = *(void **)tlsstart;
-    dtvsize = (size_t)dtv[1];
+    dtvsize = (vaddr_t)dtv[1];
     for (i = 0; i < dtvsize; i++) {
 	if (dtv[i+2] && (dtv[i+2] < tlsstart || dtv[i+2] >= tlsend)) {
 	    free((void*)dtv[i+2]);

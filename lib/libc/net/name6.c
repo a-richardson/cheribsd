@@ -331,7 +331,7 @@ getipnodebyaddr(const void *src, size_t len, int af, int *errp)
 			*errp = NO_RECOVERY;
 			return NULL;
 		}
-		if (rounddown2((long)src, sizeof(struct in_addr))) {
+		if (rounddown2((vaddr_t)src, sizeof(struct in_addr))) {
 			memcpy(&addrbuf, src, len);
 			src = &addrbuf;
 		}
@@ -344,7 +344,7 @@ getipnodebyaddr(const void *src, size_t len, int af, int *errp)
 			*errp = NO_RECOVERY;
 			return NULL;
 		}
-		if (rounddown2((long)src, sizeof(struct in6_addr) / 2)) {
+		if (rounddown2((vaddr_t)src, sizeof(struct in6_addr) / 2)) {
 			/* XXX */
 			memcpy(&addrbuf, src, len);
 			src = &addrbuf;

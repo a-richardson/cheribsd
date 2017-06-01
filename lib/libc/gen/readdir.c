@@ -74,7 +74,7 @@ _readdir_unlocked(DIR *dirp, int skip)
 		}
 		dirp->dd_flags &= ~__DTF_SKIPREAD;
 		dp = (struct dirent *)(dirp->dd_buf + dirp->dd_loc);
-		if ((long)dp & 03L)	/* bogus pointer check */
+		if ((vaddr_t)dp & 03L)	/* bogus pointer check */
 			return (NULL);
 		if (dp->d_reclen <= 0 ||
 		    dp->d_reclen > dirp->dd_len + 1 - dirp->dd_loc)

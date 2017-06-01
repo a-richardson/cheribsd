@@ -93,7 +93,8 @@ LDFLAGS+=	-fuse-ld=bfd
 LDFLAGS+=	-fuse-ld=lld -Wl,-z,norelro
 .endif
 .else
-STATIC_CFLAGS+= -ftls-model=local-exec # MIPS/hybrid case
+# MIPS/hybrid case
+STATIC_CFLAGS+= -ftls-model=local-exec
 .endif
 
 .if ${MK_CHERI128} == "yes"
@@ -111,6 +112,9 @@ NO_SHARED=	yes
 CC:=	${_CHERI_CC}
 COMPILER_TYPE=	clang
 CFLAGS+=	${_CHERI_CFLAGS}
+# CFLAGS+=	-fcolor-diagnostics -Werror=cheri-capability-misuse -Wno-cast-qual
+# CFLAGS+=	-fcolor-diagnostics -Werror=capability-to-integer-cast -Wno-cast-qual -Wno-sign-compare
+
 # Don't remove CHERI symbols from the symbol table
 STRIP_FLAGS+=	-w --keep-symbol=__cheri_callee_method.\* \
 		--keep-symbol=__cheri_method.\*

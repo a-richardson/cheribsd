@@ -456,8 +456,8 @@ core_read_ps_strings(struct procstat_core *core, vm_offset_t psstrings,
 				return ((vm_offset_t)0);
 			nargstr = pss.ps_nargvstr;
 			nenvstr = pss.ps_nenvstr;
-			argaddr = (vm_offset_t)pss.ps_argvstr;
-			envaddr = (vm_offset_t)pss.ps_envstr;
+			argaddr = (vaddr_t)pss.ps_argvstr;
+			envaddr = (vaddr_t)pss.ps_envstr;
 			*size = sizeof(char *);
 		}
 		break;
@@ -492,7 +492,7 @@ core_image_off(struct procstat_core *core, char **ptr, int i)
 		}
 
 	default:
-		return ((vm_offset_t)ptr[i]);
+		return ((vaddr_t)ptr[i]);
 	}
 }
 

@@ -225,7 +225,7 @@ files_rpcent(void *retval, void *mdata, va_list ap)
 	int stayopen;
 	enum nss_lookup_type how;
 
-	how = (enum nss_lookup_type)mdata;
+	how = (enum nss_lookup_type)(vaddr_t)mdata;
 	switch (how)
 	{
 	case nss_lt_name:
@@ -345,7 +345,7 @@ files_setrpcent(void *retval, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata)
+	switch ((enum constants)(vaddr_t)mdata)
 	{
 	case SETRPCENT:
 		f = va_arg(ap,int);
@@ -405,7 +405,7 @@ nis_rpcent(void *retval, void *mdata, va_list ap)
 	enum nss_lookup_type	how;
 	int	no_name_active;
 
-	how = (enum nss_lookup_type)mdata;
+	how = (enum nss_lookup_type)(vaddr_t)mdata;
 	switch (how)
 	{
 	case nss_lt_name:
@@ -574,7 +574,7 @@ nis_setrpcent(void *retval, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata)
+	switch ((enum constants)(vaddr_t)mdata)
 	{
 	case SETRPCENT:
 	case ENDRPCENT:
@@ -601,7 +601,7 @@ rpc_id_func(char *buffer, size_t *buffer_size, va_list ap, void *cache_mdata)
 	enum nss_lookup_type lookup_type;
 	int res = NS_UNAVAIL;
 
-	lookup_type = (enum nss_lookup_type)cache_mdata;
+	lookup_type = (enum nss_lookup_type)(vaddr_t)cache_mdata;
 	switch (lookup_type) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
@@ -658,7 +658,7 @@ rpc_marshal_func(char *buffer, size_t *buffer_size, void *retval, va_list ap,
 	char *p;
 	char **alias;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(vaddr_t)cache_mdata) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
 		break;
@@ -744,7 +744,7 @@ rpc_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
 	char *p;
 	char **alias;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(vaddr_t)cache_mdata) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
 		break;
@@ -774,9 +774,9 @@ rpc_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
 
 	orig_buf = (char *)_ALIGN(orig_buf);
 	memcpy(orig_buf, buffer + sizeof(struct rpcent) + sizeof(char *) +
-	    _ALIGN(p) - (size_t)p,
+	    _ALIGN(p) - (vaddr_t)p,
 	    buffer_size - sizeof(struct rpcent) - sizeof(char *) -
-	    _ALIGN(p) + (size_t)p);
+	    _ALIGN(p) + (vaddr_t)p);
 	p = (char *)_ALIGN(p);
 
 	NS_APPLY_OFFSET(rpc->r_name, orig_buf, p, char *);

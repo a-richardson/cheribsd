@@ -440,6 +440,8 @@ void CRYPTO_THREADID_set_pointer(CRYPTO_THREADID *id, void *ptr)
 
     memset(id, 0, sizeof(*id));
     id->ptr = ptr;
+#ifndef __CHERI_PURE_CAPABILITY__
+    /* XXXAR: Or should we just store the vaddr as the hash in CHERIABI? */
     if (sizeof(id->val) >= sizeof(id->ptr)) {
         /*
          * 'ptr' can be embedded in 'val' without loss of uniqueness
@@ -447,6 +449,7 @@ void CRYPTO_THREADID_set_pointer(CRYPTO_THREADID *id, void *ptr)
         id->val = (unsigned long)id->ptr;
         return;
     }
+#endif
     /*
      * hash ptr ==> val. Each byte of 'val' gets the mod-256 total of a
      * linear function over the bytes in 'ptr', the co-efficients of which

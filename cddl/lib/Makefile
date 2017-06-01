@@ -18,7 +18,7 @@ SUBDIR=	${_drti} \
 _tests=		tests
 .endif
 
-.if ${MK_ZFS} != "no"
+.if ${MK_ZFS} != "no" && !defined(LIBCHERI)
 _libzfs_core=	libzfs_core
 _libzfs=	libzfs
 .if ${MK_LIBTHR} != "no"

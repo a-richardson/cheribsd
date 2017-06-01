@@ -69,11 +69,11 @@ static int  nlist_init(kvm_t *);
 static int  getsysctl(kvm_t *, const char *, void *, size_t);
 
 #define KREAD(kd, addr, obj) \
-	(kvm_read(kd, addr, (char *)(obj), sizeof(*obj)) != sizeof(*obj))
+	(kvm_read2(kd, addr, (char *)(obj), sizeof(*obj)) != sizeof(*obj))
 #define	KGET(idx, var)							\
 	KGET2(kvm_swap_nl[(idx)].n_value, var, kvm_swap_nl[(idx)].n_name)
 #define KGET2(addr, var, msg)						\
-	if (KREAD(kd, (u_long)(addr), (var))) {				\
+	if (KREAD(kd, (kvaddr_t)(addr), (var))) {			\
 		_kvm_err(kd, kd->program, "cannot read %s", msg);	\
 		return (-1);						\
 	}

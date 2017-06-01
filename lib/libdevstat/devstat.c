@@ -1585,10 +1585,10 @@ bailout:
 }
 
 static int 
-readkmem(kvm_t *kd, unsigned long addr, void *buf, size_t nbytes)
+readkmem(kvm_t *kd, kvaddr_t addr, void *buf, size_t nbytes)
 {
 
-	if (kvm_read(kd, addr, buf, nbytes) == -1) {
+	if (kvm_read2(kd, addr, buf, nbytes) == -1) {
 		snprintf(devstat_errbuf, sizeof(devstat_errbuf),
 			 "%s: error reading value (kvm_read): %s", __func__,
 			 kvm_geterr(kd));
@@ -1650,7 +1650,7 @@ get_devstat_kvm(kvm_t *kd)
 	 */
 	for (i = 0; (nds != NULL) && (i < num_devs);  
 	     nds = STAILQ_NEXT(nds, dev_links), i++) {
-		if (readkmem(kd, (long)nds, &ds, sizeof(ds)) == -1) {
+		if (readkmem(kd, (kvaddr_t)nds, &ds, sizeof(ds)) == -1) {
 			free(rv);
 			return(NULL);
 		}

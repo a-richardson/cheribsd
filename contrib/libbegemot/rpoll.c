@@ -113,6 +113,8 @@ GETUSECS(void) {
 	return (tval_t)tval.tv_sec * 1000000 + tval.tv_usec;
 }
 
+static void _panic(const char* fmt, ...) __printflike(1, 2);
+
 /*
  * Simple fatal exit.
  */
@@ -137,17 +139,14 @@ _xrealloc(void *p, size_t s)
 
 	if(p == NULL) {
 		if((ptr=malloc(s)) == NULL && (s!=0 || (ptr=malloc(1)) == NULL))
-			_panic("out of memory: xrealloc(%lx, %lu)",
-				(unsigned long)p, (unsigned long)s);
+			_panic("out of memory: xrealloc(%p, %zu)", p, s);
 	} else if(s == 0) {
 		free(p);
 		if((ptr=malloc(s)) == NULL && (ptr=malloc(1)) == NULL)
-			_panic("out of memory: xrealloc(%lx, %lu)",
-				(unsigned long)p, (unsigned long)s);
+			_panic("out of memory: xrealloc(%p, %zu)", p, s);
 	} else {
 		if((ptr = realloc(p, s)) == NULL)
-			_panic("out of memory: xrealloc(%lx, %lu)",
-				(unsigned long)p, (unsigned long)s);
+			_panic("out of memory: xrealloc(%p, %zu)", p, s);
 	}
 
 	return ptr;

@@ -229,8 +229,8 @@ __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 	(struct thread *)SX_OWNER((sx)->sx_lock))
 
 #define	sx_xlocked(sx)							\
-	(((sx)->sx_lock & ~(SX_LOCK_FLAGMASK & ~SX_LOCK_SHARED)) ==	\
-	    (uintptr_t)curthread)
+	((vaddr_t)((sx)->sx_lock & ~(SX_LOCK_FLAGMASK & ~SX_LOCK_SHARED)) ==	\
+	    (vaddr_t)curthread)
 
 #define	sx_unlock_(sx, file, line) do {					\
 	if (sx_xlocked(sx))						\

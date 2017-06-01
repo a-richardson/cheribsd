@@ -31,11 +31,12 @@
 
 #ifndef _LOCORE
 #include <machine/param.h>
+#include <sys/_stdint.h>
 
 #if defined(__mips_n64) || defined(__mips_n32) /*  PHYSADDR_64_BIT */
-typedef	uint64_t pt_entry_t;
+typedef	__memory_address uint64_t pt_entry_t;
 #else
-typedef	uint32_t pt_entry_t;
+typedef	__memory_address uint32_t pt_entry_t;
 #endif
 
 typedef	pt_entry_t *pd_entry_t;

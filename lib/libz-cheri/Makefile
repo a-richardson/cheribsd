@@ -72,6 +72,8 @@ test: example minigzip
 
 .include <bsd.lib.mk>
 
+CFLAGS += -Wno-error=capability-to-integer-cast
+
 ## XXX: clang integrated-as doesn't grok .intel_syntax directives yet
 #ACFLAGS.gvmat64.S=	${CLANG_NO_IAS}
 #ACFLAGS+=		${ACFLAGS.${.IMPSRC:T}}

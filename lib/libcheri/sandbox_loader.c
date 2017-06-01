@@ -216,7 +216,7 @@ cheri_system_object_for_instance(struct sandbox_object *sbop)
 	 */
 	codecap = cheri_getpcc();
 	codecap = cheri_setoffset(codecap,
-	    (register_t)CHERI_CLASS_ENTRY(libcheri_system));
+	    (vaddr_t)CHERI_CLASS_ENTRY(libcheri_system));
 	system_object.co_codecap = cheri_seal(codecap, cheri_system_type);
 
 	/*
@@ -372,7 +372,7 @@ sandbox_object_load(struct sandbox_class *sbcp, struct sandbox_object *sbop)
 	 * address is hard to change as it is the address used in static
 	 * linking for sandboxed code.
 	 */
-	assert((register_t)base - (register_t)sbop->sbo_datamem <
+	assert((vaddr_t)base - (vaddr_t)sbop->sbo_datamem <
 	    SANDBOX_BINARY_BASE);
 
 	/*
@@ -390,7 +390,7 @@ sandbox_object_load(struct sandbox_class *sbcp, struct sandbox_object *sbop)
 	/*
 	 * Heap.
 	 */
-	sbop->sbo_heapbase = (register_t)base - (register_t)sbop->sbo_datamem;
+	sbop->sbo_heapbase = (vaddr_t)base - (vaddr_t)sbop->sbo_datamem;
 	if (mmap(base, heaplen, PROT_READ | PROT_WRITE, MAP_ANON | MAP_FIXED,
 	    -1, 0) == MAP_FAILED) {
 		saved_errno = errno;

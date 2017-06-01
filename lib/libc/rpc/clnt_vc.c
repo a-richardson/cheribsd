@@ -177,7 +177,7 @@ clnt_vc_create(int fd, const struct netbuf *raddr, const rpcprog_t prog,
 	struct __rpc_sockinfo si;
 
 	if (disrupt == 0)
-		disrupt = (u_int32_t)(long)raddr;
+		disrupt = (u_int32_t)(vaddr_t)raddr;
 
 	cl = (CLIENT *)mem_alloc(sizeof (*cl));
 	ct = (struct ct_data *)mem_alloc(sizeof (*ct));

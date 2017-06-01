@@ -366,7 +366,8 @@ gethostanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 				bp += nn;
 			}
 
-			bp += sizeof(align) - ((u_long)bp % sizeof(align));
+			/* XXXAR: Do we have a macro to align up */
+			bp += sizeof(align) - ((vaddr_t)bp % sizeof(align));
 
 			if (bp + n >= ep) {
 				dbg_printf("size (%d) too big\n", n, statp);

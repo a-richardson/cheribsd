@@ -93,7 +93,11 @@
 #endif
 
 #ifndef offsetof
-#define offsetof(s, e) ((size_t)&((s *)0)->e)
+#  ifdef __offsetof
+#    define offsetof(s, e) __offsetof(s, e)
+#  else
+#    define offsetof(s, e) ((size_t)&((s *)0)->e)
+#  endif
 #endif
 
 #ifdef INET6

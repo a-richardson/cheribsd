@@ -84,12 +84,12 @@ udf_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 
 	assert(kd);
 	assert(vn);
-	error = kvm_read_all(kd, (unsigned long)VTON(vp), &node, sizeof(node));
+	error = kvm_read_ptr(kd, VTON(vp), &node, sizeof(node));
 	if (error != 0) {
 		warnx("can't read udf fnode at %p", (void *)VTON(vp));
 		return (1);
 	}
-        error = kvm_read_all(kd, (unsigned long)node.udfmp, &mnt, sizeof(mnt));
+        error = kvm_read_ptr(kd, node.udfmp, &mnt, sizeof(mnt));
         if (error != 0) {
                 warnx("can't read udf_mnt at %p for vnode %p",
                     (void *)node.udfmp, vp);

@@ -249,6 +249,7 @@ struct cap_rights;
 typedef	struct cap_rights	cap_rights_t;
 #endif
 
+/* XXXAR: Should we tag this with __memory_address? */
 typedef	__vm_offset_t	vm_offset_t;
 typedef	__int64_t	vm_ooffset_t;
 typedef	__vm_paddr_t	vm_paddr_t;

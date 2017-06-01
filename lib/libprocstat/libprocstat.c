@@ -415,7 +415,7 @@ getctty(kvm_t *kd, struct kinfo_proc *kp)
 	int error;
                         
 	assert(kp);
-	error = kvm_read_all(kd, (unsigned long)kp->ki_paddr, &proc,
+	error = kvm_read_ptr(kd, kp->ki_paddr, &proc,
 	    sizeof(proc));
 	if (error == 0) {
 		warnx("can't read proc struct at %p for pid %d",
@@ -424,14 +424,14 @@ getctty(kvm_t *kd, struct kinfo_proc *kp)
 	}
 	if (proc.p_pgrp == NULL)
 		return (NULL);
-	error = kvm_read_all(kd, (unsigned long)proc.p_pgrp, &pgrp,
+	error = kvm_read_ptr(kd, proc.p_pgrp, &pgrp,
 	    sizeof(pgrp));
 	if (error == 0) {
 		warnx("can't read pgrp struct at %p for pid %d",
 		    proc.p_pgrp, kp->ki_pid);
 		return (NULL);
 	}
-	error = kvm_read_all(kd, (unsigned long)pgrp.pg_session, &sess,
+	error = kvm_read_ptr(kd, pgrp.pg_session, &sess,
 	    sizeof(sess));
 	if (error == 0) {
 		warnx("can't read session struct at %p for pid %d",
@@ -468,8 +468,7 @@ procstat_getfiles_kvm(struct procstat *procstat, struct kinfo_proc *kp, int mmap
 		return (NULL);
 	if (kp->ki_fd == NULL)
 		return (NULL);
-	if (!kvm_read_all(kd, (unsigned long)kp->ki_fd, &filed,
-	    sizeof(filed))) {
+	if (!kvm_read_ptr(kd, kp->ki_fd, &filed, sizeof(filed))) {
 		warnx("can't read filedesc at %p", (void *)kp->ki_fd);
 		return (NULL);
 	}
@@ -533,7 +532,7 @@ procstat_getfiles_kvm(struct procstat *procstat, struct kinfo_proc *kp, int mmap
 		warn("malloc(%zu)", nfiles * sizeof(struct file *));
 		goto do_mmapped;
 	}
-	if (!kvm_read_all(kd, (unsigned long)filed.fd_ofiles, ofiles,
+	if (!kvm_read_ptr(kd, filed.fd_ofiles, ofiles,
 	    nfiles * sizeof(struct file *))) {
 		warnx("cannot read file structures at %p",
 		    (void *)filed.fd_ofiles);
@@ -543,7 +542,7 @@ procstat_getfiles_kvm(struct procstat *procstat, struct kinfo_proc *kp, int mmap
 	for (i = 0; i <= filed.fd_lastfile; i++) {
 		if (ofiles[i] == NULL)
 			continue;
-		if (!kvm_read_all(kd, (unsigned long)ofiles[i], &file,
+		if (!kvm_read_ptr(kd, ofiles[i], &file,
 		    sizeof(struct file))) {
 			warnx("can't read file %d at %p", i,
 			    (void *)ofiles[i]);
@@ -597,7 +596,7 @@ do_mmapped:
 	 * Process mmapped files if requested.
 	 */
 	if (mmapped) {
-		if (!kvm_read_all(kd, (unsigned long)kp->ki_vmspace, &vmspace,
+		if (!kvm_read_ptr(kd, kp->ki_vmspace, &vmspace,
 		    sizeof(vmspace))) {
 			warnx("can't read vmspace at %p",
 			    (void *)kp->ki_vmspace);
@@ -608,7 +607,7 @@ do_mmapped:
 		for (entryp = map->header.next;
 		    entryp != &kp->ki_vmspace->vm_map.header;
 		    entryp = vmentry.next) {
-			if (!kvm_read_all(kd, (unsigned long)entryp, &vmentry,
+			if (!kvm_read_ptr(kd, entryp, &vmentry,
 			    sizeof(vmentry))) {
 				warnx("can't read vm_map_entry at %p",
 				    (void *)entryp);
@@ -619,7 +618,7 @@ do_mmapped:
 			if ((objp = vmentry.object.vm_object) == NULL)
 				continue;
 			for (; objp; objp = object.backing_object) {
-				if (!kvm_read_all(kd, (unsigned long)objp,
+				if (!kvm_read_ptr(kd, objp,
 				    &object, sizeof(object))) {
 					warnx("can't read vm_object at %p",
 					    (void *)objp);
@@ -932,7 +931,7 @@ procstat_get_pipe_info_kvm(kvm_t *kd, struct filestat *fst,
 	pipep = fst->fs_typedep;
 	if (pipep == NULL)
 		goto fail;
-	if (!kvm_read_all(kd, (unsigned long)pipep, &pi, sizeof(struct pipe))) {
+	if (!kvm_read_ptr(kd, pipep, &pi, sizeof(struct pipe))) {
 		warnx("can't read pipe at %p", (void *)pipep);
 		goto fail;
 	}
@@ -999,7 +998,7 @@ procstat_get_pts_info_kvm(kvm_t *kd, struct filestat *fst,
 	ttyp = fst->fs_typedep;
 	if (ttyp == NULL)
 		goto fail;
-	if (!kvm_read_all(kd, (unsigned long)ttyp, &tty, sizeof(struct tty))) {
+	if (!kvm_read_ptr(kd, ttyp, &tty, sizeof(struct tty))) {
 		warnx("can't read tty at %p", (void *)ttyp);
 		goto fail;
 	}
@@ -1066,8 +1065,7 @@ procstat_get_sem_info_kvm(kvm_t *kd, struct filestat *fst,
 	ksemp = fst->fs_typedep;
 	if (ksemp == NULL)
 		goto fail;
-	if (!kvm_read_all(kd, (unsigned long)ksemp, &ksem,
-	    sizeof(struct ksem))) {
+	if (!kvm_read_ptr(kd, ksemp, &ksem, sizeof(struct ksem))) {
 		warnx("can't read ksem at %p", (void *)ksemp);
 		goto fail;
 	}
@@ -1076,8 +1074,7 @@ procstat_get_sem_info_kvm(kvm_t *kd, struct filestat *fst,
 	if (fst->fs_path == NULL && ksem.ks_path != NULL) {
 		path = malloc(MAXPATHLEN);
 		for (i = 0; i < MAXPATHLEN - 1; i++) {
-			if (!kvm_read_all(kd, (unsigned long)ksem.ks_path + i,
-			    path + i, 1))
+			if (!kvm_read_ptr(kd, ksem.ks_path + i, path + i, 1))
 				break;
 			if (path[i] == '\0')
 				break;
@@ -1149,8 +1146,7 @@ procstat_get_shm_info_kvm(kvm_t *kd, struct filestat *fst,
 	shmfdp = fst->fs_typedep;
 	if (shmfdp == NULL)
 		goto fail;
-	if (!kvm_read_all(kd, (unsigned long)shmfdp, &shmfd,
-	    sizeof(struct shmfd))) {
+	if (!kvm_read_ptr(kd, shmfdp, &shmfd, sizeof(struct shmfd))) {
 		warnx("can't read shmfd at %p", (void *)shmfdp);
 		goto fail;
 	}
@@ -1159,8 +1155,7 @@ procstat_get_shm_info_kvm(kvm_t *kd, struct filestat *fst,
 	if (fst->fs_path == NULL && shmfd.shm_path != NULL) {
 		path = malloc(MAXPATHLEN);
 		for (i = 0; i < MAXPATHLEN - 1; i++) {
-			if (!kvm_read_all(kd, (unsigned long)shmfd.shm_path + i,
-			    path + i, 1))
+			if (!kvm_read_ptr(kd, shmfd.shm_path + i, path + i, 1))
 				break;
 			if (path[i] == '\0')
 				break;
@@ -1251,7 +1246,7 @@ procstat_get_vnode_info_kvm(kvm_t *kd, struct filestat *fst,
 	vp = fst->fs_typedep;
 	if (vp == NULL)
 		goto fail;
-	error = kvm_read_all(kd, (unsigned long)vp, &vnode, sizeof(vnode));
+	error = kvm_read_ptr(kd, vp, &vnode, sizeof(vnode));
 	if (error == 0) {
 		warnx("can't read vnode at %p", (void *)vp);
 		goto fail;
@@ -1260,8 +1255,7 @@ procstat_get_vnode_info_kvm(kvm_t *kd, struct filestat *fst,
 	vn->vn_type = vntype2psfsttype(vnode.v_type);
 	if (vnode.v_type == VNON || vnode.v_type == VBAD)
 		return (0);
-	error = kvm_read_all(kd, (unsigned long)vnode.v_tag, tagstr,
-	    sizeof(tagstr));
+	error = kvm_read_ptr(kd, vnode.v_tag, tagstr, sizeof(tagstr));
 	if (error == 0) {
 		warnx("can't read v_tag at %p", (void *)vp);
 		goto fail;
@@ -1447,26 +1441,24 @@ procstat_get_socket_info_kvm(kvm_t *kd, struct filestat *fst,
 		goto fail;
 	sock->so_addr = (uintptr_t)so;
 	/* fill in socket */
-	if (!kvm_read_all(kd, (unsigned long)so, &s,
-	    sizeof(struct socket))) {
+	if (!kvm_read_ptr(kd, so, &s, sizeof(struct socket))) {
 		warnx("can't read sock at %p", (void *)so);
 		goto fail;
 	}
 	/* fill in protosw entry */
-	if (!kvm_read_all(kd, (unsigned long)s.so_proto, &proto,
-	    sizeof(struct protosw))) {
+	if (!kvm_read_ptr(kd, s.so_proto, &proto, sizeof(struct protosw))) {
 		warnx("can't read protosw at %p", (void *)s.so_proto);
 		goto fail;
 	}
 	/* fill in domain */
-	if (!kvm_read_all(kd, (unsigned long)proto.pr_domain, &dom,
-	    sizeof(struct domain))) {
+	if (!kvm_read_ptr(kd, proto.pr_domain, &dom, sizeof(struct domain))) {
 		warnx("can't read domain at %p",
 		    (void *)proto.pr_domain);
 		goto fail;
 	}
-	if ((len = kvm_read(kd, (unsigned long)dom.dom_name, sock->dname,
-	    sizeof(sock->dname) - 1)) < 0) {
+	len = kvm_read2(kd, (kvaddr_t)dom.dom_name, sock->dname,
+	    sizeof(sock->dname) - 1);
+	if (len < 0) {
 		warnx("can't read domain name at %p", (void *)dom.dom_name);
 		sock->dname[0] = '\0';
 	}
@@ -1489,9 +1481,8 @@ procstat_get_socket_info_kvm(kvm_t *kd, struct filestat *fst,
 	case AF_INET6:
 		if (proto.pr_protocol == IPPROTO_TCP) {
 			if (s.so_pcb) {
-				if (kvm_read(kd, (u_long)s.so_pcb,
-				    (char *)&inpcb, sizeof(struct inpcb))
-				    != sizeof(struct inpcb)) {
+				if (!kvm_read_ptr(kd, s.so_pcb, (char *)&inpcb,
+				    sizeof(struct inpcb))) {
 					warnx("can't read inpcb at %p",
 					    (void *)s.so_pcb);
 				} else
@@ -1502,8 +1493,8 @@ procstat_get_socket_info_kvm(kvm_t *kd, struct filestat *fst,
 		break;
 	case AF_UNIX:
 		if (s.so_pcb) {
-			if (kvm_read(kd, (u_long)s.so_pcb, (char *)&unpcb,
-			    sizeof(struct unpcb)) != sizeof(struct unpcb)){
+			if (!kvm_read_ptr(kd, s.so_pcb, (char *)&unpcb,
+			    sizeof(struct unpcb))){
 				warnx("can't read unpcb at %p",
 				    (void *)s.so_pcb);
 			} else if (unpcb.unp_conn) {
@@ -1656,7 +1647,7 @@ getmnton(kvm_t *kd, struct mount *m)
 	for (mt = mhead; mt != NULL; mt = mt->next)
 		if (m == mt->m)
 			return (mt->mntonname);
-	if (!kvm_read_all(kd, (unsigned long)m, &mnt, sizeof(struct mount))) {
+	if (!kvm_read_ptr(kd, m, &mnt, sizeof(struct mount))) {
 		warnx("can't read mount table at %p", (void *)m);
 		return (NULL);
 	}
@@ -1939,16 +1930,14 @@ procstat_getgroups_kvm(kvm_t *kd, struct kinfo_proc *kp, unsigned int *cntp)
 
 	assert(kd != NULL);
 	assert(kp != NULL);
-	if (!kvm_read_all(kd, (unsigned long)kp->ki_paddr, &proc,
-	    sizeof(proc))) {
+	if (!kvm_read_ptr(kd, kp->ki_paddr, &proc, sizeof(proc))) {
 		warnx("can't read proc struct at %p for pid %d",
 		    kp->ki_paddr, kp->ki_pid);
 		return (NULL);
 	}
 	if (proc.p_ucred == NOCRED)
 		return (NULL);
-	if (!kvm_read_all(kd, (unsigned long)proc.p_ucred, &ucred,
-	    sizeof(ucred))) {
+	if (!kvm_read_ptr(kd, proc.p_ucred, &ucred, sizeof(ucred))) {
 		warnx("can't read ucred struct at %p for pid %d",
 		    proc.p_ucred, kp->ki_pid);
 		return (NULL);
@@ -1959,7 +1948,7 @@ procstat_getgroups_kvm(kvm_t *kd, struct kinfo_proc *kp, unsigned int *cntp)
 		warn("malloc(%zu)", len);
 		return (NULL);
 	}
-	if (!kvm_read_all(kd, (unsigned long)ucred.cr_groups, groups, len)) {
+	if (!kvm_read_ptr(kd, ucred.cr_groups, groups, len)) {
 		warnx("can't read groups at %p for pid %d",
 		    ucred.cr_groups, kp->ki_pid);
 		free(groups);
@@ -2041,7 +2030,7 @@ procstat_getumask_kvm(kvm_t *kd, struct kinfo_proc *kp, unsigned short *maskp)
 	assert(kp != NULL);
 	if (kp->ki_fd == NULL)
 		return (-1);
-	if (!kvm_read_all(kd, (unsigned long)kp->ki_fd, &fd, sizeof(fd))) {
+	if (!kvm_read_ptr(kd, kp->ki_fd, &fd, sizeof(fd))) {
 		warnx("can't read filedesc at %p for pid %d", kp->ki_fd,
 		    kp->ki_pid);
 		return (-1);
@@ -2108,12 +2097,12 @@ procstat_getrlimit_kvm(kvm_t *kd, struct kinfo_proc *kp, int which,
     struct rlimit* rlimit)
 {
 	struct proc proc;
-	unsigned long offset;
+	void* offset;
 
 	assert(kd != NULL);
 	assert(kp != NULL);
 	assert(which >= 0 && which < RLIM_NLIMITS);
-	if (!kvm_read_all(kd, (unsigned long)kp->ki_paddr, &proc,
+	if (!kvm_read_ptr(kd, kp->ki_paddr, &proc,
 	    sizeof(proc))) {
 		warnx("can't read proc struct at %p for pid %d",
 		    kp->ki_paddr, kp->ki_pid);
@@ -2121,9 +2110,9 @@ procstat_getrlimit_kvm(kvm_t *kd, struct kinfo_proc *kp, int which,
 	}
 	if (proc.p_limit == NULL)
 		return (-1);
-	offset = (unsigned long)proc.p_limit + sizeof(struct rlimit) * which;
-	if (!kvm_read_all(kd, offset, rlimit, sizeof(*rlimit))) {
-		warnx("can't read rlimit struct at %lx for pid %d",
+	offset = (char*)proc.p_limit + sizeof(struct rlimit) * which;
+	if (!kvm_read_ptr(kd, offset, rlimit, sizeof(*rlimit))) {
+		warnx("can't read rlimit struct at %p for pid %d",
 		    offset, kp->ki_pid);
 		return (-1);
 	}
@@ -2263,8 +2252,7 @@ procstat_getosrel_kvm(kvm_t *kd, struct kinfo_proc *kp, int *osrelp)
 
 	assert(kd != NULL);
 	assert(kp != NULL);
-	if (!kvm_read_all(kd, (unsigned long)kp->ki_paddr, &proc,
-	    sizeof(proc))) {
+	if (!kvm_read_ptr(kd, kp->ki_paddr, &proc, sizeof(proc))) {
 		warnx("can't read proc struct at %p for pid %d",
 		    kp->ki_paddr, kp->ki_pid);
 		return (-1);

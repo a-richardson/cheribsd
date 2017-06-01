@@ -84,8 +84,7 @@ msdosfs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 	u_long dirsperblk;
 	int fileid;
 
-	if (!kvm_read_all(kd, (unsigned long)VTODE(vp), &denode,
-	    sizeof(denode))) {
+	if (!kvm_read_ptr(kd, VTODE(vp), &denode, sizeof(denode))) {
 		warnx("can't read denode at %p", (void *)VTODE(vp));
 		return (1);
 	}
@@ -103,8 +102,8 @@ msdosfs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 			warn("malloc()");
 			return (1);
 		}
-		if (!kvm_read_all(kd, (unsigned long)denode.de_pmp,
-		    &mnt->data, sizeof(mnt->data))) {
+		if (!kvm_read_ptr(kd, denode.de_pmp, &mnt->data,
+		    sizeof(mnt->data))) {
 			free(mnt);
 			    warnx("can't read mount info at %p",
 			    (void *)denode.de_pmp);

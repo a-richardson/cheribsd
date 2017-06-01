@@ -404,7 +404,7 @@ XXH_PUBLIC_API unsigned int XXH32 (const void* input, size_t len, unsigned int s
     XXH_endianess endian_detected = (XXH_endianess)XXH_CPU_LITTLE_ENDIAN;
 
     if (XXH_FORCE_ALIGN_CHECK) {
-        if ((((size_t)input) & 3) == 0) {   /* Input is 4-bytes aligned, leverage the speed benefit */
+        if ((((vaddr_t)input) & 3) == 0) {   /* Input is 4-bytes aligned, leverage the speed benefit */
             if ((endian_detected==XXH_littleEndian) || XXH_FORCE_NATIVE_FORMAT)
                 return XXH32_endian_align(input, len, seed, XXH_littleEndian, XXH_aligned);
             else
@@ -516,7 +516,7 @@ XXH_PUBLIC_API unsigned long long XXH64 (const void* input, size_t len, unsigned
     XXH_endianess endian_detected = (XXH_endianess)XXH_CPU_LITTLE_ENDIAN;
 
     if (XXH_FORCE_ALIGN_CHECK) {
-        if ((((size_t)input) & 7)==0) {  /* Input is aligned, let's leverage the speed advantage */
+        if ((((vaddr_t)input) & 7)==0) {  /* Input is aligned, let's leverage the speed advantage */
             if ((endian_detected==XXH_littleEndian) || XXH_FORCE_NATIVE_FORMAT)
                 return XXH64_endian_align(input, len, seed, XXH_littleEndian, XXH_aligned);
             else

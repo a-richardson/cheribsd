@@ -155,13 +155,14 @@ __libc_allocate_tls(void *oldtcb, size_t tcbsize, size_t tcbalign __unused)
 
 		/* Adjust the DTV. */
 		dtv = tls[0];
-		dtv[2] = (Elf_Addr)tls + TLS_TCB_SIZE;
+		/* XXXAR: tag Elf_Addr as __memory_address? */
+		dtv[2] = (Elf_Addr)(vaddr_t)tls + TLS_TCB_SIZE;
 	} else {
 		dtv = __je_bootstrap_malloc(3 * sizeof(Elf_Addr));
 		tls[0] = dtv;
 		dtv[0] = 1;
 		dtv[1] = 1;
-		dtv[2] = (Elf_Addr)tls + TLS_TCB_SIZE;
+		dtv[2] = (Elf_Addr)(vaddr_t)tls + TLS_TCB_SIZE;
 
 #ifndef __CHERI_PURE_CAPABILITY__
 		if (tls_init_size > 0)

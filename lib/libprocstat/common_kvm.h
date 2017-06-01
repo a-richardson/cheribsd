@@ -29,10 +29,21 @@
 #ifndef	_COMMON_KVM_H_
 #define	_COMMON_KVM_H_
 
+#include <stdbool.h>
+
 dev_t	dev2udev(kvm_t *kd, struct cdev *dev);
 int	kdevtoname(kvm_t *kd, struct cdev *dev, char *);
-int	kvm_read_all(kvm_t *kd, unsigned long addr, void *buf,
-    size_t nbytes);
+/*bool	kvm_read_all(kvm_t *kd, kvaddr_t addr, void *buf, size_t nbytes);*/
+
+#if __has_feature(capabilities)
+bool	kvm_read_cap(kvm_t *kd, const void* __capability addr,
+		     void * __capability buf, size_t nbytes);
+#endif
+#ifndef __CHERI_PURE_CAPABILITY__
+bool	kvm_read_ptr(kvm_t *kd, const void* addr, void *buf, size_t nbytes);
+#else
+#define kvm_read_ptr kvm_read_cap
+#endif
 
 /*
  * Filesystems specific access routines.

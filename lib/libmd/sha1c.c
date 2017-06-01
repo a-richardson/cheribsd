@@ -218,7 +218,7 @@ SHA1_Update(c, in, len)
 	 */
 #if 1
 #if BYTE_ORDER == BIG_ENDIAN || defined(SHA1_ASM)
-	if ((((unsigned int)data)%sizeof(u_int32_t)) == 0)
+	if ((((vaddr_t)data)%sizeof(u_int32_t)) == 0)
 		{
 		sw=len/SHA_CBLOCK;
 		if (sw)

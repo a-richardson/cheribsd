@@ -1066,34 +1066,35 @@ zcmd_ioctl_compat(int fd, int request, zfs_cmd_t *zc, const int cflag)
 	unsigned long ncmd;
 	zfs_iocparm_t zp;
 
+	/* XXXAR: are all these uint64_t casts okay? */
 	switch (cflag) {
 	case ZFS_CMD_COMPAT_NONE:
 		ncmd = _IOWR('Z', request, struct zfs_iocparm);
-		zp.zfs_cmd = (uint64_t)zc;
+		zp.zfs_cmd = (vaddr_t)zc;
 		zp.zfs_cmd_size = sizeof(zfs_cmd_t);
 		zp.zfs_ioctl_version = ZFS_IOCVER_CURRENT;
 		return (ioctl(fd, ncmd, &zp));
 	case ZFS_CMD_COMPAT_INLANES:
 		ncmd = _IOWR('Z', request, struct zfs_iocparm);
-		zp.zfs_cmd = (uint64_t)zc;
+		zp.zfs_cmd = (vaddr_t)zc;
 		zp.zfs_cmd_size = sizeof(zfs_cmd_inlanes_t);
 		zp.zfs_ioctl_version = ZFS_IOCVER_INLANES;
 		return (ioctl(fd, ncmd, &zp));
 	case ZFS_CMD_COMPAT_RESUME:
 		ncmd = _IOWR('Z', request, struct zfs_iocparm);
-		zp.zfs_cmd = (uint64_t)zc;
+		zp.zfs_cmd = (vaddr_t)zc;
 		zp.zfs_cmd_size = sizeof(zfs_cmd_resume_t);
 		zp.zfs_ioctl_version = ZFS_IOCVER_RESUME;
 		return (ioctl(fd, ncmd, &zp));
 	case ZFS_CMD_COMPAT_EDBP:
 		ncmd = _IOWR('Z', request, struct zfs_iocparm);
-		zp.zfs_cmd = (uint64_t)zc;
+		zp.zfs_cmd = (vaddr_t)zc;
 		zp.zfs_cmd_size = sizeof(zfs_cmd_edbp_t);
 		zp.zfs_ioctl_version = ZFS_IOCVER_EDBP;
 		return (ioctl(fd, ncmd, &zp));
 	case ZFS_CMD_COMPAT_ZCMD:
 		ncmd = _IOWR('Z', request, struct zfs_iocparm);
-		zp.zfs_cmd = (uint64_t)zc;
+		zp.zfs_cmd = (vaddr_t)zc;
 		zp.zfs_cmd_size = sizeof(zfs_cmd_zcmd_t);
 		zp.zfs_ioctl_version = ZFS_IOCVER_ZCMD;
 		return (ioctl(fd, ncmd, &zp));

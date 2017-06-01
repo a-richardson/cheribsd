@@ -142,14 +142,14 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 	 */
 	for (; cnt < maxcnt && p != NULL; p = LIST_NEXT(&proc, p_list)) {
 		memset(kp, 0, sizeof *kp);
-		if (KREAD(kd, (u_long)p, &proc)) {
+		if (KREAD(kd, (kvaddr_t)p, &proc)) {
 			_kvm_err(kd, kd->program, "can't read proc at %p", p);
 			return (-1);
 		}
 		if (proc.p_state == PRS_NEW)
 			continue;
 		if (proc.p_state != PRS_ZOMBIE) {
-			if (KREAD(kd, (u_long)TAILQ_FIRST(&proc.p_threads),
+			if (KREAD(kd, (kvaddr_t)TAILQ_FIRST(&proc.p_threads),
 			    &mtd)) {
 				_kvm_err(kd, kd->program,
 				    "can't read thread at %p",
@@ -157,7 +157,7 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 				return (-1);
 			}
 		}
-		if (KREAD(kd, (u_long)proc.p_ucred, &ucred) == 0) {
+		if (KREAD(kd, (kvaddr_t)proc.p_ucred, &ucred) == 0) {
 			kp->ki_ruid = ucred.cr_ruid;
 			kp->ki_svuid = ucred.cr_svuid;
 			kp->ki_rgid = ucred.cr_rgid;
@@ -168,11 +168,11 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 				kp->ki_cr_flags |= KI_CRF_GRP_OVERFLOW;
 			} else
 				kp->ki_ngroups = ucred.cr_ngroups;
-			kvm_read(kd, (u_long)ucred.cr_groups, kp->ki_groups,
+			kvm_read(kd, (kvaddr_t)ucred.cr_groups, kp->ki_groups,
 			    kp->ki_ngroups * sizeof(gid_t));
 			kp->ki_uid = ucred.cr_uid;
 			if (ucred.cr_prison != NULL) {
-				if (KREAD(kd, (u_long)ucred.cr_prison, &pr)) {
+				if (KREAD(kd, (kvaddr_t)ucred.cr_prison, &pr)) {
 					_kvm_err(kd, kd->program,
 					    "can't read prison at %p",
 					    ucred.cr_prison);
@@ -230,7 +230,7 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 		kp->ki_fd = proc.p_fd;
 		kp->ki_vmspace = proc.p_vmspace;
 		if (proc.p_sigacts != NULL) {
-			if (KREAD(kd, (u_long)proc.p_sigacts, &sigacts)) {
+			if (KREAD(kd, (kvaddr_t)proc.p_sigacts, &sigacts)) {
 				_kvm_err(kd, kd->program,
 				    "can't read sigacts at %p", proc.p_sigacts);
 				return (-1);
@@ -240,7 +240,7 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 		}
 #if 0
 		if ((proc.p_flag & P_INMEM) && proc.p_stats != NULL) {
-			if (KREAD(kd, (u_long)proc.p_stats, &pstats)) {
+			if (KREAD(kd, (kvaddr_t)proc.p_stats, &pstats)) {
 				_kvm_err(kd, kd->program,
 				    "can't read stats at %x", proc.p_stats);
 				return (-1);
@@ -263,7 +263,7 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 		if (proc.p_oppid)
 			kp->ki_ppid = proc.p_oppid;
 		else if (proc.p_pptr) {
-			if (KREAD(kd, (u_long)proc.p_pptr, &pproc)) {
+			if (KREAD(kd, (kvaddr_t)proc.p_pptr, &pproc)) {
 				_kvm_err(kd, kd->program,
 				    "can't read pproc at %p", proc.p_pptr);
 				return (-1);
@@ -273,14 +273,14 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 			kp->ki_ppid = 0;
 		if (proc.p_pgrp == NULL)
 			goto nopgrp;
-		if (KREAD(kd, (u_long)proc.p_pgrp, &pgrp)) {
+		if (KREAD(kd, (kvaddr_t)proc.p_pgrp, &pgrp)) {
 			_kvm_err(kd, kd->program, "can't read pgrp at %p",
 				 proc.p_pgrp);
 			return (-1);
 		}
 		kp->ki_pgid = pgrp.pg_id;
 		kp->ki_jobc = pgrp.pg_jobc;
-		if (KREAD(kd, (u_long)pgrp.pg_session, &sess)) {
+		if (KREAD(kd, (kvaddr_t)pgrp.pg_session, &sess)) {
 			_kvm_err(kd, kd->program, "can't read session at %p",
 				pgrp.pg_session);
 			return (-1);
@@ -292,13 +292,13 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 		if (sess.s_leader == p)
 			kp->ki_kiflag |= KI_SLEADER;
 		if ((proc.p_flag & P_CONTROLT) && sess.s_ttyp != NULL) {
-			if (KREAD(kd, (u_long)sess.s_ttyp, &tty)) {
+			if (KREAD(kd, (kvaddr_t)sess.s_ttyp, &tty)) {
 				_kvm_err(kd, kd->program,
 					 "can't read tty at %p", sess.s_ttyp);
 				return (-1);
 			}
 			if (tty.t_dev != NULL) {
-				if (KREAD(kd, (u_long)tty.t_dev, &t_cdev)) {
+				if (KREAD(kd, (kvaddr_t)tty.t_dev, &t_cdev)) {
 					_kvm_err(kd, kd->program,
 						 "can't read cdev at %p",
 						tty.t_dev);
@@ -311,7 +311,7 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 #endif
 			}
 			if (tty.t_pgrp != NULL) {
-				if (KREAD(kd, (u_long)tty.t_pgrp, &pgrp)) {
+				if (KREAD(kd, (kvaddr_t)tty.t_pgrp, &pgrp)) {
 					_kvm_err(kd, kd->program,
 						 "can't read tpgrp at %p",
 						tty.t_pgrp);
@@ -321,7 +321,7 @@ kvm_proclist(kvm_t *kd, int what, int arg, struct proc *p,
 			} else
 				kp->ki_tpgid = -1;
 			if (tty.t_session != NULL) {
-				if (KREAD(kd, (u_long)tty.t_session, &sess)) {
+				if (KREAD(kd, (kvaddr_t)tty.t_session, &sess)) {
 					_kvm_err(kd, kd->program,
 					    "can't read session at %p",
 					    tty.t_session);
@@ -334,10 +334,10 @@ nopgrp:
 			kp->ki_tdev = NODEV;
 		}
 		if ((proc.p_state != PRS_ZOMBIE) && mtd.td_wmesg)
-			(void)kvm_read(kd, (u_long)mtd.td_wmesg,
+			(void)kvm_read(kd, (kvaddr_t)mtd.td_wmesg,
 			    kp->ki_wmesg, WMESGLEN);
 
-		(void)kvm_read(kd, (u_long)proc.p_vmspace,
+		(void)kvm_read(kd, (kvaddr_t)proc.p_vmspace,
 		    (char *)&vmspace, sizeof(vmspace));
 		kp->ki_size = vmspace.vm_map.size;
 		/*
@@ -371,9 +371,9 @@ nopgrp:
 		}
 		if (proc.p_comm[0] != 0)
 			strlcpy(kp->ki_comm, proc.p_comm, MAXCOMLEN);
-		(void)kvm_read(kd, (u_long)proc.p_sysent, (char *)&sysent,
+		(void)kvm_read(kd, (kvaddr_t)proc.p_sysent, (char *)&sysent,
 		    sizeof(sysent));
-		(void)kvm_read(kd, (u_long)sysent.sv_name, (char *)&svname,
+		(void)kvm_read(kd, (kvaddr_t)sysent.sv_name, (char *)&svname,
 		    sizeof(svname));
 		if (svname[0] != 0)
 			strlcpy(kp->ki_emul, svname, KI_EMULNAMELEN);
@@ -382,7 +382,7 @@ nopgrp:
 			kp->ki_kiflag |= KI_LOCKBLOCK;
 			if (mtd.td_lockname)
 				(void)kvm_read(kd,
-				    (u_long)mtd.td_lockname,
+				    (kvaddr_t)mtd.td_lockname,
 				    kp->ki_lockname, LOCKNAMELEN);
 			kp->ki_lockname[LOCKNAMELEN] = 0;
 		}

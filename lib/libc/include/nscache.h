@@ -162,13 +162,13 @@ name##_get_mp_rs(void)							\
 /* args are: current pointer, current buffer, initial buffer, pointer type */
 #define NS_APPLY_OFFSET(cp, cb, ib, p_type)				\
 	if ((cp) != NULL)						\
-		(cp) = (p_type)((char *)(cb) + (size_t)(cp) - (size_t)(ib))
+		(cp) = (p_type)((char *)(cb) + (vaddr_t)(cp) - (vaddr_t)(ib))
 /*
  * Gets new pointer from the marshalled buffer by uisng initial address
  * and initial buffer address
  */
 #define NS_GET_NEWP(cp, cb, ib)						\
-	((char *)(cb) + (size_t)(cp) - (size_t)(ib))
+	((char *)(cb) + (vaddr_t)(cp) - (vaddr_t)(ib))
 
 typedef struct _nss_cache_data {
 	char	*key;

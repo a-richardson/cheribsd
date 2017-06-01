@@ -70,14 +70,12 @@ isofs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 	struct iso_node isonode;
 	struct iso_mnt mnt;
 
-	if (!kvm_read_all(kd, (unsigned long)VTOI(vp), &isonode,
-	    sizeof(isonode))) {
+	if (!kvm_read_ptr(kd, VTOI(vp), &isonode, sizeof(isonode))) {
 		warnx("can't read iso_node at %p",
 		    (void *)VTOI(vp));
 		return (1);
 	}
-	if (!kvm_read_all(kd, (unsigned long)isonode.i_mnt, &mnt,
-	    sizeof(mnt))) {
+	if (!kvm_read_ptr(kd, isonode.i_mnt, &mnt, sizeof(mnt))) {
 		warnx("can't read iso_mnt at %p",
 		    (void *)VTOI(vp));
 		return (1);

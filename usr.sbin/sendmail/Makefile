@@ -72,3 +72,5 @@ sm_os.h: ${SENDMAIL_DIR}/include/sm/os/sm_os_freebsd.h .NOMETA
 	ln -sf ${.ALLSRC} ${.TARGET}
 
 .include <bsd.prog.mk>
+
+# CFLAGS += -Wno-error=capability-to-integer-cast

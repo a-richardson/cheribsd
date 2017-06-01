@@ -256,8 +256,10 @@ SECTIONS
    . = ALIGN(64 / 8);
   }
   . = ALIGN(64 / 8);
+  __bss_end = .;
   _end = .;
   PROVIDE (end = .);
+
   /* Stabs debugging sections.  */
   .stab 0 : { *(.stab) }
   .stabstr 0 : { *(.stabstr) }

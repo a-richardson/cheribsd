@@ -280,7 +280,7 @@ mi_engine(ctx)
 		{
 			if (ctx->ctx_dbg > 3)
 				sm_dprintf("[%lu] milter_abort\n",
-					(long) ctx->ctx_id);
+					(vaddr_t) ctx->ctx_id);
 			ret = MI_FAILURE;
 			break;
 		}
@@ -311,7 +311,7 @@ mi_engine(ctx)
 		{
 			if (ctx->ctx_dbg > 5)
 				sm_dprintf("[%lu] mi_engine: mi_rd_cmd error (%x)\n",
-					(long) ctx->ctx_id, (int) cmd);
+					(vaddr_t) ctx->ctx_id, (int) cmd);
 
 			/*
 			**  eof is currently treated as failure ->

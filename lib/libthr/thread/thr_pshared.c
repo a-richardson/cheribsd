@@ -47,7 +47,7 @@ struct psh {
 LIST_HEAD(pshared_hash_head, psh);
 #define	HASH_SIZE	128
 static struct pshared_hash_head pshared_hash[HASH_SIZE];
-#define	PSHARED_KEY_HASH(key)	(((unsigned long)(key) >> 8) % HASH_SIZE)
+#define	PSHARED_KEY_HASH(key)	(((vaddr_t)(key) >> 8) % HASH_SIZE)
 /* XXXKIB: lock could be split to per-hash chain, if appears contested */
 static struct urwlock pshared_lock = DEFAULT_URWLOCK;
 

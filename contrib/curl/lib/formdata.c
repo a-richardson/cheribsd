@@ -396,7 +396,7 @@ CURLFORMcode FormAdd(struct curl_httppost **httppost,
         return_value = CURL_FORMADD_OPTION_TWICE;
       else
         current_form->namelength =
-          array_state?(size_t)array_value:(size_t)va_arg(params, long);
+          array_state?(size_t)(vaddr_t)array_value:(size_t)va_arg(params, long);
       break;
 
       /*
@@ -421,7 +421,7 @@ CURLFORMcode FormAdd(struct curl_httppost **httppost,
         return_value = CURL_FORMADD_OPTION_TWICE;
       else
         current_form->contentslength =
-          array_state?(size_t)array_value:(size_t)va_arg(params, long);
+          array_state?(size_t)(vaddr_t)array_value:(size_t)va_arg(params, long);
       break;
 
       /* Get contents from a given file name */
@@ -514,7 +514,7 @@ CURLFORMcode FormAdd(struct curl_httppost **httppost,
         return_value = CURL_FORMADD_OPTION_TWICE;
       else
         current_form->bufferlength =
-          array_state?(size_t)array_value:(size_t)va_arg(params, long);
+          array_state?(size_t)(vaddr_t)array_value:(size_t)va_arg(params, long);
       break;
 
     case CURLFORM_STREAM:

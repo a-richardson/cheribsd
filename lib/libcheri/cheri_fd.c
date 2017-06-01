@@ -122,7 +122,7 @@ cheri_fd_new(int fd, struct cheri_object *cop)
 	 * XXXRW: In the future, use cheri_codeptr() here?
 	 */
 	codecap = cheri_setoffset(cheri_getpcc(),
-	    (register_t)CHERI_CLASS_ENTRY(cheri_fd));
+	    (vaddr_t)CHERI_CLASS_ENTRY(cheri_fd));
 	cop->co_codecap = cheri_seal(codecap, cheri_fd_type);
 
 	/*

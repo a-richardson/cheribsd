@@ -88,8 +88,7 @@ zfs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 	}
 	/* Since we have problems including vnode.h, we'll use the wrappers. */
 	vnodeptr = getvnodedata(vp);
-	if (!kvm_read_all(kd, (unsigned long)vnodeptr, znodeptr,
-	    (size_t)size)) {
+	if (!kvm_read_ptr(kd, vnodeptr, znodeptr, (size_t)size)) {
 		warnx("can't read znode at %p", (void *)vnodeptr);
 		goto bad;
 	}
@@ -105,15 +104,14 @@ zfs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 	zid = (uint64_t *)(dataptr + LOCATION_ZID);
 	zphys_addr = *(void **)(dataptr + LOCATION_ZPHYS(size));
 
-	if (!kvm_read_all(kd, (unsigned long)zphys_addr, &zphys,
-	    sizeof(zphys))) {
+	if (!kvm_read_ptr(kd, zphys_addr, &zphys, sizeof(zphys))) {
 		warnx("can't read znode_phys at %p", zphys_addr);
 		goto bad;
 	}
 
 	/* Get the mount pointer, and read from the address. */
 	mountptr = getvnodemount(vp);
-	if (!kvm_read_all(kd, (unsigned long)mountptr, &mount, sizeof(mount))) {
+	if (!kvm_read_ptr(kd, mountptr, &mount, sizeof(mount))) {
 		warnx("can't read mount at %p", (void *)mountptr);
 		goto bad;
 	}

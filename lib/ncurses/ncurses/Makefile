@@ -452,7 +452,7 @@ curses.head: curses.h.in
 	    -e "s%@NCURSES_SP_FUNCS@%0%g" \
 	    -e "s%@NCURSES_INTEROP_FUNCS@%0%g" \
 	    -e "s%@NCURSES_CCHARW_MAX@%5%g" \
-	    -e "s%@NCURSES_TPARM_ARG@%long%g" \
+	    -e "s%@NCURSES_TPARM_ARG@%vaddr_t%g" \
 	    -e "s%@cf_cv_1UL@%${ONEUL}%g" \
 	    -e "s%@cf_cv_builtin_bool@%${BUILTIN_BOOL}%g" \
 	    -e "s%@cf_cv_enable_lp64@%${ENABLE_LP64}%g" \

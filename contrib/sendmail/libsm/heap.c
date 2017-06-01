@@ -305,10 +305,10 @@ ptrhash(p)
 	void *p;
 {
 	int h;
-
+	/* XXXAR: Should we hash the virtual address here for CHERI? */
 	if (sizeof(void*) == 4 && sizeof(unsigned long) == 4)
 	{
-		unsigned long n = (unsigned long)p;
+		unsigned long n = (vaddr_t)p;
 
 		h = hashtab[n & 0xFF];
 		h = hashtab[h ^ ((n >> 8) & 0xFF)];
@@ -770,8 +770,8 @@ sm_heap_report(stream, verbosity)
 				sm_io_fprintf(stream, SM_TIME_DEFAULT,
 					"%4d %*lx %7lu bytes",
 					hi->hi_group,
-					(int) sizeof(void *) * 2,
-					(long)hi->hi_ptr,
+					(int) sizeof(vaddr_t) * 2,
+					(vaddr_t)hi->hi_ptr,
 					(unsigned long)hi->hi_size);
 				if (hi->hi_tag != NULL)
 				{

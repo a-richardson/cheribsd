@@ -481,7 +481,7 @@ generate_type_A_query(struct module_qstate* qstate, int id)
 static enum module_ext_state
 handle_event_pass(struct module_qstate* qstate, int id)
 {
-	if ((uintptr_t)qstate->minfo[id] == DNS64_NEW_QUERY
+	if ((vaddr_t)qstate->minfo[id] == DNS64_NEW_QUERY
             && qstate->qinfo.qtype == LDNS_RR_TYPE_PTR
             && qstate->qinfo.qname_len == 74
             && !strcmp((char*)&qstate->qinfo.qname[64], "\03ip6\04arpa"))
@@ -489,12 +489,12 @@ handle_event_pass(struct module_qstate* qstate, int id)
         return handle_ipv6_ptr(qstate, id);
 
 	if (qstate->env->cfg->dns64_synthall &&
-	    (uintptr_t)qstate->minfo[id] == DNS64_NEW_QUERY
+	    (vaddr_t)qstate->minfo[id] == DNS64_NEW_QUERY
 	    && qstate->qinfo.qtype == LDNS_RR_TYPE_AAAA)
 		return generate_type_A_query(qstate, id);
 
 	/* We are finished when our sub-query is finished. */
-	if ((uintptr_t)qstate->minfo[id] == DNS64_SUBQUERY_FINISHED)
+	if ((vaddr_t)qstate->minfo[id] == DNS64_SUBQUERY_FINISHED)
 		return module_finished;
 
 	/* Otherwise, pass request to next module. */
@@ -526,7 +526,7 @@ handle_event_moddone(struct module_qstate* qstate, int id)
      *        synthesize in (sec 5.1.2 of RFC6147).
      *   - A successful AAAA query with an answer.
      */
-	if ( (enum dns64_qstate)qstate->minfo[id] == DNS64_INTERNAL_QUERY
+	if ( (enum dns64_qstate)(vaddr_t)qstate->minfo[id] == DNS64_INTERNAL_QUERY
             || qstate->qinfo.qtype != LDNS_RR_TYPE_AAAA
 	    || (qstate->query_flags & BIT_CD)
 	    || (qstate->return_msg &&

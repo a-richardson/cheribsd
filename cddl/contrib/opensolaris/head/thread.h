@@ -44,7 +44,7 @@ typedef pthread_rwlock_t rwlock_t;
 
 #define USYNC_THREAD 0
 
-#define	thr_self()		(unsigned long)pthread_self()
+#define	thr_self()		(void*)pthread_self()
 #define	thr_equal(a,b)		pthread_equal(a,b)
 #define	thr_join(t,d,s)		pthread_join(t,s)
 #define	thr_exit(r)		pthread_exit(r)

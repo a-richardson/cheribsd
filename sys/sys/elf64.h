@@ -35,7 +35,7 @@
  * ELF definitions common to all 64-bit architectures.
  */
 
-typedef uint64_t	Elf64_Addr;
+typedef __memory_address uint64_t	Elf64_Addr;
 typedef uint16_t	Elf64_Half;
 typedef uint64_t	Elf64_Off;
 typedef int32_t		Elf64_Sword;

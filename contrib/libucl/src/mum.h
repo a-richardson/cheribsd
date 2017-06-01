@@ -328,7 +328,7 @@ _mum_hash_default (const void *key, size_t len, uint64_t seed) {
   uint64_t buf[_MUM_BLOCK_LEN / sizeof (uint64_t)];
 
   result = seed + len;
-  if (_MUM_UNALIGNED_ACCESS || ((size_t) str & 0x7) == 0)
+  if (_MUM_UNALIGNED_ACCESS || ((vaddr_t) str & 0x7) == 0)
     result = _mum_hash_aligned (result, key, len);
   else {
     while (len != 0) {

@@ -35,7 +35,7 @@
  * ELF definitions common to all 32-bit architectures.
  */
 
-typedef uint32_t	Elf32_Addr;
+typedef __memory_address uint32_t	Elf32_Addr;
 typedef uint16_t	Elf32_Half;
 typedef uint32_t	Elf32_Off;
 typedef int32_t		Elf32_Sword;

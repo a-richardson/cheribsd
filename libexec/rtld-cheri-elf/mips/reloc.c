@@ -65,9 +65,9 @@ void
 init_pltgot(Obj_Entry *obj)
 {
 	if (obj->pltgot != NULL) {
-		obj->pltgot[0] = (Elf_Addr) &_rtld_bind_start;
+		obj->pltgot[0] = (Elf_Addr) (vaddr_t) &_rtld_bind_start;
 		if (GOT1_RESERVED_FOR_RTLD(obj->pltgot))
-			obj->pltgot[1] = (Elf_Addr) obj | GOT1_MASK;
+			obj->pltgot[1] = (Elf_Addr)((vaddr_t)obj | GOT1_MASK);
 	}
 }
 
@@ -104,7 +104,7 @@ load_ptr(void *where, size_t len)
 {
 	Elf_Sxword val;
 
-	if (__predict_true(((size_t)where & (len - 1)) == 0)) {
+	if (__predict_true(((vaddr_t)where & (len - 1)) == 0)) {
 #ifdef __mips_n64
 		if (len == sizeof(Elf_Sxword))
 			return *(Elf_Sxword *)where;
@@ -125,7 +125,7 @@ load_ptr(void *where, size_t len)
 static __inline void
 store_ptr(void *where, Elf_Sxword val, size_t len)
 {
-	if (__predict_true(((size_t)where & (len - 1)) == 0)) {
+	if (__predict_true(((vaddr_t)where & (len - 1)) == 0)) {
 #ifdef __mips_n64
 		if (len == sizeof(Elf_Sxword)) {
 			*(Elf_Sxword *)where = val;

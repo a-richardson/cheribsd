@@ -3,6 +3,9 @@
 .PATH: ${SRCTOP}/cddl/contrib/opensolaris/lib/libdtrace/common
 .PATH: ${SRCTOP}/cddl/contrib/opensolaris/lib/libgen/common
 
+# XXXAR: does lots of strange integer == pointer things
+WANT_CHERI=none
+
 LIB=		dtrace
 SRCS=		dt_aggregate.c \
 		dt_as.c \

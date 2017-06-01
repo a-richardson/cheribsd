@@ -6,6 +6,8 @@ SRCS=	zfs.c
 OBJS=	zfs.o
 WARNS?=	1
 
+WANT_CHERI=none
+
 CFLAGS+= -I${SRCTOP}/sys/cddl/compat/opensolaris
 CFLAGS+= -I${SRCTOP}/cddl/compat/opensolaris/include
 CFLAGS+= -I${SRCTOP}/cddl/compat/opensolaris/lib/libumem

@@ -213,7 +213,7 @@ extern int aok;
 /*
  * Threads
  */
-#define	curthread	((void *)(uintptr_t)thr_self())
+#define	curthread	(thr_self())
 
 #define	kpreempt(x)	sched_yield()
 
@@ -560,7 +560,12 @@ extern void delay(clock_t ticks);
 #define	minclsyspri	60
 #define	maxclsyspri	99
 
-#define	CPU_SEQID	(thr_self() & (max_ncpus - 1))
+/*
+ * XXXAR: this seems rather dubious, thr_self is a capability so the bottom
+ * bits will always be zero
+ * SHIFT?
+ */
+#define	CPU_SEQID	((vaddr_t)thr_self() & (max_ncpus - 1))
 
 #define	kcred		NULL
 #define	CRED()		NULL

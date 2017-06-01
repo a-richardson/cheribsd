@@ -20,3 +20,5 @@ NEED_CHERI=	hybrid
 .include <bsd.lib.mk>
 
 CFLAGS+=	-Wno-cast-align -Wno-cast-qual
+# XXXAR: the casting here is weird, I'm not sure how to fix it
+CFLAGS+=	-Wno-error=capability-to-integer-cast

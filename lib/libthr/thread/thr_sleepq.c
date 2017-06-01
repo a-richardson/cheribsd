@@ -33,8 +33,8 @@ __FBSDID("$FreeBSD$");
 #define HASHSHIFT	9
 #define HASHSIZE	(1 << HASHSHIFT)
 #define SC_HASH(wchan) ((unsigned)				\
-	((((size_t)(wchan) >> 3)				\
-	^ ((size_t)(wchan) >> (HASHSHIFT + 3)))		\
+	((((vaddr_t)(wchan) >> 3)				\
+	^ ((vaddr_t)(wchan) >> (HASHSHIFT + 3)))		\
 	& (HASHSIZE - 1)))
 #define SC_LOOKUP(wc)	&sc_table[SC_HASH(wc)]
 

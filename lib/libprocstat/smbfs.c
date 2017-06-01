@@ -56,14 +56,12 @@ smbfs_filestat(kvm_t *kd, struct vnode *vp, struct vnstat *vn)
 
 	assert(kd);
 	assert(vn);
-	error = kvm_read_all(kd, (unsigned long)VTOSMB(vp), &node,
-	    sizeof(node));
+	error = kvm_read_ptr(kd, VTOSMB(vp), &node, sizeof(node));
 	if (error != 0) {
 		warnx("can't read smbfs fnode at %p", (void *)VTOSMB(vp));
 		return (1);
 	}
-        error = kvm_read_all(kd, (unsigned long)getvnodemount(vp), &mnt,
-	    sizeof(mnt));
+        error = kvm_read_ptr(kd, getvnodemount(vp), &mnt, sizeof(mnt));
         if (error != 0) {
                 warnx("can't read mount at %p for vnode %p",
                     (void *)getvnodemount(vp), vp);

@@ -6,6 +6,9 @@
 .PATH: ${SRCTOP}/cddl/contrib/opensolaris/lib/libzfs_core/common
 .PATH: ${SRCTOP}/cddl/contrib/opensolaris/lib/libzfs/common
 
+# XXXAR: does lots of strange integer == pointer things
+WANT_CHERI=none
+
 LIB=	zfs_core
 LIBADD=	nvpair
 
