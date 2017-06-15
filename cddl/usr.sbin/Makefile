@@ -37,7 +37,7 @@ _lockstat=	lockstat
 .endif
 
 .if ${MACHINE_CPUARCH} == "mips"
-_dtrace=	dtrace
+# _dtrace=	dtrace
 .endif
 
 .if ${MACHINE_CPUARCH} == "powerpc"
