@@ -233,7 +233,9 @@ LFLAGS		?=
 # compiler driver flags (e.g. -mabi=*) that conflict with flags to LD.
 LD		?=	ld
 LDFLAGS		?=
+.if 0
 LDFLAGS		+=	-Wl,--no-warn-mismatch
+.endif
 _LDFLAGS	=	${LDFLAGS:S/-Wl,//g:N-mabi=*:N-fuse-ld=*}
 
 LINT		?=	lint

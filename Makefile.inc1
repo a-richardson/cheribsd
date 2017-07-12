@@ -199,6 +199,7 @@ compiler-metadata.mk: .PHONY .META
 
 # Handle external binutils.
 .if defined(CROSS_TOOLCHAIN_PREFIX)
+.error "TOOLCHAIN ${CROSS_TOOLCHAIN_PREFIX}"
 CROSS_BINUTILS_PREFIX?=${CROSS_TOOLCHAIN_PREFIX}
 .endif
 # If we do not have a bootstrap binutils (because the in-tree one does not
@@ -217,10 +218,16 @@ CROSS_BINUTILS_PREFIX=/usr/local/${TARGET_ARCH}-freebsd/bin/
 .endif
 XBINUTILS=	AS AR LD NM OBJCOPY OBJDUMP RANLIB SIZE STRINGS
 .for BINUTIL in ${XBINUTILS}
+# .warning "${CROSS_BINUTILS_PREFIX}${${BINUTIL}}"
 .if defined(CROSS_BINUTILS_PREFIX) && \
     exists(${CROSS_BINUTILS_PREFIX}${${BINUTIL}})
+.info "X${BINUTIL}?=	${CROSS_BINUTILS_PREFIX}${${BINUTIL}}"
 X${BINUTIL}?=	${CROSS_BINUTILS_PREFIX}${${BINUTIL}}
 .else
+.if !exists(${CROSS_BINUTILS_PREFIX}${${BINUTIL}}) && !defined(X${BINUTIL}) && !defined(SYSROOT)
+# For some reason exists() returns false for objcopy although it exists
+# .warning "Missing ${${BINUTIL}}:  ${CROSS_BINUTILS_PREFIX}${${BINUTIL}}"
+.endif
 X${BINUTIL}?=	${${BINUTIL}}
 .endif
 .endfor
@@ -442,6 +449,11 @@ _CPUTYPE!=	MK_AUTO_OBJ=no MAKEFLAGS= CPUTYPE=${_TARGET_CPUTYPE} ${MAKE} \
 .endif
 .if make(buildworld)
 BUILD_ARCH!=	uname -p
+# Linux compatibility
+.if !empty(CROSSBUILD) && ${BUILD_ARCH} == "x86_64"
+BUILD_ARCH:=amd64
+.endif
+.info "${MACHINE_ARCH} != ${BUILD_ARCH}"
 .if ${MACHINE_ARCH} != ${BUILD_ARCH}
 .error To cross-build, set TARGET_ARCH.
 .endif
@@ -524,7 +536,7 @@ BMAKEENV=	INSTALL="sh ${.CURDIR}/tools/install.sh" \
 		MAKEFLAGS="-m ${.CURDIR}/tools/build/mk ${.MAKEFLAGS}"
 # need to keep this in sync with targets/pseudo/bootstrap-tools/Makefile
 BSARGS= 	DESTDIR= \
-		BOOTSTRAPPING=${OSRELDATE} \
+		BOOTSTRAPPING=${OSRELDATE} CROSSBUILD=${CROSSBUILD} \
 		SSP_CFLAGS= \
 		MK_HTML=no NO_LINT=yes MK_MAN=no \
 		-DNO_PIC MK_PROFILE=no -DNO_SHARED \
@@ -542,7 +554,7 @@ TMAKE=		MAKEOBJDIRPREFIX=${OBJTREE} \
 		${BMAKEENV} ${MAKE} ${WORLD_FLAGS} -f Makefile.inc1 \
 		TARGET=${TARGET} TARGET_ARCH=${TARGET_ARCH} \
 		DESTDIR= \
-		BOOTSTRAPPING=${OSRELDATE} \
+		BOOTSTRAPPING=${OSRELDATE} CROSSBUILD=${CROSSBUILD} \
 		SSP_CFLAGS= \
 		-DNO_LINT \
 		-DNO_CPU_CFLAGS MK_WARNS=no MK_CTF=no \
@@ -561,7 +573,7 @@ KTMAKEENV=	INSTALL="sh ${.CURDIR}/tools/install.sh" \
 KTMAKE=		TOOLS_PREFIX=${WORLDTMP} MAKEOBJDIRPREFIX=${WORLDTMP} \
 		${KTMAKEENV} ${MAKE} ${WORLD_FLAGS} -f Makefile.inc1 \
 		DESTDIR= \
-		BOOTSTRAPPING=${OSRELDATE} \
+		BOOTSTRAPPING=${OSRELDATE} CROSSBUILD=${CROSSBUILD} \
 		SSP_CFLAGS= \
 		MK_HTML=no -DNO_LINT MK_MAN=no \
 		-DNO_PIC MK_PROFILE=no -DNO_SHARED \
@@ -703,8 +715,11 @@ NO_META_IGNORE_HOST_HEADERS=	1
 # allows tracking the oldest osreldate to force rebuilds via
 # META_MODE_BADABI_REVS above.
 host-osreldate.h: # DO NOT ADD /usr/include/osreldate.h here
+.if !empty(CROSSBUILD)
 	@cp -f /usr/include/osreldate.h ${.TARGET}
-
+.else
+	@cp -f ${.PARSEDIR}/fake-osreldate.h ${.TARGET}
+.endif
 WMAKE=		${WMAKEENV} ${MAKE} ${WORLD_FLAGS} -f Makefile.inc1 DESTDIR=${WORLDTMP}
 
 .if ${MK_CHERI} != "no"
@@ -847,71 +862,75 @@ _worldtmp: .PHONY
     bin lib lib/casper usr legacy/bin legacy/usr
 	mkdir -p ${WORLDTMP}/${_dir}
 .endfor
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${WORLDTMP}/legacy/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${WORLDTMP}/legacy/usr/include >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${WORLDTMP}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${WORLDTMP}/usr/include >/dev/null
 	ln -sf ${.CURDIR}/sys ${WORLDTMP}
 .if ${MK_DEBUG_FILES} != "no"
 	# We could instead disable debug files for these build stages
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
 	    -p ${WORLDTMP}/legacy/usr/lib >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
 	    -p ${WORLDTMP}/usr/lib >/dev/null
 .endif
 .if ${MK_CHERI} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.libcheri.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.libcheri.dist \
 	    -p ${WORLDTMP}/usr >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.libcheri.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.libcheri.dist \
 	    -p ${WORLDTMP}/legacy/usr/lib/debug/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.libcheri.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.libcheri.dist \
 	    -p ${WORLDTMP}/usr/lib/debug/usr >/dev/null
 .endif
 .if ${MK_TESTS} != "no"
 	mkdir -p ${WORLDTMP}${LIBCHERI_TESTSBASE}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${WORLDTMP}${LIBCHERI_TESTSBASE} >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
 	mkdir -p ${WORLDTMP}/usr/lib/debug/${LIBCHERI_TESTSBASE}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${WORLDTMP}/usr/lib/debug/${LIBCHERI_TESTSBASE} >/dev/null
 .endif
 .endif
 .endif
 .if defined(LIBCOMPAT)
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${WORLDTMP}/usr >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${WORLDTMP}/legacy/usr/lib/debug/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${WORLDTMP}/usr/lib/debug/usr >/dev/null
 .endif
 .endif
 .if ${MK_TESTS} != "no"
 	mkdir -p ${WORLDTMP}${TESTSBASE}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${WORLDTMP}${TESTSBASE} >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
 	mkdir -p ${WORLDTMP}/usr/lib/debug/${TESTSBASE}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${WORLDTMP}/usr/lib/debug/${TESTSBASE} >/dev/null
 .endif
 .endif
 .for _mtree in ${LOCAL_MTREE}
-	mtree -deU -f ${.CURDIR}/${_mtree} -p ${WORLDTMP} > /dev/null
+	mtree -deUW -f ${.CURDIR}/${_mtree} -p ${WORLDTMP} > /dev/null
 .endfor
 _legacy:
 	@echo
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 1.1: legacy release compatibility shims"
 	@echo "--------------------------------------------------------------"
+.if defined(CROSSBUILD)
+	@echo "Skipping legacy stage when cross-compiling"
+.else
 	${_+_}cd ${.CURDIR}; ${BMAKE} legacy
+.endif
 _bootstrap-tools:
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -943,22 +962,34 @@ _build-tools:
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 2.3: build tools"
 	@echo "--------------------------------------------------------------"
+.if !empty(CROSSBUILD)
+	@echo "Skipping build tools stage when cross-compiling"
+.else
 	${_+_}cd ${.CURDIR}; ${TMAKE} build-tools
+.endif
 _cross-tools:
 	@echo
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 3: cross tools"
 	@echo "--------------------------------------------------------------"
 	@rm -f ${.OBJDIR}/compiler-metadata.mk
+.if !empty(CROSSBUILD)
+	@echo "Skipping kernel cross tools stage when cross-compiling"
+.else
 	${_+_}cd ${.CURDIR}; ${XMAKE} cross-tools
 	${_+_}cd ${.CURDIR}; ${XMAKE} kernel-tools
+.endif
 _build-metadata:
 	@echo
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 3.1: recording build metadata"
 	@echo "--------------------------------------------------------------"
 	${_+_}cd ${.CURDIR}; ${WMAKE} compiler-metadata.mk
+.if defined(CROSSBUILD)
+	@echo "Skipping host-osreldate.h stage when cross-compiling"
+.else
 	${_+_}cd ${.CURDIR}; ${WMAKE} host-osreldate.h
+.endif
 _includes:
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -1010,6 +1041,33 @@ INTERNAL_LIB_DIRS=				\
 	usr.sbin/ntp/libparse
 .endif
 
+_cheri_libs=lib/csu lib/libgcc_eh lib/libcompiler_rt lib/libc \
+	lib/libc_nonshared lib/libgcc_s lib/libthr lib/libz lib/libbz2 \
+	lib/liblzma lib/libexpat secure/lib/libcrypto lib/libsbuf lib/libelf \
+	lib/libkvm lib/ncurses/ncurses lib/ncurses/ncursesw secure/lib/libssl \
+	lib/libmd lib/libutil lib/libprocstat lib/librtld_db cddl/lib/libctf \
+	lib/libkiconv lib/libpam/libpam lib/libcom_err lib/libcrypt
+.if ${MK_KERBEROS} != "no"
+_cheri_libs+=kerberos5/lib/libroken kerberos5/lib/libasn1 kerberos5/lib/libwind \
+	kerberos5/lib/libhx509 kerberos5/lib/libheimbase \
+	kerberos5/lib/libheimipcc kerberos5/lib/libkrb5 
+_libgssapi=lib/libgssapi
+_kerberos5_libdir=kerberos5/lib
+.endif
+_cheri_libs+=lib/libopie lib/libradius lib/libtacplus lib/libypclnt \
+	lib/libldns secure/lib/libssh lib/msun lib/libnv lib/libcheri gnu/lib/libdialog \
+	lib/libfigpar ${_libgssapi} cddl/lib/libnvpair cddl/lib/libumem cddl/lib/libuutil \
+	cddl/lib/libzfs_core cddl/lib/libavl
+.if ${MK_KERBEROS} != "no"
+_cheri_libs+=kerberos5/lib/libheimntlm
+.endif
+_cheri_libs+=lib/libsqlite3
+.if ${MK_KERBEROS} != "no"
+_cheri_libs+=kerberos5/lib/libhdb
+.endif
+_cheri_libs+=usr.bin/lex/lib lib/libcxxrt lib/libc++ lib ${LOCAL_LIB_DIRS} \
+	cddl/lib gnu/lib secure/lib ${_kerberos5_libdir} ${INTERNAL_INC_DIRS} ${INTERNAL_LIB_DIRS}
+
 buildcheri:
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -1022,10 +1080,10 @@ buildcheri:
 	    MAKEFLAGS="-m ${.CURDIR}/tools/build/mk ${.MAKEFLAGS}" \
 	    MAKEOBJDIRPREFIX=${LIBCHERI_OBJTREE} ${MAKE} SSP_CFLAGS= DESTDIR= \
 	    DIRPRFX=${_dir}/ -DNO_LINT -DNO_CPU_CFLAGS MK_WARNS=no MK_CTF=no \
-	    ${_t}
+	    CROSSBUILD=${CROSSBUILD} ${_t}
 .endfor
 .endfor
-.for _lib in lib/csu lib/libgcc_eh lib/libcompiler_rt lib/libc lib/libc_nonshared lib/libgcc_s lib/libthr lib/libz lib/libbz2 lib/liblzma lib/libexpat secure/lib/libcrypto lib/libsbuf lib/libelf lib/libkvm lib/ncurses/ncurses lib/ncurses/ncursesw secure/lib/libssl lib/libmd lib/libutil lib/libprocstat lib/librtld_db cddl/lib/libctf lib/libkiconv lib/libpam/libpam lib/libcom_err lib/libcrypt kerberos5/lib/libroken kerberos5/lib/libasn1 kerberos5/lib/libwind kerberos5/lib/libhx509 kerberos5/lib/libheimbase kerberos5/lib/libheimipcc kerberos5/lib/libkrb5 lib/libopie lib/libradius lib/libtacplus lib/libypclnt lib/libldns secure/lib/libssh lib/msun lib/libnv lib/libcheri gnu/lib/libdialog lib/libfigpar lib/libgssapi cddl/lib/libnvpair cddl/lib/libumem cddl/lib/libuutil cddl/lib/libzfs_core cddl/lib/libavl kerberos5/lib/libheimntlm lib/libsqlite3 kerberos5/lib/libhdb usr.bin/lex/lib lib/libcxxrt lib/libc++ lib ${LOCAL_LIB_DIRS} cddl/lib gnu/lib secure/lib kerberos5/lib ${INTERNAL_INC_DIRS} ${INTERNAL_LIB_DIRS}
+.for _lib in ${_cheri_libs}
 	${_+_}@${ECHODIR} "===> ${_lib} (obj,all,install)"; \
 		cd ${.CURDIR}/${_lib} && \
 		    if [ -z "${NO_OBJ}" ]; then ${LIBCHERIWMAKE} DIRPRFX=${_lib}/ obj; fi && \
@@ -1033,7 +1091,7 @@ buildcheri:
 		    ${LIBCHERIWMAKE} MK_TESTS=no DIRPRFX=${_lib}/ install
 .endfor
 .if ${MK_TESTS} == "yes"
-.for _lib in lib/csu lib ${LOCAL_LIB_DIRS} cddl/lib gnu/lib secure/lib kerberos5/lib
+.for _lib in lib/csu lib ${LOCAL_LIB_DIRS} cddl/lib gnu/lib secure/lib ${_kerberos5_libdir}
 		cd ${.CURDIR}/${_lib} && \
 		    ${LIBCHERIWMAKE} DIRPRFX=${_lib}/ all
 .endfor
@@ -1208,7 +1266,7 @@ __installcheck_sh_check: .PHONY
 _zoneinfo=	zic tzsetup
 .endif
 
-ITOOLS=	[ awk cap_mkdb cat chflags chmod chown cmp cp \
+ITOOLS=	[ awk bmake cap_mkdb cat chflags chmod chown cmp cp \
 	date echo egrep find grep id install ${_install-info} \
 	ln make mkdir mtree mv pwd_mkdb \
 	rm sed services_mkdb sh strip sysctl test true uname wc ${_zoneinfo} \
@@ -1274,30 +1332,30 @@ distributeworld installworld stageworld: _installcheck_world .PHONY
 .if make(distributeworld)
 .for dist in ${EXTRA_DISTRIBUTIONS}
 	-mkdir ${DESTDIR}/${DISTDIR}/${dist}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.root.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.root.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist} >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr/include >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr/lib >/dev/null
 .endif
 .if defined(LIBCOMPAT)
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr/lib/debug/usr >/dev/null
 .endif
 .endif
 .if ${MK_TESTS} != "no" && ${dist} == "tests"
 	-mkdir -p ${DESTDIR}/${DISTDIR}/${dist}${TESTSBASE}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}${TESTSBASE} >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr/lib/debug/${TESTSBASE} >/dev/null
 .endif
 .endif
@@ -1995,10 +2053,18 @@ _kerberos5_bootstrap_tools= \
 .ORDER: ${_kerberos5_bootstrap_tools:C/^/${_bt}-/g}
 .endif
 
+.if empty(CROSSBUILD)
 # r283777 makewhatis(1) replaced with mandoc version which builds a database.
 _libopenbsd?=	lib/libopenbsd
 _makewhatis=	usr.bin/mandoc
 ${_bt}-usr.bin/mandoc: ${_bt}-lib/libopenbsd
+.endif
+
+.if empty(CROSSBUILD)
+_brandelf=usr.bin/brandelf
+_rpcgen=usr.bin/rpcgen
+_xinstall=usr.bin/xinstall
+.endif
 
 bootstrap-tools: .PHONY
 
@@ -2011,17 +2077,17 @@ bootstrap-tools: .PHONY
     ${_strfile} \
     ${_gperf} \
     ${_dtc} \
-    usr.bin/brandelf \
+    ${_brandelf} \
     ${_cat} \
     ${_kbdcontrol} \
     usr.bin/lorder \
     ${_libopenbsd} \
     ${_makewhatis} \
-    usr.bin/rpcgen \
+    ${_rpcgen} \
     ${_yacc} \
     ${_m4} \
     ${_lex} \
-    usr.bin/xinstall \
+    ${_xinstall} \
     ${_gensnmptree} \
     usr.sbin/config \
     ${_crunchide} \
@@ -2042,7 +2108,7 @@ bootstrap-tools: ${_bt}-${_tool}
 #
 # build-tools: Build special purpose build tools
 #
-.if !defined(NO_SHARE)
+.if !defined(NO_SHARE) && ${MK_SYSCONS} != "no"
 _share=	share/syscons/scrnmaps
 .endif
 
@@ -2055,6 +2121,15 @@ _gcc_tools= gnu/usr.bin/cc/cc_tools
 _rescue=rescue/rescue
 .endif
 
+.if !empty(CROSSBUILD)
+# __packed needs to be defined when (otherwise we get errors)
+_other_bootstrap_tools=usr.bin/mkesdb_static usr.bin/mkcsmapper_static
+.endif
+
+.if ${MK_FILE} != "no"
+_libmagic=lib/libmagic
+.endif
+
 .for _tool in \
     bin/csh \
     bin/sh \
@@ -2064,9 +2139,8 @@ _rescue=rescue/rescue
     ${_rescue} \
     ${_share} \
     usr.bin/awk \
-    lib/libmagic \
-    usr.bin/mkesdb_static \
-    usr.bin/mkcsmapper_static \
+    ${_libmagic} \
+    ${_other_bootstrap_tools} \
     usr.bin/vi/catalog
 build-tools_${_tool}: .PHONY
 	${_+_}@${ECHODIR} "===> ${_tool} (obj,build-tools)"; \
@@ -2090,7 +2164,7 @@ build-tools: build-tools_${_tool}
 #
 kernel-tools: .PHONY
 	mkdir -p ${MAKEOBJDIRPREFIX}/usr
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${MAKEOBJDIRPREFIX}/usr >/dev/null
 
 #
@@ -2102,7 +2176,7 @@ kernel-tools: .PHONY
 .if ${TARGET_ARCH} == "amd64" || ${TARGET_ARCH} == "i386"
 _btxld=		usr.sbin/btxld
 .endif
-.if ${TARGET_ARCH} == "mips64"
+.if ${TARGET_ARCH} == "mips64"  && !empty(CROSSBUILD)
 _cheritest=	lib/libxo \
 		bin/cheritest \
 		bin/cheriabitest
@@ -2156,6 +2230,8 @@ _gcc=		gnu/usr.bin/cc
 _usb_tools=	usr.bin/sysinit
 .endif
 
+
+# TODO:     usr.bin/sed  usr.bin/awk
 cross-tools: .MAKE .PHONY
 .for _tool in \
     ${LOCAL_XTOOL_DIRS} \
@@ -2208,12 +2284,12 @@ native-xtools: .PHONY
 	${NXBMAKE} DIRPRFX=${_gperf}/ DESTDIR=${OBJTREE}/gperf_for_gcc install
 .endif
 	mkdir -p ${NXBDESTDIR}/bin ${NXBDESTDIR}/sbin ${NXBDESTDIR}/usr
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${NXBDESTDIR}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${NXBDESTDIR}/usr/include >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
 	    -p ${NXBDESTDIR}/usr/lib >/dev/null
 .endif
 .for _tool in \
@@ -2883,7 +2959,7 @@ xdev-build: _xb-worldtmp _xb-bootstrap-tools _xb-build-tools _xb-cross-tools .PH
 
 _xb-worldtmp: .PHONY
 	mkdir -p ${CDTMP}/usr
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${CDTMP}/usr >/dev/null
 
 _xb-bootstrap-tools: .PHONY
@@ -2919,19 +2995,19 @@ _xb-cross-tools: .PHONY
 _xi-mtree: .PHONY
 	${_+_}@${ECHODIR} "mtree populating ${XDDESTDIR}"
 	mkdir -p ${XDDESTDIR}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.root.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.root.dist \
 	    -p ${XDDESTDIR} >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${XDDESTDIR}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${XDDESTDIR}/usr/include >/dev/null
 .if defined(LIBCOMPAT)
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${XDDESTDIR}/usr >/dev/null
 .endif
 .if ${MK_TESTS} != "no"
 	mkdir -p ${XDDESTDIR}${TESTSBASE}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${XDDESTDIR}${TESTSBASE} >/dev/null
 .endif
 

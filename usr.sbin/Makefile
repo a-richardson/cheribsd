@@ -87,7 +87,6 @@ SUBDIR=	adduser \
 	sysrc \
 	tcpdrop \
 	tcpdump \
-	traceroute \
 	trpt \
 	tzsetup \
 	uefisign \
@@ -99,6 +98,12 @@ SUBDIR=	adduser \
 	watchdogd \
 	zic \
 	zonectl
+
+
+.if !defined(CROSSBUILD)
+# undefined symbol with LLD
+SUBDIR+=	traceroute
+.endif
 
 # NB: keep these sorted by MK_* knobs
 

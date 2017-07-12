@@ -47,13 +47,13 @@
 #define CURSES_PRIV_H 1
 /* *INDENT-OFF* */
 
-#include <ncurses_dll.h>
+#include "ncurses_dll.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <ncurses_cfg.h>
+#include "ncurses_cfg.h"
 
 #if USE_RCS_IDS
 #define MODULE_ID(id) static const char Ident[] = id;

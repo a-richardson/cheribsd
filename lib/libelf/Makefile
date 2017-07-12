@@ -75,16 +75,16 @@ INCS=		libelf.h gelf.h
 # problems when a header file in sys depends on a file in another
 # part of the tree, e.g. a machine dependent header.
 #
-SRCS+=	sys/elf32.h sys/elf64.h sys/elf_common.h
+# SRCS+=	${SRCTOP}/sys/elf32.h ${SRCTOP}/sys/elf64.h ${SRCTOP}/sys/elf_common.h
 
 GENSRCS=	libelf_fsize.c libelf_msize.c libelf_convert.c
 CLEANFILES=	${GENSRCS}
 CLEANDIRS=	sys
-CFLAGS+=	-I. -I${SRCDIR} -I${ELFTCDIR}/common
+CFLAGS+=	-I. -I${SRCDIR} -I${ELFTCDIR}/common -I${SRCTOP}/sys
 
-sys/elf32.h sys/elf64.h sys/elf_common.h: ${SRCTOP}/sys/${.TARGET} .NOMETA
-	mkdir -p ${.OBJDIR}/sys
-	ln -sf ${.ALLSRC} ${.TARGET}
+# sys/elf32.h sys/elf64.h sys/elf_common.h: ${SRCTOP}/sys/${.TARGET} .NOMETA
+#	mkdir -p ${.OBJDIR}/sys
+#	ln -sf ${.ALLSRC} ${.TARGET}
 
 SHLIB_MAJOR=	2
 

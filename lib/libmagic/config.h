@@ -1,11 +1,15 @@
 /* $FreeBSD$ */
 
+#ifdef __FreeBSD__
+
 /* Get __FreeBSD_version. */
 #include <osreldate.h>
 
 /* Only specific versions of FreeBSD support xlocale */
 #if __FreeBSD_version >= 1000002 || (__FreeBSD_version < 1000000 && __FreeBSD_version >= 900506)
 #define FREEBSD_XLOCALE_SUPPORT 1
+#endif
+
 #endif
 
 /* config.h.  Generated from config.h.in by configure.  */

@@ -25,8 +25,11 @@ SUBDIR=adjkerntz \
 	fsck_msdosfs \
 	fsdb \
 	fsirand \
-	gbde \
-	geom \
+
+
+	# gbde \
+	
+SUBDIR+=	geom \
 	ggate \
 	growfs \
 	gvinum \

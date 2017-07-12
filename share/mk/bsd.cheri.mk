@@ -89,6 +89,8 @@ _CHERI_COMMON_FLAGS+=	-mllvm -cheri-exact-equals
 # Turn off deprecated warnings
 _CHERI_COMMON_FLAGS+= -Wno-deprecated-declarations
 
+LDFLAGS+=-fuse-ld=lld -Wl,-z,notext
+
 .if ${WANT_CHERI} == "pure" || ${WANT_CHERI} == "sandbox"
 OBJCOPY:=	objcopy
 MIPS_ABI=	purecap
