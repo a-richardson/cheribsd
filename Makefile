@@ -317,7 +317,7 @@ _guard: .PHONY
 	@false
 
 STARTTIME!= LC_ALL=C date
-CHECK_TIME!= find ${.CURDIR}/sys/sys/param.h -mtime -0s ; echo
+CHECK_TIME!= find ${.CURDIR}/sys/sys/param.h -mtime -0 ; echo
 .if !empty(CHECK_TIME)
 .error check your date/time: ${STARTTIME}
 .endif
