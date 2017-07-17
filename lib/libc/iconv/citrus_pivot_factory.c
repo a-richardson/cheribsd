@@ -201,18 +201,20 @@ _citrus_pivot_factory_convert(FILE *out, FILE *in)
 {
 	struct src_head sh;
 	struct _region r;
-	char *line;
-	size_t size;
+	char *line = NULL;
+	size_t linecap = 0;
+	ssize_t linelen;
 	int ret;
 
 	STAILQ_INIT(&sh);
 
-	while ((line = fgetln(in, &size)) != NULL)
-		if ((ret = convert_line(&sh, line, size))) {
+	while ((linelen = getline(&line, &linecap, in)) > 0)
+		if ((ret = convert_line(&sh, line, linelen))) {
 			free_src(&sh);
 			return (ret);
 		}
 
+	free(line);
 	ret = dump_db(&sh, &r);
 	free_src(&sh);
 	if (ret)
