@@ -102,7 +102,11 @@ static void indent(int, FILE *);
 static int nextfield(char *);
 static void skipbl(void);
 static int readline(FILE *);
-static void error(const char *, ...) __printf0like(1, 2) __dead2;
+static void error(const char *, ...)
+#ifdef __printf0like
+	__printf0like(1, 2)
+#endif
+	__dead2;
 static char *savestr(const char *);
 
 
