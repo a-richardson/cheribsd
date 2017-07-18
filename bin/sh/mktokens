@@ -38,7 +38,11 @@
 # token marks the end of a list.  The third column is the name to print in
 # error messages.
 
-temp=`/usr/bin/mktemp -t ka`
+mktemp_cmd=${MKTEMP:-mktemp}
+awk_cmd=${AWK:-awk}
+set -xe
+
+temp=`${mktemp_cmd} -t ka`
 cat > $temp <<\!
 TEOF	1	end of file
 TNL	0	newline
@@ -71,11 +75,11 @@ TNOT	0	"!"
 !
 nl=`wc -l $temp`
 exec > token.h
-awk '{print "#define " $1 " " NR-1}' $temp
+${awk_cmd} '{print "#define " $1 " " NR-1}' $temp
 echo '
 /* Array indicating which tokens mark the end of a list */
 static const char tokendlist[] = {'
-awk '{print "\t" $2 ","}' $temp
+${awk_cmd} '{print "\t" $2 ","}' $temp
 echo '};
 
 static const char *const tokname[] = {'
@@ -84,7 +88,7 @@ sed -e 's/"/\\"/g' \
     $temp
 echo '};
 '
-sed 's/"//g' $temp | awk '
+sed 's/"//g' $temp | ${awk_cmd} '
 /TIF/{print "#define KWDOFFSET " NR-1; print ""; print "const char *const parsekwd[] = {"}
 /TIF/,/neverfound/{print "	\"" $3 "\","}'
 echo '	0
