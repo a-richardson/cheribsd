@@ -196,8 +196,12 @@ SYSTEM_LD= @${LD} -m ${LD_EMULATION} -Bdynamic -T ${LDSCRIPT} ${_LDFLAGS} \
 	--no-warn-mismatch --warn-common --export-dynamic \
 	--dynamic-linker /red/herring \
 	-o ${.TARGET} -X ${SYSTEM_OBJS} vers.o
+.if ${COMPILER_TYPE} == "clang"
+SYSTEM_LD_TAIL= ${SIZE} ${.TARGET} ; chmod 755 ${.TARGET}
+.else
 SYSTEM_LD_TAIL= @${OBJCOPY} --strip-symbol gcc2_compiled. ${.TARGET} ; \
 	${SIZE} ${.TARGET} ; chmod 755 ${.TARGET}
+.endif
 SYSTEM_DEP+= ${LDSCRIPT}
 
 # Calculate path for .m files early, if needed.

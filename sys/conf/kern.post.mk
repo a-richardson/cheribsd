@@ -112,7 +112,7 @@ modules-all modules-depend: modules-obj
 .endif
 .endif
 
-.if !defined(DEBUG)
+.if !defined(DEBUG) || defined(WITHOUT_DEBUG_FILES)
 FULLKERNEL=	${KERNEL_KO}
 .else
 FULLKERNEL=	${KERNEL_KO}.full
@@ -149,6 +149,7 @@ ${FULLKERNEL}: ${SYSTEM_DEP} vers.o
 .if !defined(DEBUG)
 	${OBJCOPY} --strip-debug ${.TARGET}
 .endif
+	@echo ${SYSTEM_LD_TAIL}
 	${SYSTEM_LD_TAIL}
 .if defined(EMBED_CHERITEST_LIST)
 	sh ${S}/tools/embed_cheritest_list.sh ${FULLKERNEL}
@@ -186,7 +187,7 @@ lint: ${LNFILES}
 HACK_EXTRA_FLAGS?= -shared
 hack.pico: Makefile
 	:> hack.c
-	${CC} ${HACK_EXTRA_FLAGS} -nostdlib hack.c -o hack.pico
+	${CC} ${HACK_EXTRA_FLAGS} ${HACK_LDFLAGS} -nostdlib hack.c -o hack.pico
 	rm -f hack.c
 
 assym.s: $S/kern/genassym.sh genassym.o
