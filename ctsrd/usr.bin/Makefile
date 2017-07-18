@@ -2,8 +2,11 @@
 
 .include <src.opts.mk>
 
-SUBDIR=	browser \
-	writefile
+SUBDIR=writefile
+
+.if ${MK_FILE} != "no"
+SUBDIR+=	browser
+.endif
 
 # XXX: The latter two should be buildable without cheri but aren't yet.
 .if ${MK_CHERI} != "no"
