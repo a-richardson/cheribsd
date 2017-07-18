@@ -325,8 +325,9 @@ platform_start(__register_t a0, __register_t a1,  __register_t a2,
 
 	/* clear the BSS and SBSS segments */
 	kernend = (vm_offset_t)&end;
+#if 0
 	memset(&edata, 0, kernend - (vm_offset_t)(&edata));
-
+#endif
 	mips_postboot_fixup();
 
 	mips_pcpu0_init();
