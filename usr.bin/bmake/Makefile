@@ -145,6 +145,9 @@ _mfromdir=${srcdir}
 
 .include <bsd.prog.mk>
 
+# XXXAR: why do I need this here:
+LDFLAGS+=-fuse-ld=lld
+
 CPPFLAGS+= -DMAKE_NATIVE -DHAVE_CONFIG_H
 COPTS.var.c += -Wno-cast-qual
 COPTS.job.c += -Wno-format-nonliteral
