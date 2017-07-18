@@ -7,6 +7,18 @@ __BSD_PROG_MK=yes
 .include <bsd.cheri.mk>
 .include <bsd.compiler.mk>
 
+
+.if ${.TARGETS:Mbuild-tools} && defined(BOOTSTRAPPING)
+.warning "BUILD TOOLS: ${.TARGETS}"
+.if defined(CROSSBUILD) && ${CROSSBUILD} == "linux"
+LDFLAGS+=-lbsd
+# /usr/lib/x86_64-linux-gnu/libbsd.a
+NO_SHARED=no
+.endif
+.endif
+
+
+
 .SUFFIXES: .out .o .bc .c .cc .cpp .cxx .C .m .y .l .ll .ln .s .S .asm
 
 # XXX The use of COPTS in modern makefiles is discouraged.

@@ -286,6 +286,14 @@ YFLAGS		?=
 YFLAGS		?=	-d
 .endif
 
+.if target(build-tools)
+BUILD_TOOLS_CFLAGS?=	${CFLAGS}
+.if defined(CROSSBUILD) && ${CROSSBUILD} == "linux"
+BUILD_TOOLS_CFLAGS+=	-lbsd
+.endif
+.endif
+
+
 .if defined(%POSIX)
 
 .include "bsd.suffixes-posix.mk"
