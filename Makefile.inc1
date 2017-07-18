@@ -470,7 +470,7 @@ TMPPATH=	${STRICTTMPPATH}:${PATH}
 # when in the middle of installing over this system.
 #
 .if make(distributeworld) || make(installworld) || make(stageworld)
-INSTALLTMP!=	/usr/bin/mktemp -d -u -t install
+INSTALLTMP!=	mktemp -d -u -t install
 .endif
 
 .if make(stagekernel) || make(distributekernel)
@@ -936,7 +936,11 @@ _bootstrap-tools:
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 1.2: bootstrap tools"
 	@echo "--------------------------------------------------------------"
+.if defined(CROSSBUILD)
+	@echo "Skipping legacy stage when cross-compiling"
+.else
 	${_+_}cd ${.CURDIR}; ${BMAKE} bootstrap-tools
+.endif
 _cleanobj:
 .if !defined(NO_CLEAN)
 	@echo
@@ -962,11 +966,7 @@ _build-tools:
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 2.3: build tools"
 	@echo "--------------------------------------------------------------"
-.if !empty(CROSSBUILD)
-	@echo "Skipping build tools stage when cross-compiling"
-.else
 	${_+_}cd ${.CURDIR}; ${TMAKE} build-tools
-.endif
 _cross-tools:
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -974,7 +974,7 @@ _cross-tools:
 	@echo "--------------------------------------------------------------"
 	@rm -f ${.OBJDIR}/compiler-metadata.mk
 .if !empty(CROSSBUILD)
-	@echo "Skipping kernel cross tools stage when cross-compiling"
+	@echo "Skipping cross tools stage when cross-compiling"
 .else
 	${_+_}cd ${.CURDIR}; ${XMAKE} cross-tools
 	${_+_}cd ${.CURDIR}; ${XMAKE} kernel-tools
@@ -1266,11 +1266,14 @@ __installcheck_sh_check: .PHONY
 _zoneinfo=	zic tzsetup
 .endif
 
-ITOOLS=	[ awk bmake cap_mkdb cat chflags chmod chown cmp cp \
+ITOOLS=	[ awk bmake cap_mkdb cat chmod chown cmp cp \
 	date echo egrep find grep id install ${_install-info} \
 	ln make mkdir mtree mv pwd_mkdb \
 	rm sed services_mkdb sh strip sysctl test true uname wc ${_zoneinfo} \
 	${LOCAL_ITOOLS}
+.if defined(CROSSBUILD) && ${CROSSBUILD} != "linux"
+ITOOLS+=	chflags
+.endif
 
 # Needed for share/man
 .if ${MK_MAN_UTILS} != "no"
@@ -2064,6 +2067,7 @@ ${_bt}-usr.bin/mandoc: ${_bt}-lib/libopenbsd
 _brandelf=usr.bin/brandelf
 _rpcgen=usr.bin/rpcgen
 _xinstall=usr.bin/xinstall
+_use_sbin_config=usr.sbin/config
 .endif
 
 bootstrap-tools: .PHONY
@@ -2089,7 +2093,7 @@ bootstrap-tools: .PHONY
     ${_lex} \
     ${_xinstall} \
     ${_gensnmptree} \
-    usr.sbin/config \
+    ${_usr_sbin_config} \
     ${_crunchide} \
     ${_crunchgen} \
     ${_nmtree} \
