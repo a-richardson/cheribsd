@@ -34,7 +34,7 @@ CFLAGS+=	-I${.CURDIR}/${RTLD_ARCH} -I${.CURDIR}
 .if ${MACHINE_ARCH} == "powerpc64"
 LDFLAGS+=	-nostdlib -e _rtld_start
 .else
-LDFLAGS+=	-nostdlib -e .rtld_start
+LDFLAGS+=	-nostdlib -e rtld_start
 .endif
 WARNS?=		2
 INSTALLFLAGS=	-C -b
