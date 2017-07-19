@@ -75,6 +75,9 @@ CHERI_CXX=${CHERI_CC:H}/${CHERI_CC:T:S/clang/clang++/}
 
 _CHERI_COMMON_FLAGS=	-g -integrated-as --target=cheri-unknown-freebsd \
 			-msoft-float
+.ifdef CHERI_CC_COLOR_DIAGNOSTICS
+_CHERI_COMMON_FLAGS+=	-fcolor-diagnostics
+.endif
 _CHERI_CC=		${CHERI_CC} ${_CHERI_COMMON_FLAGS}
 _CHERI_CXX=		${CHERI_CXX} ${_CHERI_COMMON_FLAGS}
 _CHERI_CPP=		${CHERI_CPP} ${_CHERI_COMMON_FLAGS}
