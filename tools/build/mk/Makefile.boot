@@ -9,6 +9,8 @@ LDFLAGS+=	-L${WORLDTMP}/legacy/usr/lib
 CFLAGS+=	-I/usr/include/bsd -DLIBBSD_OVERLAY=1 -D_GNU_SOURCE=1 -D__unused= -DEFTYPE=EINVAL
 LDFLAGS+=	-lbsd
 NO_SHARED=	no
+.elif ${CROSSBUILD} == "mac"
+CFLAGS+=	-D_DARWIN_C_SOURCE=1 -D__packed= -D__unused=
 .endif
 
 # we do not want to capture dependencies referring to the above
