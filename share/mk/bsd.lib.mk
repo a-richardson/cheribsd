@@ -72,6 +72,8 @@ TAG_ARGS=	-T ${TAGS:[*]:S/ /,/g}
 CFLAGS+= ${DEBUG_FILES_CFLAGS}
 CXXFLAGS+= ${DEBUG_FILES_CFLAGS}
 CTFFLAGS+= -g
+STATIC_CFLAGS+= -g
+STATIC_CXXFLAGS+= -g
 .endif
 
 .include <bsd.libnames.mk>
