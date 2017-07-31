@@ -29,7 +29,9 @@
  */
 
 #include <sys/cdefs.h>
+#ifdef __FreeBSD__
 #include <sys/endian.h>
+#endif
 #include <sys/queue.h>
 #include <sys/types.h>
 
