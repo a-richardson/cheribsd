@@ -90,7 +90,7 @@ _CHERI_COMMON_FLAGS+=	-mllvm -cheri-exact-equals
 _CHERI_COMMON_FLAGS+= 	-Wno-deprecated-declarations
 
 # Don't make this an error until I have fixed all the issues
-_CHERI_COMMON_FLAGS+=	-Wno-error=capability-to-integer-cast
+_CHERI_COMMON_FLAGS+=	-Wno-error=capability-to-integer-cast -Wno-error=cheri-capability-misuse
 
 .if ${WANT_CHERI} == "pure" || ${WANT_CHERI} == "sandbox"
 OBJCOPY:=	objcopy
