@@ -136,7 +136,7 @@ cheri_ptr(const void *ptr, size_t len)
 {
 
 	/* Assume CFromPtr without base set, availability of CSetBounds. */
-	return (cheri_csetbounds((const void * __capability)ptr, len));
+	return (cheri_csetbounds((__cheri_cast const void * __capability)ptr, len));
 }
 
 static __inline void * __capability
