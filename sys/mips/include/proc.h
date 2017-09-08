@@ -75,6 +75,9 @@ struct mdthread {
 #endif
 #ifdef CPU_CHERI
 	void * __capability	md_tls_cap;
+#ifdef COMPAT_CHERIABI
+	void * __capability	md_cheri_mmap_cap;
+#endif
 #endif
 };
 
@@ -86,10 +89,8 @@ struct mdthread {
 #endif
 
 struct mdproc {
-#ifndef COMPAT_CHERIABI
-	/* empty */
-#else
-	void * __capability	md_cheri_mmap_cap;
+#ifdef CPU_CHERI
+	void * __capability md_cheri_sealcap;	/* Root of object-type tree. */
 #endif
 };
 

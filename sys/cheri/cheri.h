@@ -145,7 +145,7 @@ struct cheri_stack {
  */
 #ifdef _KERNEL
 void	cheri_capability_set(void * __capability *capp, uint32_t uperms,
-	    void *basep, size_t length, off_t off);
+	    vaddr_t basep, size_t length, off_t off);
 
 /*
  * CHERI capability utility functions.
@@ -164,7 +164,7 @@ void	cheri_exec_setregs(struct thread *td, u_long entry_addr);
 void	cheri_log_cheri_frame(struct trapframe *frame);
 void	cheri_log_exception(struct trapframe *frame, int trap_type);
 void	cheri_log_exception_registers(struct trapframe *frame);
-void	cheri_newthread_setregs(struct thread *td);
+void	cheri_newthread_setregs(struct thread *td, u_long entry_addr);
 int	cheri_syscall_authorize(struct thread *td, u_int code,
 	    int nargs, syscallarg_t *args);
 int	cheri_signal_sandboxed(struct thread *td);
@@ -179,7 +179,7 @@ void	cheri_trapframe_to_cheriframe(struct trapframe *frame,
  */
 struct pcb;
 struct sysarch_args;
-void	cheri_sealcap_copy(struct pcb *dst, struct pcb *src);
+void	cheri_sealcap_copy(struct proc *dst, struct proc *src);
 void	cheri_signal_copy(struct pcb *dst, struct pcb *src);
 void	cheri_stack_copy(struct pcb *dst, struct pcb *src);
 void	cheri_stack_init(struct pcb *pcb);

@@ -132,7 +132,7 @@ cpu_fork(struct thread *td1, struct proc *p2, struct thread *td2,int flags)
 	cheri_bcopy(td1->td_pcb, pcb2, sizeof(*pcb2));
 	cheri_signal_copy(pcb2, td1->td_pcb);
 	cheri_stack_copy(pcb2, td1->td_pcb);
-	cheri_sealcap_copy(pcb2, td1->td_pcb);
+	cheri_sealcap_copy(p2, p1);
 #endif
 
 	/* Point mdproc and then copy over td1's contents */
@@ -183,7 +183,7 @@ cpu_fork(struct thread *td1, struct proc *p2, struct thread *td2,int flags)
 #ifdef CPU_CHERI
 #ifdef COMPAT_CHERIABI
 	td2->td_md.md_tls_cap = td1->td_md.md_tls_cap;
-	p2->p_md.md_cheri_mmap_cap = p1->p_md.md_cheri_mmap_cap;
+	td2->td_md.md_cheri_mmap_cap = td1->td_md.md_cheri_mmap_cap;
 #endif
 	/*
 	 * XXXRW: Ensure capability coprocessor is enabled for both kernel and
@@ -453,7 +453,6 @@ cpu_copy_thread(struct thread *td, struct thread *td0)
 	cheri_bcopy(td0->td_pcb, pcb2, sizeof(*pcb2));
 	cheri_signal_copy(pcb2, td0->td_pcb);
 	cheri_stack_init(pcb2);
-	cheri_sealcap_copy(pcb2, td0->td_pcb);
 #endif
 
 	/*
@@ -495,6 +494,9 @@ cpu_copy_thread(struct thread *td, struct thread *td0)
 	/* Setup to release spin count in in fork_exit(). */
 	td->td_md.md_spinlock_count = 1;
 	td->td_md.md_saved_intr = MIPS_SR_INT_IE;
+#if defined(CPU_CHERI) && defined(COMPAT_CHERIABI)
+	td->td_md.md_cheri_mmap_cap = td0->td_md.md_cheri_mmap_cap;
+#endif
 #if 0
 	    /* Maybe we need to fix this? */
 	td->td_md.md_saved_sr = ( (MIPS_SR_COP_2_BIT | MIPS_SR_COP_0_BIT) |
@@ -559,7 +561,7 @@ cpu_set_upcall(struct thread *td, void (*entry)(void *), void *arg,
 	 * the completed MIPS trapframe and existing process state.
 	 */
 	tf->sr |= MIPS_SR_COP_2_BIT;
-	cheri_newthread_setregs(td);
+	cheri_newthread_setregs(td, (uintptr_t)entry);
 #endif
 /*	tf->sr |= (ALL_INT_MASK & idle_mask) | SR_INT_ENAB; */
 	/**XXX the above may now be wrong -- mips2 implements this as panic */

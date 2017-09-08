@@ -84,6 +84,7 @@ static union {
  */
 CTASSERT(offsetof(struct trapframe, ddc) % CHERICAP_SIZE == 0);
 CTASSERT(offsetof(struct mdthread, md_tls_cap) % CHERICAP_SIZE == 0);
+CTASSERT(offsetof(struct mdthread, md_cheri_mmap_cap) % CHERICAP_SIZE == 0);
 
 /*
  * For now, all we do is declare what we support, as most initialisation took
@@ -128,12 +129,12 @@ SYSINIT(cheri_cpu_startup, SI_SUB_CPU, SI_ORDER_FIRST, cheri_cpu_startup,
  * explicit base/length/offset arguments is quite the right thing.
  */
 void
-cheri_capability_set(void * __capability *cp, uint32_t perms, void *basep,
+cheri_capability_set(void * __capability *cp, uint32_t perms, vaddr_t basep,
     size_t length, off_t off)
 {
 	/* 'basep' is relative to $kdc. */
 	*cp = cheri_setoffset(cheri_andperm(cheri_csetbounds(
-	    cheri_incoffset(cheri_getkdc(), (vaddr_t)basep), length), perms),
+	    cheri_incoffset(cheri_getkdc(), basep), length), perms),
 	    off);
 
 	/*
@@ -150,7 +151,7 @@ cheri_capability_set(void * __capability *cp, uint32_t perms, void *basep,
 	    ("%s: permissions 0x%x rather than 0x%x", __func__,
 	    (unsigned int)cheri_getperm(*cp), perms));
 	KASSERT(cheri_getbase(*cp) == (register_t)basep,
-	    ("%s: base %p rather than %p", __func__,
+	    ("%s: base %p rather than %lx", __func__,
 	     (void *)cheri_getbase(*cp), basep));
 	KASSERT(cheri_getlen(*cp) == (register_t)length,
 	    ("%s: length 0x%x rather than %p", __func__,
@@ -190,7 +191,7 @@ cheri_capability_set_user_stc(void * __capability *cp)
 
 	/*
 	 * For now, initialise stack as ambient with identical rights as $ddc.
-	 * In the future, we will likely want to change this to be local
+	 * In the future, we will may want to change this to be local
 	 * (non-global).
 	 */
 	cheri_capability_set_user_ddc(cp);
@@ -238,14 +239,14 @@ cheri_capability_set_user_sigcode(void * __capability *cp, struct sysentvec *se)
 		base = se->sv_sigcode_base;
 	} else {
 		/*
-		 * XXX: true for mips64 and mip64-cheriabi without
-		 * shared page support...
+		 * XXX: true for mips64 and mip64-cheriabi without shared-page
+		 * support...
 		 */
 		base = (uintptr_t)se->sv_psstrings - szsigcode;
 		base = rounddown2(base, sizeof(struct chericap));
 	}
 
-	cheri_capability_set(cp, CHERI_CAP_USER_CODE_PERMS, (void *)base,
+	cheri_capability_set(cp, CHERI_CAP_USER_CODE_PERMS, base,
 	    szsigcode, 0);
 }
 
@@ -258,11 +259,17 @@ cheri_capability_set_user_sealcap(void * __capability *cp)
 	    CHERI_SEALCAP_USERSPACE_OFFSET);
 }
 
+/*
+ * Set per-thread CHERI register state for MIPS ABI processes.  In
+ * particular, we need to set up the CHERI register state for MIPS ABI
+ * processes with suitable capabilities.
+ *
+ * XXX: I also wonder if we should be inheriting signal-handling state...?
+ */
 void
-cheri_exec_setregs(struct thread *td, unsigned long entry_addr)
+cheri_newthread_setregs(struct thread *td, unsigned long entry_addr)
 {
 	struct trapframe *frame;
-	struct cheri_signal *csigp;
 
 	/*
 	 * We assume that the caller has initialised the trapframe to zeroes
@@ -277,7 +284,7 @@ cheri_exec_setregs(struct thread *td, unsigned long entry_addr)
 	    __func__));
 
 	/*
-	 * XXXRW: Experimental CHERI ABI initialises $ddc with full user
+	 * XXXRW: Experimental CheriABI initialises $ddc with full user
 	 * privilege, and all other user-accessible capability registers with
 	 * no rights at all.  The runtime linker/compiler/application can
 	 * propagate around rights as required.
@@ -285,11 +292,24 @@ cheri_exec_setregs(struct thread *td, unsigned long entry_addr)
 	cheri_capability_set_user_ddc(&frame->ddc);
 	cheri_capability_set_user_stc(&frame->stc);
 	cheri_capability_set_user_idc(&frame->idc);
-	cheri_capability_set_user_pcc(&frame->pcc);
+	cheri_capability_set_user_entry(&frame->pcc, entry_addr);
 	cheri_capability_set_user_entry(&frame->c12, entry_addr);
+}
+
+/*
+ * Set per-process CHERI state for MIPS ABI processes after exec.
+ * Initializes process-wide state as well as per-thread state for the
+ * process' initial thread.
+ */
+void
+cheri_exec_setregs(struct thread *td, unsigned long entry_addr)
+{
+	struct cheri_signal *csigp;
+
+	cheri_newthread_setregs(td, entry_addr);
 
 	/*
-	 * Also initialise signal-handling state; this can't yet be modified
+	 * Initialise signal-handling state; this can't yet be modified
 	 * by userspace, but the principle is that signal handlers should run
 	 * with ambient authority unless given up by the userspace runtime
 	 * explicitly.
@@ -308,23 +328,7 @@ cheri_exec_setregs(struct thread *td, unsigned long entry_addr)
 	 * Set up root for the userspace object-type sealing capability tree.
 	 * This can be queried using sysarch(2).
 	 */
-	cheri_capability_set_user_sealcap(&td->td_pcb->pcb_sealcap);
-}
-
-/*
- * Similar to a newly exec'd process, we need to set up the CHERI register
- * state for MIPS ABI processes with suitable capabilities.  We do this using
- * the existing MIPS registers as a starting point.
- *
- * XXX: Similar concerns exist here as exist above in cheri_exec_setregs().
- *
- * XXX: I also wonder if we should be inheriting signal-handling state...?
- */
-void
-cheri_newthread_setregs(struct thread *td)
-{
-
-	cheri_exec_setregs(td, td->td_pcb->pcb_regs.pc);
+	cheri_capability_set_user_sealcap(&td->td_proc->p_md.md_cheri_sealcap);
 }
 
 void

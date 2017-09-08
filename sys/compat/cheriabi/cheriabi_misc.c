@@ -1515,7 +1515,7 @@ cheriabi_syscall_helper_unregister(struct syscall_helper_data *sd)
 #define sucap(uaddr, base, offset, length, perms)			\
 	do {								\
 		void * __capability _tmpcap;				\
-		cheri_capability_set(&_tmpcap, (perms), (base),		\
+		cheri_capability_set(&_tmpcap, (perms), (vaddr_t)(base),\
 		    (length), (offset));				\
 		copyoutcap(&_tmpcap, uaddr, sizeof(_tmpcap));		\
 	} while(0)
@@ -1634,7 +1634,7 @@ cheriabi_copyout_strings(struct image_params *imgp)
 	 */
 	imgp->args->argv = (void *)vectp;
 	for (; argc > 0; --argc) {
-		sucap(vectp++, (void *)destp, 0, strlen(stringp) + 1,
+		sucap(vectp++, destp, 0, strlen(stringp) + 1,
 		    CHERI_CAP_USER_DATA_PERMS);
 		while (*stringp++ != 0)
 			destp++;
@@ -1655,7 +1655,7 @@ cheriabi_copyout_strings(struct image_params *imgp)
 	 */
 	imgp->args->envv = (void *)vectp;
 	for (; envc > 0; --envc) {
-		sucap(vectp++, (void *)destp, 0, strlen(stringp) + 1,
+		sucap(vectp++, destp, 0, strlen(stringp) + 1,
 		    CHERI_CAP_USER_DATA_PERMS);
 		while (*stringp++ != 0)
 			destp++;
@@ -1703,7 +1703,7 @@ convert_sigevent_c(struct sigevent_c *sig_c, struct sigevent *sig)
 
 #define	AUXARGS_ENTRY_CAP(pos, id, base, offset, len, perm)		\
 	do {								\
-		suword(pos++, id); sucap(pos++, (void *)(intptr_t)base,	\
+		suword(pos++, id); sucap(pos++, base,	\
 		    offset, len, perm);					\
 	} while(0)
 
@@ -1801,7 +1801,11 @@ cheriabi_elf_fixup(register_t **stack_base, struct image_params *imgp)
 {
 	void * __capability *base;
 
-	base = (void * __capability *)*stack_base;
+	KASSERT(((vaddr_t)*stack_base & (sizeof(void * __capability) - 1)) == 0,
+	    ("*stack_base (%p) is not capability aligned", *stack_base));
+
+	base = (void * __capability *)
+	    __builtin_assume_aligned(*stack_base, sizeof(void * __capability));
 	base += imgp->args->argc + imgp->args->envc + 2;
 
 	cheriabi_set_auxargs(base, imgp);
@@ -1860,16 +1864,10 @@ cheriabi_mmap(struct thread *td, struct cheriabi_mmap_args *uap)
 			return (EINVAL);
 		}
 
-		/* User didn't provide a capability so get the default one. */
-		PROC_LOCK(td->td_proc);
-		addr_cap = *((void * __capability *)&(td->td_proc->p_md.md_cheri_mmap_cap));
-		PROC_UNLOCK(td->td_proc);
-#ifdef INVARIANTS
-		int tag;
-		tag = cheri_gettag(addr_cap);
-		KASSERT(tag,
-		    ("td->td_proc->p_md.md_cheri_mmap_cap is untagged!"));
-#endif
+		/* User didn't provide a capability so get the thread one. */
+		addr_cap = td->td_md.md_cheri_mmap_cap;
+		KASSERT(cheri_gettag(addr_cap),
+		    ("td->td_md.md_cheri_mmap_cap is untagged!"));
 	}
 	cap_base = cheri_getbase(addr_cap);
 	cap_len = cheri_getlen(addr_cap);
@@ -2085,9 +2083,7 @@ cheriabi_mmap_set_retcap(struct thread *td, void * __capability *retcap,
 	if (flags & MAP_FIXED) {
 		addr = *addrp;
 	} else {
-		PROC_LOCK(td->td_proc);
-		addr = *((void * __capability *)&td->td_proc->p_md.md_cheri_mmap_cap);
-		PROC_UNLOCK(td->td_proc);
+		addr = td->td_md.md_cheri_mmap_cap;
 	}
 
 	if (cheriabi_mmap_honor_prot) {
