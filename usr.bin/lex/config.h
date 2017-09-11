@@ -206,3 +206,6 @@
 
 /* Define as `fork' if `vfork' does not work. */
 /* #undef vfork */
+
+/* __func__ is supported by the compiler */
+#define HAVE_DECL___FUNC__ 1
