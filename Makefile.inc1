@@ -1998,6 +1998,9 @@ _libmagic=lib/libmagic
 .if !defined(NO_CLEAN) && make(kernel-toolchain)
 _bt_clean=	${CLEANDIR}
 .endif
+.if ${MK_FILE} != "no"
+_libmagic=lib/libmagic
+.endif
 
 .for _tool in \
     ${_tcsh} \
