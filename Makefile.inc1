@@ -1989,6 +1989,10 @@ _rescue=rescue/rescue
 _tcsh=bin/csh
 .endif
 
+.if ${MK_FILE} != "no"
+_libmagic=lib/libmagic
+.endif
+
 .for _tool in \
     ${_tcsh} \
     bin/sh \
@@ -1998,7 +2002,7 @@ _tcsh=bin/csh
     ${_rescue} \
     ${_share} \
     usr.bin/awk \
-    lib/libmagic \
+    ${_libmagic} \
     usr.bin/mkesdb_static \
     usr.bin/mkcsmapper_static \
     usr.bin/vi/catalog
