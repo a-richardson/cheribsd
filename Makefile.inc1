@@ -88,6 +88,8 @@ MK_GCC_BOOTSTRAP=	no
 # Pull in COMPILER_TYPE and COMPILER_FREEBSD_VERSION early.
 .include "share/mk/bsd.compiler.mk"
 .include "share/mk/src.opts.mk"
+# Also pull in HOST_OS to detect whether we are crossbuilding
+.include "share/mk/host-target.mk"
 
 # Check if there is a local compiler that can satisfy as an external compiler.
 # Which compiler is expected to be used?
@@ -361,6 +363,12 @@ OSRELDATE=	0
 .export OSRELDATE
 .endif
 
+.if ${HOST_OS} != "FreeBSD"
+.if ${HOST_OS} != "Linux" && ${HOST_OS} != "Darwin"
+.warning "Unsupported crossbuild host: ${HOST_OS}. Build will probably fail!"
+.endif
+.endif
+
 # Set VERSION for CTFMERGE to use via the default CTFFLAGS=-L VERSION.
 .if !defined(_REVISION)
 _REVISION!=	${MAKE} -C ${SRCDIR}/release MK_AUTO_OBJ=no -V REVISION
@@ -444,6 +452,12 @@ _CPUTYPE!=	MAKEFLAGS= CPUTYPE=${_TARGET_CPUTYPE} ${MAKE} -f /dev/null \
 .endif
 .if make(buildworld)
 BUILD_ARCH!=	uname -p
+# Linux uname -p outputs x86_64 instead of amd64
+# .if ${HOST_OS} != "FreeBSD" && ${BUILD_ARCH} == "x86_64"
+# BUILD_ARCH:=amd64
+# .endif
+
+.info "MACHINE_ARCH=${MACHINE_ARCH}, BUILD_ARCH=${BUILD_ARCH}"
 .if ${MACHINE_ARCH} != ${BUILD_ARCH}
 .error To cross-build, set TARGET_ARCH.
 .endif
@@ -710,7 +724,11 @@ NO_META_IGNORE_HOST_HEADERS=	1
 # allows tracking the oldest osreldate to force rebuilds via
 # META_MODE_BADABI_REVS above.
 host-osreldate.h: # DO NOT ADD /usr/include/osreldate.h here
+.if ${HOST_OS} == "FreeBSD"
 	@cp -f /usr/include/osreldate.h ${.TARGET}
+.else
+	@cp -f ${.CURDIR}/fake-osreldate.h ${.TARGET}
+.endif
 
 WMAKE=		${WMAKEENV} ${MAKE} ${WORLD_FLAGS} -f Makefile.inc1 \
 		BWPHASE=${.TARGET:C,^_,,} \
@@ -869,13 +887,21 @@ _legacy:
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 1.1: legacy release compatibility shims"
 	@echo "--------------------------------------------------------------"
+.if ${HOST_OS} == "FreeBSD"
 	${_+_}cd ${.CURDIR}; ${BMAKE} legacy
+.else
+	@echo "Skipping legacy stage when building on ${HOST_OS}"
+.endif
 _bootstrap-tools:
 	@echo
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 1.2: bootstrap tools"
 	@echo "--------------------------------------------------------------"
+.if ${HOST_OS} == "FreeBSD"
 	${_+_}cd ${.CURDIR}; ${BMAKE} bootstrap-tools
+.else
+	@echo "Skipping bootstrap tools stage when building on ${HOST_OS}"
+.endif
 _cleanobj:
 .if !defined(NO_CLEAN)
 	@echo
@@ -907,8 +933,12 @@ _cross-tools:
 	@echo ">>> stage 3: cross tools"
 	@echo "--------------------------------------------------------------"
 	@rm -f ${OBJTOP}/compiler-metadata.mk
+.if ${HOST_OS} == "FreeBSD"
 	${_+_}cd ${.CURDIR}; ${XMAKE} cross-tools
 	${_+_}cd ${.CURDIR}; ${XMAKE} kernel-tools
+.else
+	@echo "Skipping cross tools stage when building on ${HOST_OS}"
+.endif
 _build-metadata:
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -1100,12 +1130,16 @@ __installcheck_sh_check: .PHONY
 _zoneinfo=	zic tzsetup
 .endif
 
-ITOOLS=	[ awk cap_mkdb cat chflags chmod chown cmp cp \
+ITOOLS=	[ awk cap_mkdb cat chmod chown cmp cp \
 	date echo egrep find grep id install ${_install-info} \
 	ln make mkdir mtree mv pwd_mkdb \
 	rm sed services_mkdb sh strip sysctl test true uname wc ${_zoneinfo} \
 	${LOCAL_ITOOLS}
-
+# chflags doesn't exist on Linux, just skip the calls for now
+# XXXAR: we could also create a wrapper that calls `chattr +i` for `chflags schg`, etc
+.if ${HOST_OS} != "Linux"
+ITOOLS+=	chflags
+.endif
 # Needed for share/man
 .if ${MK_MAN_UTILS} != "no"
 ITOOLS+=makewhatis
