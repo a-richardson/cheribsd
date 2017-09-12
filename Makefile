@@ -104,7 +104,7 @@
 # This is included so CC is set to ccache for -V, and COMPILER_TYPE/VERSION
 # can be cached for sub-makes.
 .if ${MAKE_VERSION} >= 20140620 && defined(.PARSEDIR)
-.include <bsd.compiler.mk>
+.sinclude <bsd.compiler.mk>
 .endif
 
 # Note: we use this awkward construct to be compatible with FreeBSD's

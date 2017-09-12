@@ -93,7 +93,7 @@ OBJTREE=	${MAKEOBJDIRPREFIX}/${TARGET}.${TARGET_ARCH}
 .endif
 
 # Pull in COMPILER_TYPE and COMPILER_FREEBSD_VERSION early.
-.include <bsd.compiler.mk>
+.include "share/mk/bsd.compiler.mk"
 .include "share/mk/src.opts.mk"
 
 # Check if there is a local compiler that can satisfy as an external compiler.
