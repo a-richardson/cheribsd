@@ -149,16 +149,16 @@ build${libcompat}: .PHONY
 	@echo ">>> stage 5.1: building lib${libcompat} shim libraries"
 	@echo "--------------------------------------------------------------"
 	mkdir -p ${LIBCOMPATTMP}/usr/include
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${LIBCOMPATTMP}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${LIBCOMPATTMP}/usr/include >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${LIBCOMPATTMP}/usr >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
 	    -p ${LIBCOMPATTMP}/usr/lib >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	mtree -deUW -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${LIBCOMPATTMP}/usr/lib/debug/usr >/dev/null
 .endif
 	mkdir -p ${WORLDTMP}
