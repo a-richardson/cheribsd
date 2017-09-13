@@ -718,10 +718,10 @@ NO_META_IGNORE_HOST_HEADERS=	1
 # allows tracking the oldest osreldate to force rebuilds via
 # META_MODE_BADABI_REVS above.
 host-osreldate.h: # DO NOT ADD /usr/include/osreldate.h here
-.if ${HOST_OS} != "FreeBSD"
+.if ${HOST_OS} == "FreeBSD"
 	@cp -f /usr/include/osreldate.h ${.TARGET}
 .else
-	@cp -f ${.PARSEDIR}/fake-osreldate.h ${.TARGET}
+	@cp -f ${.CURDIR}/fake-osreldate.h ${.TARGET}
 .endif
 
 WMAKE=		${WMAKEENV} ${MAKE} ${WORLD_FLAGS} -f Makefile.inc1 \
