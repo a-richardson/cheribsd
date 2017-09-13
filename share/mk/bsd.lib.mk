@@ -228,6 +228,11 @@ SOLINKOPTS+=	-Wl,--no-fatal-warnings
 SOLINKOPTS+=	-Wl,--fatal-warnings
 .endif
 SOLINKOPTS+=	-Wl,--warn-shared-textrel
+.if ${LINKER_TYPE} == "lld"
+# HACK: should only enable this for the libraries that need it
+# LLD defaults to errors on text relocations
+SOLINKOPTS+=	-Wl,-z,notext
+.endif
 
 .if target(beforelinking)
 beforelinking: ${SOBJS}

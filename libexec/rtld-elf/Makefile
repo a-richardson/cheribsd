@@ -49,6 +49,9 @@ CFLAGS+=	-fvisibility=hidden
 .endif
 .if ${MACHINE_CPUARCH} == "mips"
 CFLAGS.reloc.c+=-fno-jump-tables
+# LLD errors due to adding dynamic relocations for .eh_frame because clang
+# generates the wrong relocation in eh_frame on MIPS
+LDFLAGS+=	-Wl,-z,notext
 .endif
 LDFLAGS+=	-shared -Wl,-Bsymbolic -Wl,-z,defs
 LIBADD=		c_pic
