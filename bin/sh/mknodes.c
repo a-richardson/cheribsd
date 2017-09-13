@@ -102,6 +102,9 @@ static void indent(int, FILE *);
 static int nextfield(char *);
 static void skipbl(void);
 static int readline(FILE *);
+#ifndef __printf0like
+#define	__printf0like(fmtarg, firstvararg)
+#endif
 static void error(const char *, ...) __printf0like(1, 2) __dead2;
 static char *savestr(const char *);
 
