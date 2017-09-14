@@ -34,6 +34,7 @@
 #define _CITRUS_REGION_H_
 
 #include <sys/types.h>
+#include <stdint.h>
 
 struct _citrus_region {
 	void	*r_head;
