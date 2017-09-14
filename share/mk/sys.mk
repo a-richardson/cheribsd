@@ -242,7 +242,7 @@ LFLAGS		?=
 # LDFLAGS by stripping -Wl, from pass-through arguments and dropping
 # compiler driver flags (e.g. -mabi=*) that conflict with flags to LD.
 LD		?=	ld
-LDFLAGS		?=
+LDFLAGS		?=  ${LDFLAGS_INIT}
 _LDFLAGS	=	${LDFLAGS:S/-Wl,//g:N-mabi=*:N-fuse-ld=*}
 
 MAKE		?=	make
