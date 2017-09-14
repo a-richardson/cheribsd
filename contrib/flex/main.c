@@ -212,7 +212,7 @@ int main (argc, argv)
      int argc;
      char   *argv[];
 {
-#if ENABLE_NLS
+#ifdef ENABLE_NLS
 #if HAVE_LOCALE_H
 	setlocale (LC_MESSAGES, "");
         setlocale (LC_CTYPE, "");
