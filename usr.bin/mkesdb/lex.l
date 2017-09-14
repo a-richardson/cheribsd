@@ -31,7 +31,9 @@
  */
 
 #include <sys/cdefs.h>
+#if __has_include(<sys/endian.h>)
 #include <sys/endian.h>
+#endif
 #include <sys/queue.h>
 #include <sys/types.h>
 
