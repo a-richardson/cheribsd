@@ -241,7 +241,7 @@ get_node(char *name)
 	NODE *n;
 
 	if (db == NULL &&
-	    (db = dbopen(NULL, O_RDWR, 0, DB_HASH, NULL)) == NULL)
+	    (db = dbopen(NULL, O_RDWR|O_CREAT, 0, DB_HASH, NULL)) == NULL)
 		err(1, "db: %s", name);
 
 	key.data = name;
