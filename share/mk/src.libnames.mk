@@ -455,7 +455,7 @@ LIBSMDBDIR=	${_LIB_OBJTOP}/lib/libsmdb
 LIBSMDB?=	${LIBSMDBDIR}/libsmdb.a
 
 LIBSMUTILDIR=	${_LIB_OBJTOP}/lib/libsmutil
-LIBSMUTIL?=	${LIBSMDBDIR}/libsmutil.a
+LIBSMUTIL?=	${LIBSMUTILDIR}/libsmutil.a
 
 LIBNETBSDDIR?=	${_LIB_OBJTOP}/lib/libnetbsd
 LIBNETBSD?=	${LIBNETBSDDIR}/libnetbsd.a
@@ -488,16 +488,16 @@ LIBPARSEDIR=	${_LIB_OBJTOP}/usr.sbin/ntp/libparse
 LIBPARSE?=	${LIBPARSEDIR}/libparse.a
 
 LIBLPRDIR=	${_LIB_OBJTOP}/usr.sbin/lpr/common_source
-LIBLPR?=	${LIBOPTSDIR}/liblpr.a
+LIBLPR?=	${LIBLPRDIR}/liblpr.a
 
 LIBFIFOLOGDIR=	${_LIB_OBJTOP}/usr.sbin/fifolog/lib
-LIBFIFOLOG?=	${LIBOPTSDIR}/libfifolog.a
+LIBFIFOLOG?=	${LIBFIFOLOGDIR}/libfifolog.a
 
 LIBBSNMPTOOLSDIR=	${_LIB_OBJTOP}/usr.sbin/bsnmpd/tools/libbsnmptools
 LIBBSNMPTOOLS?=	${LIBBSNMPTOOLSDIR}/libbsnmptools.a
 
 LIBAMUDIR=	${_LIB_OBJTOP}/usr.sbin/amd/libamu
-LIBAMU?=	${LIBAMUDIR}/libamu/libamu.a
+LIBAMU?=	${LIBAMUDIR}/libamu.a
 
 LIBBFDDIR=	${_LIB_OBJTOP}/gnu/usr.bin/binutils/libbfd
 LIBBFD?=	${LIBBFDDIR}/libbfd.a

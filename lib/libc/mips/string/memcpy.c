@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015 SRI International
+ * Copyright (c) 2017 Robert Kovacsics
  * All rights reserved.
  *
  * This software was developed by SRI International and the University of
@@ -28,25 +28,5 @@
  * SUCH DAMAGE.
  */
 
-#include <cheri/cheri.h>
-#include <cheri/cheric.h>
-
-#include <string.h>
-
-void *
-memcpy(void *dst, const void *src, size_t len)
-{
-
-	if (len == 0)
-		return (dst);
-#if _MIPS_SZCAP == 256
-	memcpy_c(cheri_ptr(dst, len), cheri_ptr((void *)src, len), len);
-#else
-	/*
-	 * XXX-BD: Setting more precise bounds would be good, but punt for
-	 * now on compressed capability platforms.
-	 */
-	memcpy_c((__capability void*)dst, (const __capability void *)src, len);
-#endif
-	return (dst);
-}
+#define MEMCPY
+#include "jdw57_memcpy.c"

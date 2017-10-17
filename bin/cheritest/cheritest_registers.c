@@ -36,11 +36,14 @@
 #endif
 
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/time.h>
 
 #include <machine/cherireg.h>
 #include <machine/cpuregs.h>
+#include <machine/pte.h>
+#include <machine/vmparam.h>
 
 #include <cheri/cheri.h>
 #include <cheri/cheric.h>
@@ -134,8 +137,8 @@ check_initreg_code(__capability void *c)
 
 	/* Length. */
 	v = cheri_getlen(c);
-	if (v != CHERI_CAP_USER_CODE_LENGTH)
-		cheritest_failure_errx("length 0x%jx (expected 0x%jx)", v,
+	if (v > CHERI_CAP_USER_CODE_LENGTH)
+		cheritest_failure_errx("length 0x%jx (expected <= 0x%jx)", v,
 		    CHERI_CAP_USER_CODE_LENGTH);
 
 	/* Offset. */
@@ -185,8 +188,8 @@ check_initreg_code(__capability void *c)
 	if ((v & CHERI_PERM_SEAL) != 0)
 		cheritest_failure_errx("perms %jx (seal present)", v);
 
-	if ((v & CHERI_PERM_RESERVED0) != 0)
-		cheritest_failure_errx("perms %jx (reserved0 present)", v);
+	if ((v & CHERI_PERM_CCALL) == 0)
+		cheritest_failure_errx("perms %jx (ccall missing)", v);
 
 	if ((v & CHERI_PERM_RESERVED1) != 0)
 		cheritest_failure_errx("perms %jx (reserved1 present)", v);
@@ -224,8 +227,8 @@ check_initreg_data(__capability void *c)
 
 	/* Length. */
 	v = cheri_getlen(c);
-	if (v != CHERI_CAP_USER_DATA_LENGTH)
-		cheritest_failure_errx("length 0x%jx (expected 0x%jx)", v,
+	if (v > CHERI_CAP_USER_DATA_LENGTH)
+		cheritest_failure_errx("length 0x%jx (expected <= 0x%jx)", v,
 		    CHERI_CAP_USER_DATA_LENGTH);
 
 	/* Offset. */
@@ -275,8 +278,8 @@ check_initreg_data(__capability void *c)
 	if ((v & CHERI_PERM_SEAL) != 0)
 		cheritest_failure_errx("perms %jx (seal present)", v);
 
-	if ((v & CHERI_PERM_RESERVED0) != 0)
-		cheritest_failure_errx("perms %jx (reserved0 present)", v);
+	if ((v & CHERI_PERM_CCALL) == 0)
+		cheritest_failure_errx("perms %jx (ccall missing)", v);
 
 	if ((v & CHERI_PERM_RESERVED1) != 0)
 		cheritest_failure_errx("perms %jx (reserved1 present)", v);
@@ -386,8 +389,8 @@ test_initregs_stack(const struct cheri_test *ctp __unused)
 	if ((v & CHERI_PERM_SYSTEM_REGS) != 0)
 		cheritest_failure_errx("perms %jx (system_regs present)", v);
 
-	if ((v & CHERI_PERM_RESERVED0) != 0)
-		cheritest_failure_errx("perms %jx (reserved0 present)", v);
+	if ((v & CHERI_PERM_CCALL) == 0)
+		cheritest_failure_errx("perms %jx (ccall missing)", v);
 
 	if ((v & CHERI_PERM_RESERVED1) != 0)
 		cheritest_failure_errx("perms %jx (reserved1 present)", v);
