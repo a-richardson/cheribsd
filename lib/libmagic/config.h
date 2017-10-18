@@ -1,7 +1,11 @@
 /* $FreeBSD$ */
 
 /* Get __FreeBSD_version. */
+#ifdef __FreeBSD__
 #include <osreldate.h>
+#else
+#define __FreeBSD_version 0
+#endif
 
 /* Only specific versions of FreeBSD support xlocale */
 #if __FreeBSD_version >= 1000002 || (__FreeBSD_version < 1000000 && __FreeBSD_version >= 900506)
