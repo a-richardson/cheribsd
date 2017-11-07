@@ -350,7 +350,7 @@ expanded.c: MKexpanded.sh
 	sh ${NCURSES_DIR}/ncurses/tty/MKexpanded.sh "${CC:N${CCACHE_BIN}} -E" ${CFLAGS} >expanded.c
 
 fallback.c: MKfallback.sh
-	sh ${NCURSES_DIR}/ncurses/tinfo/MKfallback.sh > fallback.c
+	sh ${NCURSES_DIR}/ncurses/tinfo/MKfallback.sh "" "" "" > fallback.c
 
 # Generated headers
 nomacros.h: MKlib_gen.sh curses.h
