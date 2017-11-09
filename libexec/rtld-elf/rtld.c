@@ -1394,7 +1394,7 @@ digest_phdr(const Elf_Phdr *phdr, int phnum, caddr_t entry, const char *path)
     }
 
     obj->stack_flags = PF_X | PF_R | PF_W;
-
+    obj->mapsize = 0;
     for (ph = phdr;  ph < phlimit;  ph++) {
 	switch (ph->p_type) {
 
@@ -1409,8 +1409,8 @@ digest_phdr(const Elf_Phdr *phdr, int phnum, caddr_t entry, const char *path)
 		obj->textsize = round_page(ph->p_vaddr + ph->p_memsz) -
 		  obj->vaddrbase;
 	    } else {		/* Last load segment */
-		obj->mapsize = round_page(ph->p_vaddr + ph->p_memsz) -
-		  obj->vaddrbase;
+		obj->mapsize = MAX(round_page(ph->p_vaddr + ph->p_memsz) -
+		  obj->vaddrbase, obj->mapsize);
 	    }
 	    nsegs++;
 	    break;
