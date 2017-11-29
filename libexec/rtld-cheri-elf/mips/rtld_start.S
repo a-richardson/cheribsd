@@ -200,6 +200,7 @@ _rtld_bind_start:
 	csetoffset	$c3, $c3, a0
 	move	a0, t8			/* symbol index */
 
+#if 0
 	/* XXX-BD: hacky PIC call */
 	dla		t0, 1f
 1:	cgetpcc		$c12
@@ -210,6 +211,9 @@ _rtld_bind_start:
 	cincoffset	$c12, $c12, t9
 	cjalr	$c12, $c17
 	nop
+#else
+	PIC_CALL(_mips_rtld_bind)
+#endif
 	cgetpccsetoffset $c12, v0
 
 	cmove	$c11, $c24
