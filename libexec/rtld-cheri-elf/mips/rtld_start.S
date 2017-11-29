@@ -32,6 +32,7 @@
 
 #include <machine/asm.h>
 #include <machine/cherireg.h>
+#include "SYS.h"
 
 .globl _C_LABEL(_rtld_relocate_nonplt_self)
 .globl _C_LABEL(_rtld)
@@ -73,15 +74,29 @@ LEAF(rtld_start)
 	cgetdefault	$c4
 	csetoffset	$c4, $c4, a1	/* relocbase */
 
+#if 0
 	dla		a0, _DYNAMIC
 	cincoffset	$c3, $c4, a0	/* dynp */
+#else
+	/* load _DYNAMIC into $c3 (dynp) */
+	/* XXXAR: This assumes that PCC and DDC share the same base address */
+	PIC_LOAD_CODE_PTR($c3, a0, _DYNAMIC)
+	/* XXXAR: Just do a CAndPerm instead? Or do we need _DYNAMIC as r/w? */
+	cgetoffset	a0, $c3
+	cgetdefault	$c3	/* load DDC to convert code to data pointers */
+	csetoffset	$c3, $c3, a0
+#endif
 
+#if 0
 	/* XXX: Assume PCC and DDC share an offset. */
 	csetoffset	$c12, $c12, a1
 	dla		t0, _C_LABEL(_rtld_relocate_nonplt_self)
 	cincoffset	$c12, $c12, t0
 	cjalr		$c12, $c17
 	nop
+#else
+	PIC_CALL(_rtld_relocate_nonplt_self)
+#endif
 
 	clc		$c3, zero, SFRAME_AUXARGS($c11)
 	/* XXX-BD: Should allocate cleanup and objp outside stack. */
@@ -92,6 +107,7 @@ LEAF(rtld_start)
 	dli		t0, SFRAME_OBJP
 	cincoffset	$c5, $c11, t0			/* &objp */
 	csetbounds	$c5, $c5, t1
+#if 0
 	cld		t0, zero, SFRAME_RELOCBASE($c11)
 	dla		t9, _C_LABEL(_rtld)
 	daddu		t0, t0, t9
@@ -99,6 +115,9 @@ LEAF(rtld_start)
 	csetoffset	$c12, $c12, t0
 	cjalr		$c12, $c17	/* v0 = _rtld(auxargs, cleanup, objp) */
 	nop
+#else
+	PIC_CALL(_rtld)
+#endif
 
 	cmove		$c12, $c3
 	clc		$c3, zero, SFRAME_AUXARGS($c11)
