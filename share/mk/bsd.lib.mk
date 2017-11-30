@@ -445,6 +445,25 @@ SUBDIR_TARGETS+=	check
 TESTS_LD_LIBRARY_PATH+=	${.OBJDIR}
 .endif
 
+.if defined(CLANG_CREATE_COMPILATION_DB) && ${COMPILER_TYPE} == "clang"
+# Allow creating a compilation database using the new clang -MJ flag
+CFLAGS+=	-MJ${.TARGET}.cdb.json
+# Clang currently won't let us record linker commands
+# LDFLAGS+=	-MJ${.TARGET}.cdb.json
+
+compile_commands.json: ${_LIBS}
+	# We need to add an empty object to the end of the JSON to avoid
+	# trailing commas
+	(echo '['; cat *.cdb.json; echo '{}]') > ${.TARGET}
+.ifdef COPY_COMPILATION_DB_TO_SOURCE_DIR
+	ln -sf ${.TARGET:tA} ${.CURDIR:tA}/compile_commands.json
+.endif
+
+.ifndef _SKIP_BUILD
+all: compile_commands.json
+.endif
+.endif
+
 .include <bsd.dep.mk>
 .include <bsd.clang-analyze.mk>
 .include <bsd.obj.mk>
