@@ -1,8 +1,7 @@
 # $FreeBSD$
 
 .include "Makefile.boot"
-# .if ${HOST_OS} == "FreeBSD"
+# when bootstrapping we don't want to build shared libraries
+NO_SHARED:=	yes
+NO_PIC:=	yes
 .include "../../../share/mk/bsd.lib.mk"
-# .else
-# .include <bsd.lib.mk>
-# .endif
