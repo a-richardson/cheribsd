@@ -32,10 +32,12 @@
  * $FreeBSD$
  */
 
+#include <memory>
 #include <string>
 #include <functional>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ctype.h>
 #include <libgen.h>
 

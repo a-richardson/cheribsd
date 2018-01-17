@@ -19,15 +19,18 @@ TSORT:=	/usr/bin/tsort
 CFLAGS+=	-Werror=implicit-function-declaration -Werror=implicit-int \
 		-Werror=return-type -Wundef
 CFLAGS+=	-DHAVE_NBTOOL_CONFIG_H=1
-CFLAGS+=	-isystem  ${SRCTOP}/tools/build/cross-build/include/common
+CFLAGS+=	-I  ${SRCTOP}/tools/build/cross-build/include/common
 
 .if ${.MAKE.OS} == "Linux"
-CFLAGS+=	-isystem /usr/include/bsd -DLIBBSD_OVERLAY=1 -D_GNU_SOURCE=1
 CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/linux
+CFLAGS+=	-isystem /usr/include/bsd -DLIBBSD_OVERLAY=1 -D_GNU_SOURCE=1
+CFLAGS+=	-std=c99
 LDFLAGS+=	-lbsd
+# Linux tsort doesn't understand the -q flag
+TSORTFLAGS:=
 .elif ${.MAKE.OS} == "Darwin"
 CFLAGS+=	-D_DARWIN_C_SOURCE=1
-CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/mac
+CFLAGS+=	-I ${SRCTOP}/tools/build/cross-build/include/mac
 # The macOS ar and ranlib don't understand all the flags supported by the
 # FreeBSD and Linux ar/ranlib
 ARFLAGS:=	-cr

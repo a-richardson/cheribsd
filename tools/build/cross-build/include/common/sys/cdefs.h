@@ -1,6 +1,11 @@
 #pragma once
 #include_next <sys/cdefs.h>
 
+#ifdef __linux__
+#include <stdint.h>
+typedef uintptr_t __uintptr_t;
+#endif
+
 #ifndef __FBSDID
 #define __FBSDID(id)
 #endif
@@ -17,9 +22,6 @@
 #ifndef __va_list
 #include <stdarg.h>
 #define __va_list va_list
-#endif
-#ifndef __restrict
-#define __restrict restrict
 #endif
 
 #ifndef __pure

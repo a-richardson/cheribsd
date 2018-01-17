@@ -8,7 +8,7 @@
 
 static inline int
 eaccess(const char *path, int mode) {
-    return faccessat(AT_FDCWD, path, mode, AT_EACCESS);
+	return faccessat(AT_FDCWD, path, mode, AT_EACCESS);
 }
 /* Just needs to be declared, doesn't actually have to be implemented */
 void closefrom(int lowfd);
