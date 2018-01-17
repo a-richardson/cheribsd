@@ -5,28 +5,31 @@ DPADD+=		${WORLDTMP}/legacy/usr/lib/libegacy.a
 LDADD+=		-legacy
 LDFLAGS+=	-L${WORLDTMP}/legacy/usr/lib
 .if ${.MAKE.OS} != "FreeBSD"
+# On MacOS using a non-mac ar will fail the build, similarly on Linux using
+# nm may not work as expected if the nm for the target architecture comes in
+# $PATH before a nm that supports the host architecture.
+# To ensure that host binary compile as expected we use the tools from /usr/bin.
+AR:=	/usr/bin/ar
+RANLIB:=	/usr/bin/ranlib
+NM:=	/usr/bin/nm
+LORDER:=	/usr/bin/lorder
+TSORT:=	/usr/bin/tsort
+
 # Add various -Werror flags to catch missing function declarations
 CFLAGS+=	-Werror=implicit-function-declaration -Werror=implicit-int \
 		-Werror=return-type -Wundef
 CFLAGS+=	-DHAVE_NBTOOL_CONFIG_H=1
 CFLAGS+=	-isystem  ${SRCTOP}/tools/build/cross-build/include/common
+
 .if ${.MAKE.OS} == "Linux"
 CFLAGS+=	-isystem /usr/include/bsd -DLIBBSD_OVERLAY=1 -D_GNU_SOURCE=1
-CFLAGS+=	-isystem /Users/alex/cheri/freebsd-crossbuild/include/common
-CFLAGS+=	-isystem /Users/alex/cheri/freebsd-crossbuild/include/linux
-CFLAGS+=	-include /Users/alex/cheri/freebsd-crossbuild/include/linux/pre-include.h
+CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/linux
 LDFLAGS+=	-lbsd
 .elif ${.MAKE.OS} == "Darwin"
 CFLAGS+=	-D_DARWIN_C_SOURCE=1
 CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/mac
-CFLAGS+=	-isystem /Users/alex/cheri/freebsd-crossbuild/include/common
-CFLAGS+=	-isystem /Users/alex/cheri/freebsd-crossbuild/include/mac
-CFLAGS+=	-include /Users/alex/cheri/freebsd-crossbuild/include/mac/pre-include.h
-# On MacOS using a non-mac ar will fail the build
-AR:=	/usr/bin/ar
-RANLIB:=	/usr/bin/ranlib
-NM:=	/usr/bin/nm
-LORDER:=	/usr/bin/lorder
+# The macOS ar and ranlib don't understand all the flags supported by the
+# FreeBSD and Linux ar/ranlib
 ARFLAGS:=	-cr
 RANLIBFLAGS:=
 .else
