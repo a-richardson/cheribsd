@@ -88,8 +88,6 @@ MK_GCC_BOOTSTRAP=	no
 # Pull in COMPILER_TYPE and COMPILER_FREEBSD_VERSION early.
 .include "share/mk/bsd.compiler.mk"
 .include "share/mk/src.opts.mk"
-# Also pull in HOST_OS to detect whether we are crossbuilding
-.include "share/mk/host-target.mk"
 
 # Check if there is a local compiler that can satisfy as an external compiler.
 # Which compiler is expected to be used?
@@ -363,8 +361,9 @@ OSRELDATE=	0
 .export OSRELDATE
 .endif
 
-.if ${HOST_OS} != "FreeBSD"
-.if ${HOST_OS} != "Linux" && ${HOST_OS} != "Darwin"
+.if ${.MAKE.OS} != "FreeBSD"
+CROSSBUILDING=${.MAKE.OS}
+.if ${.MAKE.OS} != "Linux" && ${.MAKE.OS} != "Darwin"
 .warning "Unsupported crossbuild host: ${HOST_OS}. Build will probably fail!"
 .endif
 .endif
@@ -452,12 +451,6 @@ _CPUTYPE!=	MAKEFLAGS= CPUTYPE=${_TARGET_CPUTYPE} ${MAKE} -f /dev/null \
 .endif
 .if make(buildworld)
 BUILD_ARCH!=	uname -p
-# Linux uname -p outputs x86_64 instead of amd64
-# .if ${HOST_OS} != "FreeBSD" && ${BUILD_ARCH} == "x86_64"
-# BUILD_ARCH:=amd64
-# .endif
-
-.info "MACHINE_ARCH=${MACHINE_ARCH}, BUILD_ARCH=${BUILD_ARCH}"
 .if ${MACHINE_ARCH} != ${BUILD_ARCH}
 .error To cross-build, set TARGET_ARCH.
 .endif
@@ -532,6 +525,13 @@ CROSSENV+=	BUILD_TOOLS_META=.NOMETA
 CROSSENV+=	${TARGET_CFLAGS}
 .endif
 
+.if !defined(CROSSBUILDING)
+HOST_TOOLS_COMMON_MAKEFLAGS=-DNO_PIC MK_PROFILE=no -DNO_SHARED
+.else
+# When building Linux or Mac it will usually not be possible to link statically
+HOST_TOOLS_COMMON_MAKEFLAGS=MK_PROFILE=no
+.endif
+
 # bootstrap-tools stage
 BMAKEENV=	INSTALL="sh ${.CURDIR}/tools/install.sh" \
 		TOOLS_PREFIX=${WORLDTMP} \
@@ -547,7 +547,7 @@ BSARGS= 	DESTDIR= \
 		BWPHASE=${.TARGET:C,^_,,} \
 		SSP_CFLAGS= \
 		MK_HTML=no NO_LINT=yes MK_MAN=no \
-		-DNO_PIC MK_PROFILE=no -DNO_SHARED \
+		${HOST_TOOLS_COMMON_MAKEFLAGS} \
 		-DNO_CPU_CFLAGS MK_WARNS=no MK_CTF=no \
 		MK_CLANG_EXTRAS=no MK_CLANG_FULL=no \
 		MK_LLDB=no MK_TESTS=no \
@@ -590,7 +590,7 @@ KTMAKE=		TOOLS_PREFIX=${WORLDTMP} \
 		BOOTSTRAPPING=${OSRELDATE} \
 		SSP_CFLAGS= \
 		MK_HTML=no -DNO_LINT MK_MAN=no \
-		-DNO_PIC MK_PROFILE=no -DNO_SHARED \
+		${HOST_TOOLS_COMMON_MAKEFLAGS} \
 		-DNO_CPU_CFLAGS MK_WARNS=no MK_CTF=no
 
 # world stage
@@ -724,7 +724,7 @@ NO_META_IGNORE_HOST_HEADERS=	1
 # allows tracking the oldest osreldate to force rebuilds via
 # META_MODE_BADABI_REVS above.
 host-osreldate.h: # DO NOT ADD /usr/include/osreldate.h here
-.if ${HOST_OS} == "FreeBSD"
+.if !defined(CROSSBUILDING)
 	@cp -f /usr/include/osreldate.h ${.TARGET}
 .else
 	@cp -f ${.CURDIR}/fake-osreldate.h ${.TARGET}
@@ -842,7 +842,7 @@ _worldtmp: .PHONY
 .if !defined(NO_CLEAN)
 	rm -rf ${WORLDTMP}
 .else
-.if exists(${WORLDTMP})
+.if exists(${WORLDTMP}) && 0
 	@echo ">>> Deleting stale files in build tree..."
 	${_+_}cd ${.CURDIR}; ${WMAKE} -DBATCH_DELETE_OLD_FILES \
 	    delete-old delete-old-libs >/dev/null
@@ -887,21 +887,13 @@ _legacy:
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 1.1: legacy release compatibility shims"
 	@echo "--------------------------------------------------------------"
-.if ${HOST_OS} == "FreeBSD"
 	${_+_}cd ${.CURDIR}; ${BMAKE} legacy
-.else
-	@echo "Skipping legacy stage when building on ${HOST_OS}"
-.endif
 _bootstrap-tools:
 	@echo
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 1.2: bootstrap tools"
 	@echo "--------------------------------------------------------------"
-.if ${HOST_OS} == "FreeBSD"
 	${_+_}cd ${.CURDIR}; ${BMAKE} bootstrap-tools
-.else
-	@echo "Skipping bootstrap tools stage when building on ${HOST_OS}"
-.endif
 _cleanobj:
 .if !defined(NO_CLEAN)
 	@echo
@@ -933,7 +925,7 @@ _cross-tools:
 	@echo ">>> stage 3: cross tools"
 	@echo "--------------------------------------------------------------"
 	@rm -f ${OBJTOP}/compiler-metadata.mk
-.if ${HOST_OS} == "FreeBSD"
+.if ${.MAKE.OS} == "FreeBSD"
 	${_+_}cd ${.CURDIR}; ${XMAKE} cross-tools
 	${_+_}cd ${.CURDIR}; ${XMAKE} kernel-tools
 .else
@@ -1137,7 +1129,7 @@ ITOOLS=	[ awk cap_mkdb cat chmod chown cmp cp \
 	${LOCAL_ITOOLS}
 # chflags doesn't exist on Linux, just skip the calls for now
 # XXXAR: we could also create a wrapper that calls `chattr +i` for `chflags schg`, etc
-.if ${HOST_OS} != "Linux"
+.if ${.MAKE.OS} != "Linux"
 ITOOLS+=	chflags
 .endif
 # Needed for share/man
@@ -1832,6 +1824,9 @@ update: .PHONY
 .if ${BOOTSTRAPPING} < 1200020
 _elftoolchain_libs= lib/libelf lib/libdwarf
 .endif
+.if defined(CROSSBUILDING)
+_host_bootstrap_libs= lib/libmd lib/libsbuf
+.endif
 
 legacy: .PHONY
 # Temporary special case for automatically detecting the clang compiler issue
@@ -1851,7 +1846,7 @@ legacy: .PHONY
 	false
 .endif
 
-.for _tool in tools/build ${_elftoolchain_libs}
+.for _tool in tools/build ${_elftoolchain_libs} ${_host_bootstrap_libs}
 	${_+_}@${ECHODIR} "===> ${_tool} (obj,includes,all,install)"; \
 	    cd ${.CURDIR}/${_tool}; \
 	    if [ -z "${NO_OBJWALK}" ]; then ${MAKE} DIRPRFX=${_tool}/ obj; fi; \
@@ -1881,7 +1876,7 @@ _gperf=		gnu/usr.bin/gperf
 _vtfontcvt=	usr.bin/vtfontcvt
 .endif
 
-.if ${BOOTSTRAPPING} < 1000033
+.if ${BOOTSTRAPPING} < 1000033  || defined(CROSSBUILDING)
 _m4=		usr.bin/m4
 _lex=		usr.bin/lex
 
@@ -1891,7 +1886,7 @@ ${_bt}-usr.bin/lex: ${_bt}-usr.bin/m4
 
 # r245440 mtree -N support added
 # r313404 requires sha384.h for libnetbsd, added to libmd in r292782
-.if ${BOOTSTRAPPING} < 1100093
+.if ${BOOTSTRAPPING} < 1100093 || defined(CROSSBUILDING)
 _nmtree=	lib/libmd \
 		lib/libnetbsd \
 		usr.sbin/nmtree
@@ -1901,7 +1896,7 @@ ${_bt}-usr.sbin/nmtree: ${_bt}-lib/libnetbsd
 .endif
 
 # r246097: log addition login.conf.db, passwd, pwd.db, and spwd.db with cat -l
-.if ${BOOTSTRAPPING} < 1000027
+.if ${BOOTSTRAPPING} < 1000027 || defined(CROSSBUILDING)
 _cat=		bin/cat
 .endif
 
@@ -1916,7 +1911,8 @@ _crunchide=	usr.sbin/crunch/crunchide
 # 1200006: META_MODE fixes
 .if ${BOOTSTRAPPING} < 1100078 || \
     (${MK_AUTO_OBJ} == "yes" && ${BOOTSTRAPPING} < 1100114) || \
-    (${MK_META_MODE} == "yes" && ${BOOTSTRAPPING} < 1200006)
+    (${MK_META_MODE} == "yes" && ${BOOTSTRAPPING} < 1200006) || \
+    defined(CROSSBUILDING)
 _crunchgen=	usr.sbin/crunch/crunchgen
 .endif
 
@@ -1955,7 +1951,7 @@ _dtc= usr.bin/dtc
 _dtc= gnu/usr.bin/dtc
 .endif
 
-.if ${MK_KERBEROS} != "no"
+.if ${MK_KERBEROS} != "no"  || defined(CROSSBUILDING)
 _kerberos5_bootstrap_tools= \
 	kerberos5/tools/make-roken \
 	kerberos5/lib/libroken \
@@ -1968,6 +1964,16 @@ _kerberos5_bootstrap_tools= \
 .endif
 
 ${_bt}-usr.bin/mandoc: ${_bt}-lib/libopenbsd
+
+.if !defined(CROSSBUILDING)
+#  without significant changes localedef won't bootstrap on non-FreeBSD systems
+_localedef=usr.bin/localedef
+.endif
+
+.if defined(CROSSBUILDING)
+# find on Linux and Mac doesn't support all the flags used by buildworld
+_crossbuild_bootstrap_tools=usr.bin/find
+.endif
 
 bootstrap-tools: .PHONY
 
@@ -1996,7 +2002,8 @@ bootstrap-tools: .PHONY
     ${_crunchgen} \
     ${_nmtree} \
     ${_vtfontcvt} \
-    usr.bin/localedef
+    ${_localedef} \
+    ${_crossbuild_bootstrap_tools}
 ${_bt}-${_tool}: .PHONY .MAKE
 	${_+_}@${ECHODIR} "===> ${_tool} (obj,all,install)"; \
 		cd ${.CURDIR}/${_tool}; \

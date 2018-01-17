@@ -93,6 +93,15 @@ CFLAGS+= -DSKEIN_LOOP=995
 .PATH: ${.CURDIR}/${MACHINE_ARCH} ${SRCTOP}/sys/crypto/sha2
 .PATH: ${SRCTOP}/sys/crypto/skein ${SRCTOP}/sys/crypto/skein/${MACHINE_ARCH}
 
+NO_ASM?=0
+.if (!empty(${.TARGETS:Mbuild-tools}) || defined(BOOTSTRAPPING)) && \
+	${.MAKE.OS} == "Darwin"
+# The MacOS assembler doesn't understand all the ELF directives used in these
+# files so we need to skip them when bootstrapping
+NO_ASM:=1
+.endif
+
+.if ${NO_ASM} == 0
 .if exists(${MACHINE_ARCH}/sha.S)
 SRCS+=	sha.S
 CFLAGS+= -DSHA1_ASM
@@ -111,6 +120,7 @@ CFLAGS+= -DSKEIN_ASM -DSKEIN_USE_ASM=1792 # list of block functions to replace w
 .if exists(${MACHINE_ARCH}/sha.S) || exists(${MACHINE_ARCH}/rmd160.S) || exists(${MACHINE_ARCH}/skein_block_asm.s)
 ACFLAGS+= -DELF -Wa,--noexecstack
 .endif
+.endif # NO_ASM
 
 md4hl.c: mdXhl.c
 	(echo '#define LENGTH 16'; \

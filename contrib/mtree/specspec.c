@@ -41,6 +41,7 @@ __RCSID("$NetBSD: specspec.c,v 1.2 2012/10/05 01:27:29 christos Exp $");
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include "mtree.h"
 #include "extern.h"

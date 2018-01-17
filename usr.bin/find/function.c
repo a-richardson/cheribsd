@@ -42,17 +42,12 @@ static const char sccsid[] = "@(#)function.c	8.10 (Berkeley) 5/4/95";
 __FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
-#if __has_include(<sys/ucred.h>)
 #include <sys/ucred.h>
-#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/acl.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
-#if __has_include(<sys/statfs.h>)
-#include <sys/statfs.h>
-#endif
 
 #include <dirent.h>
 #include <err.h>
@@ -266,7 +261,7 @@ f_Xmin(PLAN *plan, FTSENT *entry)
 	} else if (plan->flags & F_TIME_A) {
 		COMPARE((now - entry->fts_statp->st_atime +
 		    60 - 1) / 60, plan->t_data.tv_sec);
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_ST_BIRTHTIME
 	} else if (plan->flags & F_TIME_B) {
 		COMPARE((now - entry->fts_statp->st_birthtime +
 		    60 - 1) / 60, plan->t_data.tv_sec);
@@ -311,7 +306,7 @@ f_Xtime(PLAN *plan, FTSENT *entry)
 
 	if (plan->flags & F_TIME_A)
 		xtime = entry->fts_statp->st_atime;
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_ST_BIRTHTIME
 	else if (plan->flags & F_TIME_B)
 		xtime = entry->fts_statp->st_birthtime;
 #endif
@@ -370,7 +365,6 @@ c_mXXdepth(OPTION *option, char ***argvp)
 		mindepth = find_parsenum(new, option->name, dstr, NULL);
 	return new;
 }
-
 
 #ifdef ACL_TYPE_NFS4
 /*
@@ -882,7 +876,6 @@ c_follow(OPTION *option, char ***argvp __unused)
 }
 
 #if HAVE_STRUCT_STATFS_F_FSTYPENAME
-
 /*
  * -fstype functions --
  *
@@ -985,7 +978,6 @@ c_fstype(OPTION *option, char ***argvp)
 	new->c_data = fsname;
 	return new;
 }
-
 #endif
 
 /*
@@ -1209,7 +1201,7 @@ f_newer(PLAN *plan, FTSENT *entry)
 
 	if (plan->flags & F_TIME_C)
 		ft = entry->fts_statp->st_ctim;
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_ST_BIRTHTIME
 	else if (plan->flags & F_TIME_A)
 		ft = entry->fts_statp->st_atim;
 	else if (plan->flags & F_TIME_B)
@@ -1252,7 +1244,7 @@ c_newer(OPTION *option, char ***argvp)
 			new->t_data = sb.st_ctim;
 		else if (option->flags & F_TIME2_A)
 			new->t_data = sb.st_atim;
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_ST_BIRTHTIME
 		else if (option->flags & F_TIME2_B)
 			new->t_data = sb.st_birthtim;
 #endif

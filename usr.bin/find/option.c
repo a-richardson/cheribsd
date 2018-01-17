@@ -61,7 +61,7 @@ static OPTION const options[] = {
 	{ "!",		c_simple,	f_not,		0 },
 	{ "(",		c_simple,	f_openparen,	0 },
 	{ ")",		c_simple,	f_closeparen,	0 },
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_ST_BIRTHTIME
 	{ "-Bmin",	c_Xmin,		f_Xmin,		F_TIME_B },
 	{ "-Bnewer",	c_newer,	f_newer,	F_TIME_B },
 	{ "-Btime",	c_Xtime,	f_Xtime,	F_TIME_B },
@@ -116,7 +116,7 @@ static OPTION const options[] = {
 	{ "-mtime",	c_Xtime,	f_Xtime,	0 },
 	{ "-name",	c_name,		f_name,		0 },
 	{ "-newer",	c_newer,	f_newer,	0 },
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_ST_BIRTHTIME
 	{ "-newerBB",	c_newer,	f_newer,	F_TIME_B | F_TIME2_B },
 	{ "-newerBa",	c_newer,	f_newer,	F_TIME_B | F_TIME2_A },
 	{ "-newerBc",	c_newer,	f_newer,	F_TIME_B | F_TIME2_C },
@@ -128,14 +128,14 @@ static OPTION const options[] = {
 	{ "-newerac",	c_newer,	f_newer,	F_TIME_A | F_TIME2_C },
 	{ "-neweram",	c_newer,	f_newer,	F_TIME_A },
 	{ "-newerat",	c_newer,	f_newer,	F_TIME_A | F_TIME2_T },
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_ST_BIRTHTIME
 	{ "-newercB",	c_newer,	f_newer,	F_TIME_C | F_TIME2_B },
 #endif
 	{ "-newerca",	c_newer,	f_newer,	F_TIME_C | F_TIME2_A },
 	{ "-newercc",	c_newer,	f_newer,	F_TIME_C | F_TIME2_C },
 	{ "-newercm",	c_newer,	f_newer,	F_TIME_C },
 	{ "-newerct",	c_newer,	f_newer,	F_TIME_C | F_TIME2_T },
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_ST_BIRTHTIME
 	{ "-newermB",	c_newer,	f_newer,	F_TIME2_B },
 #endif
 	{ "-newerma",	c_newer,	f_newer,	F_TIME2_A },
