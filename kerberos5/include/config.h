@@ -693,7 +693,9 @@ static /**/const char *const rcsid[] = { (const char *)rcsid, "@(#)" msg }
 #define HAVE_RESOLV_H 1
 
 /* Define to 1 if you have the `res_ndestroy' function. */
+#ifndef __linux__
 #define HAVE_RES_NDESTROY 1
+#endif
 
 /* Define to 1 if you have the `res_nsearch' function. */
 #define HAVE_RES_NSEARCH 1

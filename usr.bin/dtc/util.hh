@@ -36,6 +36,8 @@
 #define _UTIL_HH_
 
 #include <vector>
+#include <cstdint>
+#include <string>
 
 // If we aren't using C++11, then just ignore static asserts.
 #if __cplusplus < 201103L
