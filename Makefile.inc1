@@ -938,6 +938,7 @@ _build-metadata:
 	@echo "--------------------------------------------------------------"
 	${_+_}cd ${.CURDIR}; ${WMAKE} compiler-metadata.mk
 	${_+_}cd ${.CURDIR}; ${WMAKE} host-osreldate.h
+	@echo "DONE"; false
 _includes:
 	@echo
 	@echo "--------------------------------------------------------------"
