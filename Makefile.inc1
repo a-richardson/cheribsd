@@ -925,12 +925,8 @@ _cross-tools:
 	@echo ">>> stage 3: cross tools"
 	@echo "--------------------------------------------------------------"
 	@rm -f ${OBJTOP}/compiler-metadata.mk
-.if ${.MAKE.OS} == "FreeBSD"
 	${_+_}cd ${.CURDIR}; ${XMAKE} cross-tools
 	${_+_}cd ${.CURDIR}; ${XMAKE} kernel-tools
-.else
-	@echo "Skipping cross tools stage when building on ${HOST_OS}"
-.endif
 _build-metadata:
 	@echo
 	@echo "--------------------------------------------------------------"
