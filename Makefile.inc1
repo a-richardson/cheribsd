@@ -529,7 +529,7 @@ CROSSENV+=	${TARGET_CFLAGS}
 HOST_TOOLS_COMMON_MAKEFLAGS=-DNO_PIC MK_PROFILE=no -DNO_SHARED
 .else
 # When building Linux or Mac it will usually not be possible to link statically
-HOST_TOOLS_COMMON_MAKEFLAGS=MK_PROFILE=no
+HOST_TOOLS_COMMON_MAKEFLAGS=MK_PROFILE=no MK_NLS=no MK_BSD_GREP=yes
 .endif
 
 # bootstrap-tools stage
@@ -1974,6 +1974,12 @@ _localedef=usr.bin/localedef
 .if defined(CROSSBUILDING)
 # find on Linux and Mac doesn't support all the flags used by buildworld
 _crossbuild_bootstrap_tools=usr.bin/find
+# grep is also incompatible
+_crossbuild_bootstrap_tools=usr.bin/grep
+# We also need to build mtree since Linux doesn't have it and the MacOS version
+# is different
+# TODO: can we skip the mtree invocations before this has been built?
+_crossbuild_bootstrap_tools=usr.sbin/nmtree
 .endif
 
 bootstrap-tools: .PHONY
