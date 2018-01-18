@@ -963,16 +963,18 @@ everything: .PHONY
 	${_+_}cd ${.CURDIR}; _PARALLEL_SUBDIR_OK=1 ${WMAKE} all
 
 WMAKE_TGTS=
+HOST_TOOLS_TGTS=
 .if !defined(WORLDFAST)
-WMAKE_TGTS+=	_sanity_check _worldtmp _legacy
+HOST_TOOLS_TGTS+=	_sanity_check _worldtmp _legacy
 .if empty(SUBDIR_OVERRIDE)
-WMAKE_TGTS+=	_bootstrap-tools
+HOST_TOOLS_TGTS+=	_bootstrap-tools
 .endif
-WMAKE_TGTS+=	_cleanobj
+HOST_TOOLS_TGTS+=	_cleanobj
 .if !defined(NO_OBJWALK)
-WMAKE_TGTS+=	_obj
+HOST_TOOLS_TGTS+=	_obj
 .endif
-WMAKE_TGTS+=	_build-tools _cross-tools
+HOST_TOOLS_TGTS+=	_build-tools _cross-tools
+WMAKE_TGTS+=	${HOST_TOOLS_TGTS}
 WMAKE_TGTS+=	_build-metadata
 WMAKE_TGTS+=	_includes
 .endif
@@ -984,6 +986,7 @@ WMAKE_TGTS+=	everything
 WMAKE_TGTS+=	build${libcompat}
 .endif
 
+host-tools: ${HOST_TOOLS_TGTS}
 buildworld: buildworld_prologue ${WMAKE_TGTS} buildworld_epilogue .PHONY
 .ORDER: buildworld_prologue ${WMAKE_TGTS} buildworld_epilogue
 

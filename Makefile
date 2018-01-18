@@ -139,11 +139,11 @@ TGTS=	all all-man buildenv buildenvvars buildkernel buildworld \
 	stage-packages \
 	create-packages-world create-packages-kernel create-packages \
 	packages installconfig real-packages sign-packages package-pkg \
-	print-dir test-system-compiler
+	print-dir test-system-compiler host-tools
 
 # These targets require a TARGET and TARGET_ARCH be defined.
 XTGTS=	native-xtools native-xtools-install xdev xdev-build xdev-install \
-	xdev-links
+	xdev-links host-tools
 
 # XXX: r156740: This can't work since bsd.subdir.mk is not included ever.
 # It will only work for SUBDIR_TARGETS in make.conf.
@@ -167,6 +167,7 @@ META_TGT_WHITELIST+= \
 	tinderbox toolchain \
 	toolchains universe world worlds xdev xdev-build
 
+.ORDER: host-tools buildworld
 .ORDER: buildworld installworld
 .ORDER: buildworld distrib-dirs
 .ORDER: buildworld distribution
