@@ -66,3 +66,5 @@ typedef	unsigned long	u_long;
 
 /* This is needed so that BSNMP doesn't redeclare an incompatible version */
 #define HAVE_STRLCPY 1
+/* The compiler supports __func__ */
+#define HAVE_DECL___FUNC__ 1

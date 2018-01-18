@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sys/_endian.h>
+#include <machine/endian.h>
 #include <stdint.h>
 
 /*
@@ -10,7 +10,9 @@
 #define bswap32(x)      __builtin_bswap32(x)
 #define bswap64(x)      __builtin_bswap64(x)
 
-
+#define _BYTE_ORDER __DARWIN_BYTE_ORDER
+#define _LITTLE_ENDIAN __DARWIN_LITTLE_ENDIAN
+#define _BIG_ENDIAN __DARWIN_BIG_ENDIAN
 /*
  * Host to big endian, host to little endian, big endian to host, and little
  * endian to host byte order functions as detailed in byteorder(9).
