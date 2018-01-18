@@ -44,13 +44,15 @@ SRCS+=		futimens.c utimensat.c
 .if ${.MAKE.OS} != "FreeBSD"
 # don't copy stdlib.h when cross-building since it will cause
 # conflicts with the host system's headers
-INCS:=
+INCS:=	${INCS:Nstdlib.h}
 SYSINCS+=	${SRCTOP}/sys/sys/md5.h
 SYSINCS+=	${SRCTOP}/sys/sys/sbuf.h
 .PATH: ${.CURDIR}/../../lib/libc/stdlib
 SRCS+=	strtonum.c
 .PATH: ${.CURDIR}/../../lib/libc/locale
 SRCS+=	rpmatch.c
+.if ${.MAKE.OS} == "Linux"
+.endif
 .endif
 
 .if empty(SRCS)

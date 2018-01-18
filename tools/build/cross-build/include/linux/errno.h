@@ -4,3 +4,7 @@
 #ifndef EFTYPE
 #define EFTYPE EINVAL
 #endif
+
+#ifndef EPROCLIM
+#define EPROCLIM EAGAIN
+#endif

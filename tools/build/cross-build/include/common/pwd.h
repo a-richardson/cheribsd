@@ -15,9 +15,15 @@ int
 uid_from_user(const char *name, uid_t *uid);
 
 int
-setpassent(int stayopen);
-
-int
 uid_from_user(const char *name, uid_t *uid);
 const char *
 user_from_uid(uid_t uid, int noname);
+
+#ifdef __linux__
+static inline int
+setpassent(int stayopen)
+{
+  setpwent();
+  return 1;
+}
+#endif
