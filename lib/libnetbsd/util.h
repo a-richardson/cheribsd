@@ -36,6 +36,7 @@
 #define _LIBNETBSD_UTIL_H_
 
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <libutil.h>
 #include <stdio.h>
 

@@ -319,9 +319,11 @@ main(int argc, char *argv[])
 		uid = (uid_t)-1;
 
 	if (fflags != NULL && !dounpriv) {
+#ifdef UF_SETTABLE
 		if (strtofflags(&fflags, &fset, NULL))
 			errx(EX_USAGE, "%s: invalid flag", fflags);
 		iflags |= SETFLAGS;
+#endif
 	}
 
 	if (metafile != NULL) {
@@ -533,7 +535,7 @@ do_link(const char *from_name, const char *to_name,
 				unlink(tmpl);
 				err(EX_OSERR, "%s", to_name);
 			}
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 			if (target_sb->st_flags & NOCHANGEBITS)
 				(void)chflags(to_name, target_sb->st_flags &
 				     ~NOCHANGEBITS);
@@ -581,7 +583,7 @@ do_symlink(const char *from_name, const char *to_name,
 			(void)unlink(tmpl);
 			err(EX_OSERR, "%s", to_name);
 		}
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 		if (target_sb->st_flags & NOCHANGEBITS)
 			(void)chflags(to_name, target_sb->st_flags &
 			     ~NOCHANGEBITS);
@@ -783,7 +785,7 @@ install(const char *from_name, const char *to_name, u_long fset, u_int flags)
 		if (target && !safecopy) {
 			if (to_sb.st_mode & S_IFDIR && rmdir(to_name) == -1)
 				err(EX_OSERR, "%s", to_name);
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 			if (to_sb.st_flags & NOCHANGEBITS)
 				(void)chflags(to_name,
 				    to_sb.st_flags & ~NOCHANGEBITS);
@@ -899,7 +901,7 @@ install(const char *from_name, const char *to_name, u_long fset, u_int flags)
 	 * and the files are different (or just not compared).
 	 */
 	if (tempcopy && !files_match) {
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 		/* Try to turn off the immutable bits. */
 		if (to_sb.st_flags & NOCHANGEBITS)
 			(void)chflags(to_name, to_sb.st_flags & ~NOCHANGEBITS);
@@ -915,7 +917,7 @@ install(const char *from_name, const char *to_name, u_long fset, u_int flags)
 				(void)printf("install: %s -> %s\n", to_name, backup);
 			if (unlink(backup) < 0 && errno != ENOENT) {
 				serrno = errno;
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 				if (to_sb.st_flags & NOCHANGEBITS)
 					(void)chflags(to_name, to_sb.st_flags);
 #endif
@@ -926,7 +928,7 @@ install(const char *from_name, const char *to_name, u_long fset, u_int flags)
 			if (link(to_name, backup) < 0) {
 				serrno = errno;
 				unlink(tempfile);
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 				if (to_sb.st_flags & NOCHANGEBITS)
 					(void)chflags(to_name, to_sb.st_flags);
 #endif
@@ -974,7 +976,7 @@ install(const char *from_name, const char *to_name, u_long fset, u_int flags)
 	if (!dounpriv && ((gid != (gid_t)-1 && gid != to_sb.st_gid) ||
 	    (uid != (uid_t)-1 && uid != to_sb.st_uid) ||
 	    (mode != (to_sb.st_mode & ALLPERMS)))) {
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 		/* Try to turn off the immutable bits. */
 		if (to_sb.st_flags & NOCHANGEBITS)
 			(void)fchflags(to_fd, to_sb.st_flags & ~NOCHANGEBITS);
@@ -1000,7 +1002,7 @@ install(const char *from_name, const char *to_name, u_long fset, u_int flags)
 			err(EX_OSERR, "%s: chmod", to_name);
 		}
 	}
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 	/*
 	 * If provided a set of flags, set them, otherwise, preserve the
 	 * flags, except for the dump flag.
@@ -1150,7 +1152,7 @@ create_newfile(const char *path, int target, struct stat *sbp)
 		 * off the append/immutable bits -- if we fail, go ahead,
 		 * it might work.
 		 */
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 		if (sbp->st_flags & NOCHANGEBITS)
 			(void)chflags(path, sbp->st_flags & ~NOCHANGEBITS);
 #endif
@@ -1159,7 +1161,7 @@ create_newfile(const char *path, int target, struct stat *sbp)
 			if ((size_t)snprintf(backup, MAXPATHLEN, "%s%s",
 			    path, suffix) != strlen(path) + strlen(suffix)) {
 				saved_errno = errno;
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 				if (sbp->st_flags & NOCHANGEBITS)
 					(void)chflags(path, sbp->st_flags);
 #endif
@@ -1174,7 +1176,7 @@ create_newfile(const char *path, int target, struct stat *sbp)
 				    path, backup);
 			if (rename(path, backup) < 0) {
 				saved_errno = errno;
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 				if (sbp->st_flags & NOCHANGEBITS)
 					(void)chflags(path, sbp->st_flags);
 #endif
