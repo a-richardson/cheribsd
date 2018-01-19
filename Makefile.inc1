@@ -2051,6 +2051,8 @@ _crossbuild_bootstrap_tools+=usr.bin/find
 _crossbuild_bootstrap_tools+=usr.bin/grep
 # and sed
 _crossbuild_bootstrap_tools+=usr.bin/sed
+# and expr
+_crossbuild_bootstrap_tools+=bin/expr
 # for usr.sbin/config we need file2c (which doesn't exist on Linux)
 _crossbuild_bootstrap_tools+=usr.bin/file2c
 ${_bt}-usr.sbin/config: ${_bt}-usr.bin/file2c ${_bt_lex_depend}
