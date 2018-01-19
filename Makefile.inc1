@@ -2051,8 +2051,18 @@ _crossbuild_bootstrap_tools+=usr.bin/find
 _crossbuild_bootstrap_tools+=usr.bin/grep
 # and sed
 _crossbuild_bootstrap_tools+=usr.bin/sed
+# there was/is some flag passed to rmdir that didn't work on Linux
+_crossbuild_bootstrap_tools+=bin/rmdir
+# similarly test also was incompatible
+_crossbuild_bootstrap_tools+=bin/test
+# mktemp is also slightly different (Linux only accepts a single template,
+# whereas FreeBSD can take multiple). I don't think this feature is used but
+# as this is just a single portable C file let's use the one from the source
+# tree just to be absolutely safe.
+_crossbuild_bootstrap_tools+=usr.bin/mktemp
 # and expr
 _crossbuild_bootstrap_tools+=bin/expr
+
 # for usr.sbin/config we need file2c (which doesn't exist on Linux)
 _crossbuild_bootstrap_tools+=usr.bin/file2c
 ${_bt}-usr.sbin/config: ${_bt}-usr.bin/file2c ${_bt_lex_depend}
