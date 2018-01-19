@@ -523,6 +523,11 @@ BOOTSTRAPPING?=	0
 # Keep these in sync -- see below for special case exception
 MINIMUM_SUPPORTED_OSREL?= 900044
 MINIMUM_SUPPORTED_REL?= 9.1
+# When crossbuilding pretend that we are building from the minimum supported
+# version so that all bootstrap tools get built
+.ifdef CROSSBUILDING
+BOOTSTRAPPING:=	${MINIMUM_SUPPORTED_OSREL}
+.endif
 
 # Common environment for world related stages
 CROSSENV+=	\
