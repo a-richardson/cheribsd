@@ -47,7 +47,9 @@ ${var}=	${${var}.${${X_}_ld_hash}}
 
 .if ${ld} == "LD" || (${ld} == "XLD" && ${XLD} != ${LD})
 .if !defined(${X_}LINKER_TYPE) || !defined(${X_}LINKER_VERSION)
-_ld_version!=	(${${ld}} --version || echo none) | head -n 1
+# If we pass -v and --version even the Mac linker will print a version message
+# before failing with ld: unknown option: --version
+_ld_version!=	(${${ld}} -v --version 2>&1 || echo none) | head -n 1
 .if ${_ld_version} == "none"
 .warning Unable to determine linker type from ${ld}=${${ld}}
 .endif
@@ -57,6 +59,10 @@ _v=	${_ld_version:M[1-9].[0-9]*:[1]}
 .elif ${_ld_version:[1]} == "LLD"
 ${X_}LINKER_TYPE=	lld
 _v=	${_ld_version:[2]}
+.elif ${_ld_version:[1]} == "@(\#)PROGRAM:ld"
+# bootstrap linker on MacOS
+${X_}LINKER_TYPE=	mac
+_v=	${_ld_version:[2]:S/PROJECT:ld64-//}
 .else
 .warning Unknown linker from ${ld}=${${ld}}: ${_ld_version}, defaulting to bfd
 ${X_}LINKER_TYPE=	bfd
