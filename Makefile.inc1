@@ -1954,7 +1954,6 @@ legacy: .PHONY
 	    ${MAKE} DIRPRFX=${_tool}/ MK_INCLUDES=no \
 	        DESTDIR=${WORLDTMP}/legacy install
 .endfor
-	false
 
 #
 # bootstrap-tools: Build tools needed for compatibility. These are binaries that
