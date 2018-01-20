@@ -4,10 +4,11 @@
 
 LIB=		egacy
 SRC=
-INCSGROUPS=	INCS SYSINCS
+INCSGROUPS=	INCS SYSINCS MACHINESYSINCS
 INCS=
 
 SYSINCSDIR=	${INCLUDEDIR}/sys
+MACHINESYSINCSDIR=	${INCLUDEDIR}/machine
 
 BOOTSTRAPPING?=	0
 
@@ -47,12 +48,27 @@ SRCS+=		futimens.c utimensat.c
 INCS:=	${INCS:Nstdlib.h}
 SYSINCS+=	${SRCTOP}/sys/sys/md5.h
 SYSINCS+=	${SRCTOP}/sys/sys/sbuf.h
+SYSINCS+=	${SRCTOP}/sys/sys/elf32.h
+SYSINCS+=	${SRCTOP}/sys/sys/elf64.h
+SYSINCS+=	${SRCTOP}/sys/sys/elf_common.h
+SYSINCS+=	${SRCTOP}/sys/sys/elf_generic.h
+_host_arch=${MACHINE}
+.if ${_host_arch} == "x86_64"
+# bmake on Linux/mac often prints that instead of amd64
+_host_arch=amd64
+.endif
+MACHINESYSINCS+=	${SRCTOP}/sys/${_host_arch}/include/elf.h
+
 .PATH: ${.CURDIR}/../../lib/libc/stdlib
 SRCS+=	strtonum.c
 .PATH: ${.CURDIR}/../../lib/libc/locale
 SRCS+=	rpmatch.c
-.if ${.MAKE.OS} == "Linux"
-.endif
+
+# needed for btxld:
+MACHINESYSINCS+=	${SRCTOP}/sys/${_host_arch}/include/exec.h
+MACHINESYSINCS+=	${SRCTOP}/sys/${_host_arch}/include/reloc.h
+INCS+=	${SRCTOP}/include/a.out.h
+SYSINCS+=	${SRCTOP}/sys/sys/imgact_aout.h
 .endif
 
 .if empty(SRCS)
