@@ -35,6 +35,12 @@ CFLAGS+=	-I ${SRCTOP}/tools/build/cross-build/include/mac
 # FreeBSD and Linux ar/ranlib
 ARFLAGS:=	-cr
 RANLIBFLAGS:=
+
+# to get libarchive (needed for elftoolchain)
+# MacOS ships /usr/lib/libarchive.dylib but doesn't have the headers
+CFLAGS+=	-I/usr/local/opt/libarchive/include
+LDFLAGS+=	-L/usr/local/opt/libarchive/lib
+
 .else
 .error "Unsupported build OS: ${.MAKE.OS}"
 .endif
