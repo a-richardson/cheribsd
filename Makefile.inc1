@@ -337,6 +337,24 @@ BUILDENV_SHELL?=${SHELL}
 BUILDENV_SHELL?=/bin/sh
 .endif
 
+.if ${.MAKE.OS} != "FreeBSD"
+CROSSBUILDING=${.MAKE.OS}
+.if ${.MAKE.OS} != "Linux" && ${.MAKE.OS} != "Darwin"
+.warning "Unsupported crossbuild host: ${HOST_OS}. Build will probably fail!"
+.endif
+# Use bash with -o pipefail to make sure that all commands exist
+# somehow bmake won't use the check string
+.if !exists(/tmp/bash-with-pipefail)
+_FOOOOO!=	echo '\#!/bin/sh' > /tmp/bash-with-pipefail
+_FOOOOO!=	echo 'exec /bin/bash -o pipefail "$$@"' >> /tmp/bash-with-pipefail
+_FOOOOO!=	chmod +x /tmp/bash-with-pipefail
+.endif
+.SHELL: name=bash path=/tmp/bash-with-pipefail hasErrCtl=true \
+		      check="set -uo pipefail" ignore="set +euo pipefail" \
+		      echo="set -xv" quiet="set +x" filter="set +x" \
+		      echoFlag=xv errFlag="e" newline="'\n'"
+.endif
+
 .if !defined(SVN) || empty(SVN)
 . for _P in /usr/bin /usr/local/bin
 .  for _S in svn svnlite
