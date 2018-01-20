@@ -376,17 +376,12 @@ VCS_REVISION=	$$(echo r${_VCS_REVISION})
 .if exists(/usr/include/osreldate.h)
 OSRELDATE!=	awk '/^\#define[[:space:]]*__FreeBSD_version/ { print $$3 }' \
 		/usr/include/osreldate.h
+.elif defined(CROSSBUILDING)
+OSRELDATE=	${MINIMUM_SUPPORTED_OSREL}
 .else
 OSRELDATE=	0
 .endif
 .export OSRELDATE
-.endif
-
-.if ${.MAKE.OS} != "FreeBSD"
-CROSSBUILDING=${.MAKE.OS}
-.if ${.MAKE.OS} != "Linux" && ${.MAKE.OS} != "Darwin"
-.warning "Unsupported crossbuild host: ${HOST_OS}. Build will probably fail!"
-.endif
 .endif
 
 # Set VERSION for CTFMERGE to use via the default CTFFLAGS=-L VERSION.
@@ -577,6 +572,15 @@ BMAKEENV=	INSTALL="sh ${.CURDIR}/tools/install.sh" \
 BMAKEENV+=	AWK="${WORLDTMP}/legacy/usr/bin/awk" \
 		LEX="${WORLDTMP}/legacy/usr/bin/lex" \
 		YACC="${WORLDTMP}/legacy/usr/bin/yacc"
+# For some reason the bsd.compiler.mk hash doesn't work, lets just set it here to avoid extra work
+BMAKEENV+=	CC=${CC} CXX=${CXX} \
+		COMPILER_TYPE=${COMPILER_TYPE} \
+		COMPILER_VERSION=${COMPILER_VERSION} \
+		COMPILER_FREEBSD_VERSION=${COMPILER_FREEBSD_VERSION} \
+		XCC=${XCC} XCXX=${XCCX} \
+		X_COMPILER_TYPE=${X_COMPILER_TYPE} \
+		X_COMPILER_VERSION=${X_COMPILER_VERSION} \
+		X_COMPILER_FREEBSD_VERSION=${X_COMPILER_FREEBSD_VERSION}
 .endif
 # need to keep this in sync with targets/pseudo/bootstrap-tools/Makefile
 BSARGS= 	DESTDIR= \
@@ -904,7 +908,7 @@ _worldtmp: .PHONY
 # available on the target system (this happens e.g. when building on Linux)
 .for _dir in \
     lib lib/casper usr legacy/bin legacy/usr legacy/usr/bin legacy/usr/sbin \
-    legacy/usr/lib legacy/usr/include/sys
+    legacy/usr/lib legacy/usr/include/sys  legacy/usr/include/machine
 	mkdir -p ${WORLDTMP}/${_dir}
 .endfor
 
@@ -917,19 +921,20 @@ _worldtmp: .PHONY
 # basic commands (used only with known flags)
 _host_tools_to_symlink=	basename chmod chown cmp cp date dirname echo env \
 	false fmt gzip \
-	head id join ln mkdir mv nice rm ls realpath tee touch \
+	head id ln mkdir mv nice rm ls realpath tee touch \
 	tr true sh sleep hostname \
-	patch uname wc which
+	patch uname uniq wc which
 # should we bootstrap this instead?
 _host_tools_to_symlink+=gperf
 # needed by bootloader
 _host_tools_to_symlink+=bzip2 dd
 # TODO: fake sysctl script
+_host_abs_tools_to_symlink=	${MAKE}:make ${MAKE}:bmake
 .if ${CROSSBUILDING} == "Darwin"
 # the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
 # Therefore we need to add this symlink and then have the bootstrap-tools phase
 # overwrite it with the correct version. This requires m4 from homebrew.
-_host_tools_to_symlink+=/usr/local/opt/m4/bin/m4
+_host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
 .endif
 .endif
 
@@ -941,16 +946,25 @@ _legacy:
 .if defined(CROSSBUILDING)
 	@echo "Linking host tools into ${WORLDTMP}/legacy/usr/bin"
 .for _tool in ${_host_tools_to_symlink}
-# TODO: should we skip this symlink if it exists?
-	@source_path=`which ${_tool}`; \
-	target_path="${WORLDTMP}/legacy/usr/bin/`basename ${_tool}`"; \
-	if [ ! -e "$${source_path}" ] ; then \
-		echo "Cannot find host tool '${_tool}'"; false; \
-	elif [ ! -e "$${target_path}" ] ; then \
+	@if [ ! -e "${WORLDTMP}/legacy/usr/bin/${_tool}" ]; then \
+		@source_path=`which ${_tool}`; \
+		if [ ! -e "$${source_path}" ] ; then \
+			echo "Cannot find host tool '${_tool}'"; false; \
+		fi; \
+		ln -sfnv "$${source_path}" "${WORLDTMP}/legacy/usr/bin/${_tool}"; \
+	fi
+.endfor
+.for _tool in ${_host_abs_tools_to_symlink}
+	@source_path="${_tool:S/:/ /:[1]}"; \
+	target_path="${WORLDTMP}/legacy/usr/bin/${_tool:S/:/ /:[2]}"; \
+	if [ ! -e "$${target_path}" ] ; then \
+		if [ ! -e "$${source_path}" ] ; then \
+			echo "Host tool '${src_path}' is missing"; false; \
+		fi; \
 		ln -sfnv "$${source_path}" "$${target_path}"; \
 	fi
 .endfor
-.endif
+.endif # defined(CROSSBUILDING)
 	${_+_}cd ${.CURDIR}; ${BMAKE} legacy
 _bootstrap-tools:
 	@echo
@@ -1024,12 +1038,13 @@ _includes:
 .if !empty(SUBDIR_OVERRIDE) && make(buildworld)
 	${_+_}cd ${.CURDIR}; ${WMAKE} MK_INCLUDES=yes SHARED=symlinks includes
 .endif
+	false
 _libraries:
 	@echo
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 4.2: building libraries"
 	@echo "--------------------------------------------------------------"
-	@echo "DONE"; false
+	# @echo "DONE"; false
 	${_+_}cd ${.CURDIR}; \
 	    ${WMAKE} -DNO_FSCHG MK_HTML=no -DNO_LINT MK_MAN=no \
 	    MK_PROFILE=no MK_TESTS=no MK_TESTS_SUPPORT=${MK_TESTS} libraries
@@ -1298,14 +1313,14 @@ distributeworld installworld stageworld: _installcheck_world .PHONY
 .endif
 .endif
 .if defined(NO_ROOT)
-	${IMAKEENV} mtree -C -f ${.CURDIR}/etc/mtree/BSD.root.dist | \
+	${IMAKEENV} ${MTREE} -C -f ${.CURDIR}/etc/mtree/BSD.root.dist | \
 	    sed -e 's#^\./#./${dist}/#' >> ${METALOG}
-	${IMAKEENV} mtree -C -f ${.CURDIR}/etc/mtree/BSD.usr.dist | \
+	${IMAKEENV} ${MTREE} -C -f ${.CURDIR}/etc/mtree/BSD.usr.dist | \
 	    sed -e 's#^\./#./${dist}/usr/#' >> ${METALOG}
-	${IMAKEENV} mtree -C -f ${.CURDIR}/etc/mtree/BSD.include.dist | \
+	${IMAKEENV} ${MTREE} -C -f ${.CURDIR}/etc/mtree/BSD.include.dist | \
 	    sed -e 's#^\./#./${dist}/usr/include/#' >> ${METALOG}
 .if defined(LIBCOMPAT)
-	${IMAKEENV} mtree -C -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist | \
+	${IMAKEENV} ${MTREE} -C -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist | \
 	    sed -e 's#^\./#./${dist}/usr/#' >> ${METALOG}
 .endif
 .endif
@@ -1909,7 +1924,7 @@ update: .PHONY
 _elftoolchain_libs= lib/libelf lib/libdwarf
 .endif
 .if defined(CROSSBUILDING)
-_host_bootstrap_libs= lib/libmd lib/libsbuf
+_host_bootstrap_libs=	lib/libmd lib/libsbuf
 .endif
 
 legacy: .PHONY
@@ -1939,6 +1954,7 @@ legacy: .PHONY
 	    ${MAKE} DIRPRFX=${_tool}/ MK_INCLUDES=no \
 	        DESTDIR=${WORLDTMP}/legacy install
 .endfor
+	false
 
 #
 # bootstrap-tools: Build tools needed for compatibility. These are binaries that
@@ -1947,10 +1963,6 @@ legacy: .PHONY
 # libraries, augmented by -legacy.
 #
 _bt=		_bootstrap-tools
-
-# Dummy target to allow dependencies to be specified as ${_bt}-${_foo}
-#_bootstrap-tools-:
-#	@true
 
 .if ${MK_GAMES} != "no"
 _strfile=	usr.bin/fortune/strfile
@@ -2009,8 +2021,8 @@ _crunchgen=	usr.sbin/crunch/crunchgen
 .endif
 
 # r296926 -P keymap search path, MFC to stable/10 in r298297
-.if ${BOOTSTRAPPING} < 1003501 || \
-	(${BOOTSTRAPPING} >= 1100000 && ${BOOTSTRAPPING} < 1100103)
+.if !defined(CROSSBUILDING) && (${BOOTSTRAPPING} < 1003501 || \
+	(${BOOTSTRAPPING} >= 1100000 && ${BOOTSTRAPPING} < 1100103))
 _kbdcontrol=	usr.sbin/kbdcontrol
 .endif
 
@@ -2068,8 +2080,11 @@ _localedef=usr.bin/localedef
 .if defined(CROSSBUILDING)
 # most awk scripts used during the build won't work with GNU awk
 _crossbuild_bootstrap_tools=usr.bin/awk
+${_bt}-usr.bin/awk: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
 # find on Linux and Mac doesn't support all the flags used by buildworld
 _crossbuild_bootstrap_tools+=usr.bin/find
+${_bt}-usr.bin/find: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+
 # grep is also incompatible
 _crossbuild_bootstrap_tools+=usr.bin/grep
 # and sed
@@ -2083,12 +2098,28 @@ _crossbuild_bootstrap_tools+=bin/test
 # as this is just a single portable C file let's use the one from the source
 # tree just to be absolutely safe.
 _crossbuild_bootstrap_tools+=usr.bin/mktemp
+# join on MacOS doesn't understand everything that the build uses
+_crossbuild_bootstrap_tools+=usr.bin/join
 # and expr
 _crossbuild_bootstrap_tools+=bin/expr
+${_bt}-bin/expr: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
 
 # for usr.sbin/config we need file2c (which doesn't exist on Linux)
 _crossbuild_bootstrap_tools+=usr.bin/file2c
 ${_bt}-usr.sbin/config: ${_bt}-usr.bin/file2c ${_bt_lex_depend}
+
+# gencat also needs to be built from FreeBSD sources
+_crossbuild_bootstrap_tools+=usr.bin/gencat
+
+# Linux tsort doesn't understand any flags
+_crossbuild_bootstrap_tools+=usr.bin/tsort
+
+_crossbuild_bootstrap_tools+=usr.bin/sort
+
+_crossbuild_bootstrap_tools+=usr.bin/bmake
+
+_crossbuild_bootstrap_tools+=usr.bin/unifdef
+
 .endif
 
 bootstrap-tools: .PHONY
