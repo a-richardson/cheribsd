@@ -54,6 +54,13 @@ MAKESYSPATH:=	${.PARSEDIR:tA}
 .export MAKESYSPATH
 .endif
 
+.if ${MACHINE} == "x86_64"
+MACHINE:=amd64
+MACHINE_ARCH:=amd64
+.export MACHINE
+.export MACHINE_ARCH
+.endif
+
 .if ${RELDIR:U} == "." && ${.MAKE.LEVEL} == 0
 .sinclude "${.CURDIR}/Makefile.sys.inc"
 .endif
