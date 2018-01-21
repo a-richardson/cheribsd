@@ -6,6 +6,10 @@
 PROG=	pwd_mkdb
 MAN=	pwd_mkdb.8
 SRCS=	pw_scan.c pwd_mkdb.c
+.if (!empty(${.TARGETS:Mbuild-tools}) || defined(BOOTSTRAPPING)) && \
+	${.MAKE.OS} == "Darwin"
+CFLAGS+=-DNEED_FREEBSD_STRUCT_PASSWD
+.endif
 
 CFLAGS+= -I${SRCTOP}/lib/libc/gen		# for pw_scan.h
 
