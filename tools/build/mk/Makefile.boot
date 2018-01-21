@@ -44,6 +44,10 @@ LDFLAGS+=	-L/usr/local/opt/libarchive/lib
 .else
 .error "Unsupported build OS: ${.MAKE.OS}"
 .endif
+
+# b64_pton and b64_ntop is in libresolv on MacOS and Linux:
+# TODO: only needed for uuencode and uudecode
+LDFLAGS+=-lresolv
 .endif
 
 # we do not want to capture dependencies referring to the above

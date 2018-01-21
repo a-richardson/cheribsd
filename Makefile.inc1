@@ -2135,6 +2135,9 @@ _crossbuild_bootstrap_tools+=usr.bin/bmake
 
 _crossbuild_bootstrap_tools+=usr.bin/unifdef
 
+# needed by share/tabset
+_crossbuild_bootstrap_tools+=usr.bin/uuencode usr.bin/uudecode
+
 .endif
 
 bootstrap-tools: .PHONY
