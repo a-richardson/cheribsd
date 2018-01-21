@@ -1228,16 +1228,11 @@ __installcheck_sh_check: .PHONY
 _zoneinfo=	zic tzsetup
 .endif
 
-ITOOLS=	[ awk cap_mkdb cat chmod chown cmp cp \
+ITOOLS=	[ awk cap_mkdb cat chflags chmod chown cmp cp \
 	date echo egrep find grep id install ${_install-info} \
 	ln make mkdir mtree mv pwd_mkdb \
 	rm sed services_mkdb sh strip sysctl test true uname wc ${_zoneinfo} \
 	${LOCAL_ITOOLS}
-# chflags doesn't exist on Linux, just skip the calls for now
-# XXXAR: we could also create a wrapper that calls `chattr +i` for `chflags schg`, etc
-.if ${.MAKE.OS} != "Linux"
-ITOOLS+=	chflags
-.endif
 # Needed for share/man
 .if ${MK_MAN_UTILS} != "no"
 ITOOLS+=makewhatis
@@ -2142,6 +2137,12 @@ _crossbuild_bootstrap_tools+=usr.bin/uuencode usr.bin/uudecode
 _crossbuild_bootstrap_tools+=usr.bin/cap_mkdb
 # needed by installworld
 _crossbuild_bootstrap_tools+=usr.sbin/services_mkdb usr.sbin/pwd_mkdb
+
+# fake sysctl wrapper for installworld
+_crossbuild_bootstrap_tools+=tools/build/cross-build/fake_sysctl
+# And also a fake chflags that does nothing on Linux/Mac
+# We could use the normal chflags on Mac but for now let's just skip it
+_crossbuild_bootstrap_tools+=tools/build/cross-build/fake_chflags
 .endif
 
 bootstrap-tools: .PHONY
