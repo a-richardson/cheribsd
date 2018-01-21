@@ -2138,6 +2138,10 @@ _crossbuild_bootstrap_tools+=usr.bin/unifdef
 # needed by share/tabset
 _crossbuild_bootstrap_tools+=usr.bin/uuencode usr.bin/uudecode
 
+# needed by share/termcap:
+_crossbuild_bootstrap_tools+=usr.bin/cap_mkdb
+# needed by installworld
+_crossbuild_bootstrap_tools+=usr.sbin/services_mkdb usr.sbin/pwd_mkdb
 .endif
 
 bootstrap-tools: .PHONY

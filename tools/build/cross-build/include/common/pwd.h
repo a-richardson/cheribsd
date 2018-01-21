@@ -1,6 +1,15 @@
 #pragma once
 
+#ifdef NEED_FREEBSD_STRUCT_PASSWD
+/* When building pwd_mkdb we need to use the FreeBSD definition of struct passwd */
+#define _GID_T_DECLARED
+#define _TIME_T_DECLARED
+#define _UID_T_DECLARED
+#define _SIZE_T_DECLARED
+#include "../../../../../include/pwd.h"
+#else
 #include_next <pwd.h>
+#endif
 
 #define	user_from_uid	__nbcompat_user_from_uid
 
