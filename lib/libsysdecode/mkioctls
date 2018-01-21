@@ -3,6 +3,8 @@
 # $FreeBSD$
 
 set -e
+# if /bin/sh is bash this will avoid further errors due to missing commands
+set -o pipefail || true
 
 if [ $# -ne 1 ]; then
 	echo "usage: sh $0 include-dir"

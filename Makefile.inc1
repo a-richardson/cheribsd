@@ -2128,6 +2128,9 @@ _crossbuild_bootstrap_tools+=usr.bin/tsort
 
 _crossbuild_bootstrap_tools+=usr.bin/sort
 
+# xargs is needed by mkioctls
+_crossbuild_bootstrap_tools+=usr.bin/xargs
+
 _crossbuild_bootstrap_tools+=usr.bin/bmake
 
 _crossbuild_bootstrap_tools+=usr.bin/unifdef
