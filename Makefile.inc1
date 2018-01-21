@@ -657,6 +657,15 @@ CROSSENV+=	CC="${XCC} ${XCFLAGS}" CXX="${XCXX} ${XCXXFLAGS} ${XCFLAGS}" \
 		RANLIB=${XRANLIB} STRINGS=${XSTRINGS} \
 		SIZE="${XSIZE}"
 
+# Avoid computing all the information in bsd.compiler.mk again for the
+# unused X_COMPILER* variables. This saves two invocations of clang as well
+# as two echoes and one call of awk and sed each
+# Especially on MacOS avoiding those process creations noticeably speeds up
+# stages like "includes"
+CROSSENV+=	X_COMPILER_TYPE="${X_COMPILER_TYPE}" \
+		X_COMPILER_VERSION="${X_COMPILER_VERSION}" \
+		X_COMPILER_FREEBSD_VERSION="${X_COMPILER_FREEBSD_VERSION}"
+
 .if defined(CROSS_BINUTILS_PREFIX) && exists(${CROSS_BINUTILS_PREFIX})
 # In the case of xdev-build tools, CROSS_BINUTILS_PREFIX won't be a
 # directory, but the compiler will look in the right place for its
