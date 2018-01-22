@@ -65,6 +65,9 @@ _v=	${_ld_version:[2]}
 # bootstrap linker on MacOS
 ${X_}LINKER_TYPE=	mac
 _v=	${_ld_version:[2]:S/PROJECT:ld64-//}
+# Convert version 305 to 3.0.5 so that the echo + awk below works
+_v:=	${_v:C/([0-9])([0-9])/\1.\2./}
+# .info "MacOS linker version is ${_v}"
 .else
 .warning Unknown linker from ${ld}=${${ld}}: ${_ld_version}, defaulting to bfd
 ${X_}LINKER_TYPE=	bfd
