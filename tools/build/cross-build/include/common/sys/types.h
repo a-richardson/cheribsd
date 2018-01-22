@@ -5,3 +5,7 @@
  * However, it only includes <sys/types.h> and not <stdint.h>
  */
 #include <stdint.h>
+
+#ifdef __linux__
+typedef uintptr_t __uintptr_t;
+#endif
