@@ -69,6 +69,9 @@ MACHINESYSINCS+=	${SRCTOP}/sys/${_host_arch}/include/exec.h
 MACHINESYSINCS+=	${SRCTOP}/sys/${_host_arch}/include/reloc.h
 INCS+=	${SRCTOP}/include/a.out.h
 SYSINCS+=	${SRCTOP}/sys/sys/imgact_aout.h
+
+# For mkscrfil.c:
+SYSINCS+=	${SRCTOP}/sys/sys/consio.h ${SRCTOP}/sys/sys/ioccom.h
 .endif
 
 .if empty(SRCS)
