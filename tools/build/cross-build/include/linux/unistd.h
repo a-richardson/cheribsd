@@ -34,7 +34,16 @@ fflagstostr(u_long flags)
 
 static inline int
 strtofflags(char **stringp, u_long *setp, u_long *clrp) {
-	return 1; /* error */
+	/* On linux just ignore the file flags for now */
+	/*
+	 * XXXAR: this will prevent makefs from setting noschg on libc, etc
+	 * so we should really build the version from libc
+	 */
+	if (setp)
+		*setp = 0;
+	if (clrp)
+		*clrp = 0;
+	return 0; /* success */
 }
 
 #define getopt getopt_real

@@ -534,7 +534,7 @@ apply_specentry(const char *dir, NODE *specnode, fsnode *dirnode)
 		    dirnode->inode->st.st_uid, specnode->st_uid);
 		dirnode->inode->st.st_uid = specnode->st_uid;
 	}
-#if HAVE_STRUCT_STAT_ST_FLAGS
+#ifdef UF_SETTABLE
 	if (specnode->flags & F_FLAGS) {
 		ASEPRINT("flags", "%#lX",
 		    (unsigned long)dirnode->inode->st.st_flags,

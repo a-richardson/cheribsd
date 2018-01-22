@@ -2167,6 +2167,9 @@ _crossbuild_bootstrap_tools+=tools/build/cross-build/fake_chflags
 _crossbuild_bootstrap_tools+=usr.sbin/zic usr.sbin/tzsetup
 .endif
 
+# We want to be able to build disk images when crossbuilding:
+_crossbuild_bootstrap_tools+=usr.sbin/makefs
+
 .endif
 
 bootstrap-tools: .PHONY
