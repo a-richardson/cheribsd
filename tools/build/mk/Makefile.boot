@@ -30,6 +30,9 @@ CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/linux
 CFLAGS+=	-isystem /usr/include/bsd -DLIBBSD_OVERLAY=1 -D_GNU_SOURCE=1
 CFLAGS+=	-std=c99
 LDFLAGS+=	-lbsd
+# Needed for sem_init, etc. on Linux (used by usr.bin/sort)
+LDFLAGS+=	-pthread
+
 # Linux tsort doesn't understand the -q flag
 TSORTFLAGS:=
 .elif ${.MAKE.OS} == "Darwin"
