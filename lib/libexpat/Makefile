@@ -22,7 +22,8 @@ WARNS?=		2
 # FreeBSD-style include guards.  We also want to point it at the new
 # bsdxml_external.h rather than the old expat_external.h file.
 bsdxml.h: expat.h
-	unifdef -U__VMS < ${.ALLSRC} | \
+	# Use -x1 so that this works even when running with bash -o pipefail
+	unifdef -x1 -U__VMS < ${.ALLSRC} | \
 	sed -e 's/XmlParse_INCLUDED/_BSD_XML_H_/' \
 	    -e 's/COPYING/src\/contrib\/expat\/COPYING/' \
 	    -e 's/expat_external/bsdxml_external/' \
