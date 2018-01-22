@@ -952,16 +952,17 @@ _worldtmp: .PHONY
 # sources during the bootstrap-tools stage
 .if defined(CROSSBUILDING)
 # basic commands (used only with known flags)
-_host_tools_to_symlink=	basename chmod chown cmp cp date dirname echo env \
+_host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
 	false fmt gzip \
 	head id ln mkdir mv nice rm ls realpath tee touch \
 	tr true sh sleep hostname \
 	patch uname uniq wc which
+# needed for the fake sysctl script
+_host_tools_to_symlink+=python
 # should we bootstrap this instead?
 _host_tools_to_symlink+=gperf
 # needed by bootloader
 _host_tools_to_symlink+=bzip2 dd
-# TODO: fake sysctl script
 _host_abs_tools_to_symlink=	${MAKE}:make ${MAKE}:bmake
 .if ${CROSSBUILDING} == "Darwin"
 # the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
