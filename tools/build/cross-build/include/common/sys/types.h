@@ -9,3 +9,6 @@
 #ifdef __linux__
 typedef uintptr_t __uintptr_t;
 #endif
+
+/* needed for gencat */
+typedef int __nl_item;

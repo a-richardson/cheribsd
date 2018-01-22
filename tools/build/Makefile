@@ -82,6 +82,9 @@ UFSINCS+=	${SRCTOP}/sys/ufs/ufs/dinode.h
 UFSINCS+=	${SRCTOP}/sys/ufs/ufs/dir.h
 FFSINCS+=	${SRCTOP}/sys/ufs/ffs/fs.h
 
+# for tzsetup:
+SRCS+=	fake_sysctl.c
+
 .endif
 
 .if empty(SRCS)
