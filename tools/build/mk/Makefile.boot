@@ -22,6 +22,9 @@ CFLAGS+=	-DHAVE_NBTOOL_CONFIG_H=1
 CFLAGS+=	-D__BSD_VISIBLE=1
 CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/common
 
+# ensure that we use the FreeBSD versions of libdb:
+LDADD+=	-ldb-freebsd
+
 .if ${.MAKE.OS} == "Linux"
 CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/linux
 CFLAGS+=	-isystem /usr/include/bsd -DLIBBSD_OVERLAY=1 -D_GNU_SOURCE=1

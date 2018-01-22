@@ -1952,6 +1952,11 @@ _elftoolchain_libs= lib/libelf lib/libdwarf
 .endif
 .if defined(CROSSBUILDING)
 _host_bootstrap_libs=	lib/libmd lib/libsbuf
+# We need to build a FreeBSD compatible libdb for tools like tsort, etc.
+# I believe the db routines shipped with MacOS are compatible but on Linux they
+# definitelty aren't. To avoid any surprises let's just always build it when
+# we are crossbuilding.
+_host_bootstrap_libs+=	tools/build/cross-build/libdb_freebsd
 .endif
 
 legacy: .PHONY
