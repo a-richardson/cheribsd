@@ -4,7 +4,7 @@
 
 set -e
 # if /bin/sh is bash this will avoid further errors due to missing commands
-if set -o | grep pipefail ; then
+if set -o | grep pipefail > /dev/null; then
 	set -o pipefail
 fi
 
