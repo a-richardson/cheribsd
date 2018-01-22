@@ -560,7 +560,9 @@ CROSSENV+=	${TARGET_CFLAGS}
 HOST_TOOLS_COMMON_MAKEFLAGS=-DNO_PIC MK_PROFILE=no -DNO_SHARED
 .else
 # When building Linux or Mac it will usually not be possible to link statically
-HOST_TOOLS_COMMON_MAKEFLAGS=MK_PROFILE=no MK_NLS=no MK_BSD_GREP=yes
+# so we can pass -DNO_PIC, -DNO_SHARED. Also we want to build BSD grep and
+# avoid any dependencies on libdialog (for tzsetup)
+HOST_TOOLS_COMMON_MAKEFLAGS=MK_PROFILE=no MK_NLS=no MK_BSD_GREP=yes MK_DIALOG=no
 .endif
 
 # bootstrap-tools stage
@@ -2150,6 +2152,11 @@ _crossbuild_bootstrap_tools+=tools/build/cross-build/fake_sysctl
 # And also a fake chflags that does nothing on Linux/Mac
 # We could use the normal chflags on Mac but for now let's just skip it
 _crossbuild_bootstrap_tools+=tools/build/cross-build/fake_chflags
+
+.if ${MK_ZONEINFO} != "no"
+_crossbuild_bootstrap_tools+=usr.sbin/zic usr.sbin/tzsetup
+.endif
+
 .endif
 
 bootstrap-tools: .PHONY
