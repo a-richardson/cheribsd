@@ -2298,6 +2298,11 @@ _elftctools=	lib/libelftc \
 		lib/libpe \
 		usr.bin/elfcopy
 .endif
+# when crossbuilding we can't use the default ar since that may not work
+# as expected
+.if defined(CROSSBUILDING)
+_ar=	usr.bin/ar
+.endif
 
 .if ${MK_CLANG_BOOTSTRAP} != "no"
 _clang=		usr.bin/clang
@@ -2322,6 +2327,7 @@ cross-tools: .MAKE .PHONY
     ${_clang} \
     ${_lld} \
     ${_binutils} \
+    ${_ar} \
     ${_elftctools} \
     ${_dtrace_tools} \
     ${_gcc} \
