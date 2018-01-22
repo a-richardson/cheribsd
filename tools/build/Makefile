@@ -85,6 +85,9 @@ FFSINCS+=	${SRCTOP}/sys/ufs/ffs/fs.h
 # for tzsetup:
 SRCS+=	fake_sysctl.c
 
+# for vtfontcvt:
+SYSINCS+=	${SRCTOP}/sys/sys/fnv_hash.h
+
 .endif
 
 .if empty(SRCS)

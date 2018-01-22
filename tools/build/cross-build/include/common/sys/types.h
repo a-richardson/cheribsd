@@ -12,3 +12,5 @@ typedef uintptr_t __uintptr_t;
 
 /* needed for gencat */
 typedef int __nl_item;
+
+typedef size_t u_register_t;
