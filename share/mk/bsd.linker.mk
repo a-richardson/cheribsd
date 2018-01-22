@@ -49,7 +49,9 @@ ${var}=	${${var}.${${X_}_ld_hash}}
 .if !defined(${X_}LINKER_TYPE) || !defined(${X_}LINKER_VERSION)
 # If we pass -v and --version even the Mac linker will print a version message
 # before failing with ld: unknown option: --version
-_ld_version!=	(${${ld}} -v --version 2>&1 || echo none) | head -n 1
+# the test $? -eq 141 is there in order to silence the warning due to SIGPIPE
+# if the shell is running with -o pipefail
+_ld_version!=	(${${ld}} -v --version 2>&1 || echo none) | head -n 1 || test $$? -eq 141
 .if ${_ld_version} == "none"
 .warning Unable to determine linker type from ${ld}=${${ld}}
 .endif
