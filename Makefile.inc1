@@ -960,7 +960,7 @@ _legacy:
 	@echo "Linking host tools into ${WORLDTMP}/legacy/usr/bin"
 .for _tool in ${_host_tools_to_symlink}
 	@if [ ! -e "${WORLDTMP}/legacy/usr/bin/${_tool}" ]; then \
-		@source_path=`which ${_tool}`; \
+		source_path=`which ${_tool}`; \
 		if [ ! -e "$${source_path}" ] ; then \
 			echo "Cannot find host tool '${_tool}'"; false; \
 		fi; \
