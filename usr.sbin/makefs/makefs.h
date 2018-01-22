@@ -86,7 +86,7 @@ typedef struct {
 	enum fi_flags	 flags;		/* flags used by fs specific code */
 	struct stat	 st;		/* stat entry */
 #ifndef UF_SETTABLE
-	uint32_t	 st_flags;	/* st_flags field if for struct stat */
+	uint32_t	 st_flags;	/* st_flags field if missing in struct stat */
 #endif
 } fsinode;
 
@@ -100,7 +100,6 @@ typedef struct {
 #else
 #define FSINODE_ST_FLAGS(i) ((i)->st_flags)
 #endif
-
 
 typedef struct _fsnode {
 	struct _fsnode	*parent;	/* parent (NULL if root) */

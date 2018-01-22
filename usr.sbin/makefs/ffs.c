@@ -678,12 +678,12 @@ ffs_build_dinode1(struct ufs1_dinode *dinp, dirbuf_t *dbufp, fsnode *cur,
 	dinp->di_atime = st->st_atime;
 	dinp->di_mtime = st->st_mtime;
 	dinp->di_ctime = st->st_ctime;
-#if HAVE_STRUCT_STAT_ST_MTIMENSEC
-	dinp->di_atimensec = st->st_atimensec;
-	dinp->di_mtimensec = st->st_mtimensec;
-	dinp->di_ctimensec = st->st_ctimensec;
+#if defined(st_mtim) || defined(st_mtimespec)
+	dinp->di_atimensec = st->st_atim.tv_nsec;
+	dinp->di_mtimensec = st->st_mtim.tv_nsec;
+	dinp->di_ctimensec = st->st_ctim.tv_nsec;
 #endif
-		/* not set: di_db, di_ib, di_blocks, di_spare */
+	/* not set: di_db, di_ib, di_blocks, di_spare */
 
 	membuf = NULL;
 	if (cur == root) {			/* "."; write dirbuf */
@@ -724,16 +724,16 @@ ffs_build_dinode2(struct ufs2_dinode *dinp, dirbuf_t *dbufp, fsnode *cur,
 	dinp->di_atime = st->st_atime;
 	dinp->di_mtime = st->st_mtime;
 	dinp->di_ctime = st->st_ctime;
-#if HAVE_STRUCT_STAT_ST_MTIMENSEC
-	dinp->di_atimensec = st->st_atimensec;
-	dinp->di_mtimensec = st->st_mtimensec;
-	dinp->di_ctimensec = st->st_ctimensec;
+#if defined(st_mtim) || defined(st_mtimespec)
+	dinp->di_atimensec = st->st_atim.tv_nsec;
+	dinp->di_mtimensec = st->st_mtim.tv_nsec;
+	dinp->di_ctimensec = st->st_ctim.tv_nsec;
 #endif
-#if defined(st_birthtime) || defined(st_birthtimespec)
-	dinp->di_birthtime = st->st_birthtime;
-	dinp->di_birthnsec = st->st_birthtimensec;
+#if defined(st_birthtimespec) || defined(st_birthtim)
+	dinp->di_birthtime = st->st_birthtim.tv_sec;
+	dinp->di_birthnsec = st->st_birthtim.tv_nsec;
 #endif
-		/* not set: di_db, di_ib, di_blocks, di_spare */
+	/* not set: di_db, di_ib, di_blocks, di_spare */
 
 	membuf = NULL;
 	if (cur == root) {			/* "."; write dirbuf */
