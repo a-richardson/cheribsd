@@ -23,7 +23,7 @@ CFLAGS+=	-D__BSD_VISIBLE=1
 CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/common
 
 # ensure that we use the FreeBSD versions of libdb:
-LDADD+=	-ldb-freebsd
+FREEBSD_LIBDB:=	-ldb-freebsd
 
 .if ${.MAKE.OS} == "Linux"
 CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/linux

@@ -13,4 +13,7 @@ CFLAGS+=-DNEED_FREEBSD_STRUCT_PASSWD
 
 CFLAGS+= -I${SRCTOP}/lib/libc/gen		# for pw_scan.h
 
+# This is needed to bootstrap on a Linux host:
+LDADD+=	${FREEBSD_LIBDB}
+
 .include <bsd.prog.mk>
