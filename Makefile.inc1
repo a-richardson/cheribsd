@@ -573,9 +573,25 @@ BMAKEENV=	INSTALL="sh ${.CURDIR}/tools/install.sh" \
 BMAKEENV+=	AWK="${WORLDTMP}/legacy/usr/bin/awk" \
 		LEX="${WORLDTMP}/legacy/usr/bin/lex" \
 		YACC="${WORLDTMP}/legacy/usr/bin/yacc"
+
+# Since we remove /usr/bin from $PATH when crossbuilding we need to pass an
+# absolute path for CC CPP CXX and LD
+.if ${LD} == "ld"
+LD!=	which ld
+.endif
+.if ${CC} == "cc"
+CC!=	which cc
+.endif
+.if ${CPP} == "cpp"
+CPP!=	which cpp
+.endif
+.if ${CXX} == "c++"
+CXX!=	which c++
+.endif
+BMAKEENV+=	CC=${CC} CXX=${CXX} CPP=${CPP} LD=${LD}
+
 # For some reason the bsd.compiler.mk hash doesn't work, lets just set it here to avoid extra work
-BMAKEENV+=	CC=${CC} CXX=${CXX} \
-		COMPILER_TYPE=${COMPILER_TYPE} \
+BMAKEENV+=	COMPILER_TYPE=${COMPILER_TYPE} \
 		COMPILER_VERSION=${COMPILER_VERSION} \
 		COMPILER_FREEBSD_VERSION=${COMPILER_FREEBSD_VERSION} \
 		XCC=${XCC} XCXX=${XCCX} \
