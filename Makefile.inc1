@@ -2269,7 +2269,9 @@ _dtrace_tools= cddl/lib/libctf cddl/usr.bin/ctfconvert \
 
 # If we're given an XAS, don't build binutils.
 .if ${XAS:M/*} == ""
-.if ${MK_BINUTILS_BOOTSTRAP} != "no"
+# We also skip building binutils when crossbuilding from Linux/Mac since
+# the sources won't compile there.
+.if ${MK_BINUTILS_BOOTSTRAP} != "no" && !defined(CROSSBUILDING)
 _binutils=	gnu/usr.bin/binutils
 .endif
 .if ${MK_ELFTOOLCHAIN_BOOTSTRAP} != "no"
