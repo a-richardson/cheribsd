@@ -139,7 +139,7 @@ TGTS=	all all-man buildenv buildenvvars buildkernel buildworld \
 	stage-packages \
 	create-packages-world create-packages-kernel create-packages \
 	packages installconfig real-packages sign-packages package-pkg \
-	print-dir test-system-compiler host-tools
+	print-dir test-system-compiler host-tools makefs
 
 # These targets require a TARGET and TARGET_ARCH be defined.
 XTGTS=	native-xtools native-xtools-install xdev xdev-build xdev-install \

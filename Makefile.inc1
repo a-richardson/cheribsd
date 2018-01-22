@@ -1127,6 +1127,29 @@ buildworld_epilogue: .PHONY
 	@echo ">>> World build completed on `LC_ALL=C date`"
 	@echo "--------------------------------------------------------------"
 
+
+# allow building makefs
+makefs: _sanity_check _worldtmp
+	if [ -z "${MAKEFS_INSTALLDIR}" ]; then \
+		echo "MAKEFS_INSTALLDIR must be set when installing makefs";\
+		false; \
+	fi
+	echo ">>> Building makefs"
+	${_+_}cd ${.CURDIR}; ${BMAKE} _build_makefs
+	echo ">>> Installing makefs binary to ${MAKEFS_INSTALLDIR}"
+	cp ${WORLDTMP}/legacy/usr/sbin/makefs ${MAKEFS_INSTALLDIR}/makefs
+
+_build_makefs:
+.for _tool in tools/build lib/libsbuf lib/libnetbsd usr.sbin/makefs
+	${_+_}@${ECHODIR} "===> ${_tool} (obj,includes,all,install)"; \
+	    cd ${.CURDIR}/${_tool}; \
+	    if [ -z "${NO_OBJWALK}" ]; then ${MAKE} DIRPRFX=${_tool}/ obj; fi; \
+	    ${MAKE} DIRPRFX=${_tool}/ DESTDIR=${WORLDTMP}/legacy includes; \
+	    ${MAKE} DIRPRFX=${_tool}/ MK_DEBUG_FILES=no MK_INCLUDES=no all; \
+	    ${MAKE} DIRPRFX=${_tool}/ MK_DEBUG_FILES=no MK_INCLUDES=no \
+		DESTDIR=${WORLDTMP}/legacy install
+.endfor
+
 #
 # We need to have this as a target because the indirection between Makefile
 # and Makefile.inc1 causes the correct PATH to be used, rather than a
