@@ -85,7 +85,22 @@ typedef struct {
 	uint32_t	 nlink;		/* number of links to this entry */
 	enum fi_flags	 flags;		/* flags used by fs specific code */
 	struct stat	 st;		/* stat entry */
+#ifndef UF_SETTABLE
+	uint32_t	 st_flags;	/* st_flags field if for struct stat */
+#endif
 } fsinode;
+
+/*
+ * When crossbuilding from Linux struct stat doesn't have a st_flags
+ * field so we need to store it separately. To avoid lots of ifdefs
+ * we use the FSINODE_ST_FLAGS() macro to access the field.
+ */
+#ifdef UF_SETTABLE
+#define FSINODE_ST_FLAGS(i) ((i)->st.st_flags)
+#else
+#define FSINODE_ST_FLAGS(i) ((i)->st_flags)
+#endif
+
 
 typedef struct _fsnode {
 	struct _fsnode	*parent;	/* parent (NULL if root) */

@@ -4,11 +4,13 @@
 
 LIB=		egacy
 SRC=
-INCSGROUPS=	INCS SYSINCS MACHINESYSINCS
+INCSGROUPS=	INCS SYSINCS MACHINESYSINCS UFSINCS FFSINCS
 INCS=
 
 SYSINCSDIR=	${INCLUDEDIR}/sys
 MACHINESYSINCSDIR=	${INCLUDEDIR}/machine
+UFSINCSDIR=	${INCLUDEDIR}/ufs/ufs
+FFSINCSDIR=	${INCLUDEDIR}/ufs/ffs
 
 BOOTSTRAPPING?=	0
 
@@ -74,6 +76,11 @@ SYSINCS+=	${SRCTOP}/sys/sys/imgact_aout.h
 SYSINCS+=	${SRCTOP}/sys/sys/consio.h ${SRCTOP}/sys/sys/ioccom.h
 # for gencat:
 INCS+=	${SRCTOP}/include/nl_types.h
+
+#for makefs:
+UFSINCS+=	${SRCTOP}/sys/ufs/ufs/dinode.h
+UFSINCS+=	${SRCTOP}/sys/ufs/ufs/dir.h
+FFSINCS+=	${SRCTOP}/sys/ufs/ffs/fs.h
 
 .endif
 
