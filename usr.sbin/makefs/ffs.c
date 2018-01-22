@@ -729,7 +729,7 @@ ffs_build_dinode2(struct ufs2_dinode *dinp, dirbuf_t *dbufp, fsnode *cur,
 	dinp->di_mtimensec = st->st_mtimensec;
 	dinp->di_ctimensec = st->st_ctimensec;
 #endif
-#if HAVE_STRUCT_STAT_BIRTHTIME
+#if defined(st_birthtime) || defined(st_birthtimespec)
 	dinp->di_birthtime = st->st_birthtime;
 	dinp->di_birthnsec = st->st_birthtimensec;
 #endif
