@@ -9,7 +9,7 @@ SRCS=	getdtablecount.c \
 INTERNALLIB=
 
 .if (!empty(${.TARGETS:Mbuild-tools}) || defined(BOOTSTRAPPING)) && \
-	${.MAKE.OS} == "Linux"
+	${.MAKE.OS} != "FreeBSD"
 # libopenbsd won't compile during bootstrap for Linux, but it seems like we don't need
 # any of the functions there so it is fine
 SRCS:=${SRCS:Ngetdtablecount.c}
