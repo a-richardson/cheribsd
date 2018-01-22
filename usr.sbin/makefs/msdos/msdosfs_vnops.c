@@ -104,9 +104,9 @@ msdosfs_times(struct msdosfsmount *pmp, struct denode *dep,
 	if (stampst.st_ino) 
 	    st = &stampst;
 
-#ifndef HAVE_NBTOOL_CONFIG_H
-	at = st->st_atimespec;
-	mt = st->st_mtimespec;
+#if defined(st_mtim) || defined(st_mtimespec)
+	at = st->st_atim;
+	mt = st->st_mtim;
 #else
 	at.tv_sec = st->st_atime;
 	at.tv_nsec = 0;

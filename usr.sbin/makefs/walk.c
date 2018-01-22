@@ -235,14 +235,13 @@ create_fsnode(const char *root, const char *path, const char *name,
 		cur->inode->st.st_atime = stampst.st_atime;
 		cur->inode->st.st_mtime = stampst.st_mtime;
 		cur->inode->st.st_ctime = stampst.st_ctime;
-#if HAVE_STRUCT_STAT_ST_MTIMENSEC
-		cur->inode->st.st_atimensec = stampst.st_atimensec;
-		cur->inode->st.st_mtimensec = stampst.st_mtimensec;
-		cur->inode->st.st_ctimensec = stampst.st_ctimensec;
+#if defined(st_mtim) || defined(st_mtimespec)
+		cur->inode->st.st_atim.tv_nsec = stampst.st_atim.tv_nsec;
+		cur->inode->st.st_mtim.tv_nsec = stampst.st_mtim.tv_nsec;
+		cur->inode->st.st_ctim.tv_nsec = stampst.st_ctim.tv_nsec;
 #endif
- #if defined(st_birthtime) || defined(st_birthtimespec)
-		cur->inode->st.st_birthtime = stampst.st_birthtime;
-		cur->inode->st.st_birthtimensec = stampst.st_birthtimensec;
+#if defined(st_birthtimespec) || defined(st_birthtim)
+		cur->inode->st.st_birthtim = stampst.st_birthtim;
 #endif
 	}
 	return (cur);
@@ -438,9 +437,9 @@ apply_specdir(const char *dir, NODE *specnode, fsnode *dirnode, int speconly)
 			stbuf.st_nlink = 1;
 			stbuf.st_mtime = stbuf.st_atime =
 			    stbuf.st_ctime = start_time.tv_sec;
-#if HAVE_STRUCT_STAT_ST_MTIMENSEC
-			stbuf.st_mtimensec = stbuf.st_atimensec =
-			    stbuf.st_ctimensec = start_time.tv_nsec;
+#if defined(st_mtim) || defined(st_mtimespec)
+			stbuf.st_mtim.tv_nsec = stbuf.st_atim.tv_nsec =
+			    stbuf.st_ctim.tv_nsec = start_time.tv_nsec;
 #endif
 			curfsnode = create_fsnode(".", ".", curnode->name,
 			    &stbuf);
@@ -519,14 +518,14 @@ apply_specentry(const char *dir, NODE *specnode, fsnode *dirnode)
 	if (specnode->flags & F_TIME) {
 		ASEPRINT("time", "%ld",
 		    (long)dirnode->inode->st.st_mtime,
-		    (long)specnode->st_mtimespec.tv_sec);
-		dirnode->inode->st.st_mtime =		specnode->st_mtimespec.tv_sec;
-		dirnode->inode->st.st_atime =		specnode->st_mtimespec.tv_sec;
+		    (long)specnode->st_mtim.tv_sec);
+		dirnode->inode->st.st_mtime =		specnode->st_mtim.tv_sec;
+		dirnode->inode->st.st_atime =		specnode->st_mtim.tv_sec;
 		dirnode->inode->st.st_ctime =		start_time.tv_sec;
-#if HAVE_STRUCT_STAT_ST_MTIMENSEC
-		dirnode->inode->st.st_mtimensec =	specnode->st_mtimespec.tv_nsec;
-		dirnode->inode->st.st_atimensec =	specnode->st_mtimespec.tv_nsec;
-		dirnode->inode->st.st_ctimensec =	start_time.tv_nsec;
+#if defined(st_mtim) || defined(st_mtimespec)
+		dirnode->inode->st.st_mtim.tv_nsec =	specnode->st_mtim.tv_nsec;
+		dirnode->inode->st.st_atim.tv_nsec =	specnode->st_mtim.tv_nsec;
+		dirnode->inode->st.st_ctim.tv_nsec =	start_time.tv_nsec;
 #endif
 	}
 	if (specnode->flags & (F_UID | F_UNAME)) {
