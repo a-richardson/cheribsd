@@ -421,7 +421,9 @@ extern const char *__progname;
 /* Whether we need to supply {be,le}32dec. */
 #define ELFTC_NEED_BYTEORDER_EXTENSIONS		1
 
+#ifndef roundup2
 #define	roundup2	roundup
+#endif
 
 #endif	/* __GLIBC__ || __linux__ */
 
