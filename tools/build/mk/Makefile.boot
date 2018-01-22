@@ -19,6 +19,7 @@ TSORT:=	/usr/bin/tsort
 CFLAGS+=	-Werror=implicit-function-declaration -Werror=implicit-int \
 		-Werror=return-type -Wundef
 CFLAGS+=	-DHAVE_NBTOOL_CONFIG_H=1
+CFLAGS+=	-D__BSD_VISIBLE=1
 CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/common
 
 .if ${.MAKE.OS} == "Linux"

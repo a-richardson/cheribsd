@@ -1,11 +1,6 @@
 #pragma once
 #include_next <sys/cdefs.h>
 
-#ifdef __linux__
-#include <stdint.h>
-typedef uintptr_t __uintptr_t;
-#endif
-
 #ifndef __FBSDID
 #define __FBSDID(id)
 #endif
@@ -32,6 +27,11 @@ typedef uintptr_t __uintptr_t;
 #define __packed __attribute__((__packed__))
 #endif
 
+#ifndef __printf0like
+#define	__printf0like(fmtarg, firstvararg) \
+	    __attribute__((__format__ (__printf0__, fmtarg, firstvararg)))
+#endif
+
 #ifndef __weak_reference
 #define __weak_reference(sym,alias)	\
     static int alias() __attribute__ ((weakref (#sym)));
@@ -54,6 +54,13 @@ typedef uintptr_t __uintptr_t;
 #define __unused __attribute__((unused))
 #endif
 #define __format_arg(fmtarg)    __attribute__((__format_arg__ (fmtarg)))
+
+#ifndef __exported
+#define	__exported	__attribute__((__visibility__("default")))
+#endif
+#ifndef __hidden
+#define	__hidden	__attribute__((__visibility__("hidden")))
+#endif
 
 /*
  * These should probably be in sys/types.h but mtree expects them to exist

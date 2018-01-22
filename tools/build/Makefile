@@ -72,6 +72,9 @@ SYSINCS+=	${SRCTOP}/sys/sys/imgact_aout.h
 
 # For mkscrfil.c:
 SYSINCS+=	${SRCTOP}/sys/sys/consio.h ${SRCTOP}/sys/sys/ioccom.h
+# for gencat:
+INCS+=	${SRCTOP}/include/nl_types.h
+
 .endif
 
 .if empty(SRCS)
