@@ -2170,6 +2170,7 @@ _crossbuild_bootstrap_tools+=usr.sbin/zic usr.sbin/tzsetup
 
 # We want to be able to build disk images when crossbuilding:
 _crossbuild_bootstrap_tools+=usr.sbin/makefs
+${_bt}-usr.sbin/makefs: ${_bt}-lib/libnetbsd
 
 .endif
 
