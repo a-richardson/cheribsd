@@ -2004,11 +2004,11 @@ _gperf=		gnu/usr.bin/gperf
 _vtfontcvt=	usr.bin/vtfontcvt
 .endif
 
-.if ${BOOTSTRAPPING} < 1000033  || defined(CROSSBUILDING)
+.if ${BOOTSTRAPPING} < 1000033
 _m4=		usr.bin/m4
 _lex=		usr.bin/lex
-# lex needs m4 to build but m4 also needs lex (however m4 can be bootstrapped
-# with the host systems lex so we build m4 first)
+# lex needs m4 to build but m4 also needs lex (however lex can be bootstrapped
+# with the host systems m4 so we build lex first)
 ${_bt}-${_m4}: ${_bt}-lib/libopenbsd ${_bt}-usr.bin/yacc ${_bt}-${_lex}
 _bt_lex_depend=${_bt}-usr.bin/lex ${_bt}-usr.bin/m4
 .endif
@@ -2028,7 +2028,7 @@ ${_bt}-usr.sbin/nmtree: ${_bt}-lib/libnetbsd
 .endif
 
 # r246097: log addition login.conf.db, passwd, pwd.db, and spwd.db with cat -l
-.if ${BOOTSTRAPPING} < 1000027 || defined(CROSSBUILDING)
+.if ${BOOTSTRAPPING} < 1000027
 _cat=		bin/cat
 .endif
 
@@ -2043,8 +2043,7 @@ _crunchide=	usr.sbin/crunch/crunchide
 # 1200006: META_MODE fixes
 .if ${BOOTSTRAPPING} < 1100078 || \
     (${MK_AUTO_OBJ} == "yes" && ${BOOTSTRAPPING} < 1100114) || \
-    (${MK_META_MODE} == "yes" && ${BOOTSTRAPPING} < 1200006) || \
-    defined(CROSSBUILDING)
+    (${MK_META_MODE} == "yes" && ${BOOTSTRAPPING} < 1200006)
 _crunchgen=	usr.sbin/crunch/crunchgen
 .endif
 
