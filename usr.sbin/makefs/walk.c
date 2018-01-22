@@ -240,7 +240,7 @@ create_fsnode(const char *root, const char *path, const char *name,
 		cur->inode->st.st_mtimensec = stampst.st_mtimensec;
 		cur->inode->st.st_ctimensec = stampst.st_ctimensec;
 #endif
-#if HAVE_STRUCT_STAT_BIRTHTIME
+ #if defined(st_birthtime) || defined(st_birthtimespec)
 		cur->inode->st.st_birthtime = stampst.st_birthtime;
 		cur->inode->st.st_birthtimensec = stampst.st_birthtimensec;
 #endif
