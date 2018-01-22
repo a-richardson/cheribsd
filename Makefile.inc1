@@ -989,7 +989,7 @@ _legacy:
 	fi
 .endfor
 .for _tool in ${_host_abs_tools_to_symlink}
-	@source_path="${_tool:S/:/ /:[1]}"; \
+	@source_path=`which "${_tool:S/:/ /:[1]}"`; \
 	target_path="${WORLDTMP}/legacy/usr/bin/${_tool:S/:/ /:[2]}"; \
 	if [ ! -e "$${target_path}" ] ; then \
 		if [ ! -e "$${source_path}" ] ; then \
