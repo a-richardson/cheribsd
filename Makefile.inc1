@@ -493,7 +493,12 @@ TMPPATH=	${STRICTTMPPATH}
 # when in the middle of installing over this system.
 #
 .if make(distributeworld) || make(installworld) || make(stageworld)
-INSTALLTMP!=	mktemp -d -u -t install
+.if defined(CROSSBUILDING)
+MKTEMP=${WORLDTMP}/legacy/usr/bin/mktemp
+.else
+MKTEMP=mktemp
+.endif
+INSTALLTMP!=	${MKTEMP} -d -u -t install
 .endif
 
 .if make(stagekernel) || make(distributekernel)
