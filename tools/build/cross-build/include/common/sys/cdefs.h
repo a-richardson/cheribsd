@@ -5,6 +5,10 @@
 #define __FBSDID(id)
 #endif
 
+#ifndef __IDSTRING
+#define __IDSTRING(name,string)
+#endif
+
 #ifndef rounddown
 // needed by libsbuf
 #define	rounddown(x, y)	(((x)/(y))*(y))

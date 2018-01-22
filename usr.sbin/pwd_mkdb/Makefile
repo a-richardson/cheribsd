@@ -7,7 +7,7 @@ PROG=	pwd_mkdb
 MAN=	pwd_mkdb.8
 SRCS=	pw_scan.c pwd_mkdb.c
 .if (!empty(${.TARGETS:Mbuild-tools}) || defined(BOOTSTRAPPING)) && \
-	${.MAKE.OS} == "Darwin"
+	${.MAKE.OS} != "FreeBSD"
 CFLAGS+=-DNEED_FREEBSD_STRUCT_PASSWD
 .endif
 

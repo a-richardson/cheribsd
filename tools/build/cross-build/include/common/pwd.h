@@ -9,7 +9,6 @@
 #include "../../../../../include/pwd.h"
 #else
 #include_next <pwd.h>
-#endif
 
 #define	user_from_uid	__nbcompat_user_from_uid
 
@@ -35,4 +34,6 @@ setpassent(int stayopen)
   setpwent();
   return 1;
 }
+#endif
+
 #endif
