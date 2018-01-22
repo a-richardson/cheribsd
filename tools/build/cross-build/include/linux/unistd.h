@@ -38,3 +38,7 @@ strtofflags(char **stringp, u_long *setp, u_long *clrp) {
 }
 
 #define getopt getopt_real
+
+/* Used by elftoolchain: */
+extern char *program_invocation_name;
+extern char *program_invocation_short_name;
