@@ -383,7 +383,14 @@ mips_vector_init(void)
 void
 mips_postboot_fixup(void)
 {
-	static char fake_preload[256];
+	/*
+	 * The compiler/linker can align fake_preload anyway it would like.
+	 * When building the kernel with gcc+bfd this always happened to
+	 * be a multiple of 8. However, when building with clang we have to
+	 * explicitly mark it as aligned to 8 bytes since the compiler will
+	 * emit sd instructions to store to this buffer.
+	 */
+	static char fake_preload[256] __aligned(8);
 	caddr_t preload_ptr = (caddr_t)&fake_preload[0];
 	size_t size = 0;
 
