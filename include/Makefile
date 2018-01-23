@@ -395,6 +395,10 @@ ${SHARED}: compat
 # we need MACHINE et al set correctly
 HOST_MACHINE!= uname -m
 HOST_MACHINE_ARCH!= uname -p
+.if ${HOST_MACHINE} == "x86_64"
+HOST_MACHINE:=amd64
+HOST_MACHINE_ARCH:=amd64
+.endif
 MACHINE:= ${HOST_MACHINE}
 MACHINE_ARCH:= ${HOST_MACHINE_ARCH}
 .endif
