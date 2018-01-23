@@ -916,6 +916,34 @@ _cleanobj_fast_depend_hack: .PHONY
 .endif
 .endfor
 
+
+# when building on Linux/Mac we want to run the build with only ${WORLDTMP} in
+# $PATH to ensure we don't run tools that are incompatible with the FreeBSD
+# versions. In order to do this we symlink all the basic tools that are known
+# to be compatible into ${WORLDTMP} and build all others from the FreeBSD
+# sources during the bootstrap-tools stage
+.if defined(CROSSBUILDING)
+# basic commands (used only with known flags)
+_host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
+	false fmt gzip \
+	head id ln mkdir mv nice rm ls realpath tee touch \
+	tr true sh sleep hostname \
+	patch uname uniq wc which
+# needed for the fake sysctl script
+_host_tools_to_symlink+=python
+# should we bootstrap this instead?
+_host_tools_to_symlink+=gperf
+# needed by bootloader
+_host_tools_to_symlink+=bzip2 dd
+_host_abs_tools_to_symlink=	${MAKE}:make ${MAKE}:bmake
+.if ${CROSSBUILDING} == "Darwin"
+# the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
+# Therefore we need to add this symlink and then have the bootstrap-tools phase
+# overwrite it with the correct version. This requires m4 from homebrew.
+_host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
+.endif
+.endif
+
 _worldtmp: .PHONY
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -949,39 +977,6 @@ _worldtmp: .PHONY
     legacy/usr/include/ufs/ufs legacy/usr/include/ufs/ffs
 	mkdir -p ${WORLDTMP}/${_dir}
 .endfor
-
-# when building on Linux/Mac we want to run the build with only ${WORLDTMP} in
-# $PATH to ensure we don't run tools that are incompatible with the FreeBSD
-# versions. In order to do this we symlink all the basic tools that are known
-# to be compatible into ${WORLDTMP} and build all others from the FreeBSD
-# sources during the bootstrap-tools stage
-.if defined(CROSSBUILDING)
-# basic commands (used only with known flags)
-_host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
-	false fmt gzip \
-	head id ln mkdir mv nice rm ls realpath tee touch \
-	tr true sh sleep hostname \
-	patch uname uniq wc which
-# needed for the fake sysctl script
-_host_tools_to_symlink+=python
-# should we bootstrap this instead?
-_host_tools_to_symlink+=gperf
-# needed by bootloader
-_host_tools_to_symlink+=bzip2 dd
-_host_abs_tools_to_symlink=	${MAKE}:make ${MAKE}:bmake
-.if ${CROSSBUILDING} == "Darwin"
-# the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
-# Therefore we need to add this symlink and then have the bootstrap-tools phase
-# overwrite it with the correct version. This requires m4 from homebrew.
-_host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
-.endif
-.endif
-
-_legacy:
-	@echo
-	@echo "--------------------------------------------------------------"
-	@echo ">>> stage 1.1: legacy release compatibility shims"
-	@echo "--------------------------------------------------------------"
 .if defined(CROSSBUILDING)
 	@echo "Linking host tools into ${WORLDTMP}/legacy/usr/bin"
 .for _tool in ${_host_tools_to_symlink}
@@ -1004,6 +999,12 @@ _legacy:
 	fi
 .endfor
 .endif # defined(CROSSBUILDING)
+
+_legacy:
+	@echo
+	@echo "--------------------------------------------------------------"
+	@echo ">>> stage 1.1: legacy release compatibility shims"
+	@echo "--------------------------------------------------------------"
 	${_+_}cd ${.CURDIR}; ${BMAKE} legacy
 _bootstrap-tools:
 	@echo
@@ -1094,17 +1095,16 @@ everything: .PHONY
 	${_+_}cd ${.CURDIR}; _PARALLEL_SUBDIR_OK=1 ${WMAKE} all
 
 WMAKE_TGTS=
-HOST_TOOLS_TGTS=
 .if !defined(WORLDFAST)
-HOST_TOOLS_TGTS+=	_sanity_check _worldtmp _legacy
+WMAKE_TGTS+=	_sanity_check _worldtmp _legacy
 .if empty(SUBDIR_OVERRIDE)
-HOST_TOOLS_TGTS+=	_bootstrap-tools
+WMAKE_TGTS+=	_bootstrap-tools
 .endif
-HOST_TOOLS_TGTS+=	_cleanobj
+WMAKE_TGTS+=	_cleanobj
 .if !defined(NO_OBJWALK)
-HOST_TOOLS_TGTS+=	_obj
+WMAKE_TGTS+=	_obj
 .endif
-HOST_TOOLS_TGTS+=	_build-tools _cross-tools
+WMAKE_TGTS+=	_build-tools _cross-tools
 WMAKE_TGTS+=	${HOST_TOOLS_TGTS}
 WMAKE_TGTS+=	_build-metadata
 WMAKE_TGTS+=	_includes
@@ -1117,7 +1117,14 @@ WMAKE_TGTS+=	everything
 WMAKE_TGTS+=	build${libcompat}
 .endif
 
-host-tools: ${HOST_TOOLS_TGTS}
+cross-bootstrap-tools: _worldtmp _legacy .PHONY
+	cd ${.CURDIR}; ${BMAKE} MK_ELFTOOLCHAIN_BOOTSTRAP=yes bootstrap-tools
+	@echo "--------------------------------------------------------------"
+	@echo ">>> Finished building crossbuild host tools in ${WORLDTMP}/legacy"
+	# TODO: just use destdir?
+	@echo ">>> Run ${MAKE} cross-bootstrap-tools-install BOOTSTRAP_TOOLS_DESTDIR=... to install them"
+	@echo "--------------------------------------------------------------"
+
 buildworld: buildworld_prologue ${WMAKE_TGTS} buildworld_epilogue .PHONY
 .ORDER: buildworld_prologue ${WMAKE_TGTS} buildworld_epilogue
 
@@ -1132,6 +1139,16 @@ buildworld_epilogue: .PHONY
 	@echo ">>> World build completed on `LC_ALL=C date`"
 	@echo "--------------------------------------------------------------"
 
+BOOTSTRAP_TOOLS_NAME_PREFIX?=freebsd-
+cross-bootstrap-tools-install: .PHONY
+	@echo ">>> Installing host tools to ${BOOTSTRAP_TOOLS_DESTDIR}"
+	@echo ">>> Name prefix for tools is '${BOOTSTRAP_TOOLS_NAME_PREFIX}'"
+	if [ -z "${BOOTSTRAP_TOOLS_DESTDIR}" ] ; then \
+	    echo "fatal: BOOTSTRAP_TOOLS_DESTDIR not set!"; false; \
+	fi
+	mkdir -p ${BOOTSTRAP_TOOLS_DESTDIR}/bin
+	find ${WORLDTMP}/legacy/bin ${WORLDTMP}/legacy/usr/bin ${WORLDTMP}/legacy/usr/sbin \
+	    -type f -execdir cp -vf "{}" "${BOOTSTRAP_TOOLS_DESTDIR}/bin/${BOOTSTRAP_TOOLS_NAME_PREFIX}{}" ";"
 
 # allow building makefs
 makefs: _sanity_check _worldtmp
