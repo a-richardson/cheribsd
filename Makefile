@@ -139,11 +139,12 @@ TGTS=	all all-man buildenv buildenvvars buildkernel buildworld \
 	stage-packages \
 	create-packages-world create-packages-kernel create-packages \
 	packages installconfig real-packages sign-packages package-pkg \
-	print-dir test-system-compiler host-tools makefs
+	print-dir test-system-compiler \
+	cross-bootstrap-tools cross-bootstrap-tools-install makefs
 
 # These targets require a TARGET and TARGET_ARCH be defined.
 XTGTS=	native-xtools native-xtools-install xdev xdev-build xdev-install \
-	xdev-links host-tools
+	xdev-links
 
 # XXX: r156740: This can't work since bsd.subdir.mk is not included ever.
 # It will only work for SUBDIR_TARGETS in make.conf.
