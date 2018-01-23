@@ -937,6 +937,8 @@ _host_tools_to_symlink+=gperf
 _host_tools_to_symlink+=bzip2 dd
 _host_abs_tools_to_symlink=	${MAKE}:make ${MAKE}:bmake
 .if ${CROSSBUILDING} == "Darwin"
+# /usr/bin/cpp may invoke xcrun:
+_host_tools_to_symlink+=xcrun
 # the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
 # Therefore we need to add this symlink and then have the bootstrap-tools phase
 # overwrite it with the correct version. This requires m4 from homebrew.
