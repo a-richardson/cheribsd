@@ -1147,6 +1147,10 @@ cross-bootstrap-tools-install: .PHONY
 	mkdir -p ${BOOTSTRAP_TOOLS_DESTDIR}/bin
 	find ${WORLDTMP}/legacy/bin ${WORLDTMP}/legacy/usr/bin ${WORLDTMP}/legacy/usr/sbin \
 	    -type f -execdir cp -vf "{}" "${BOOTSTRAP_TOOLS_DESTDIR}/bin/${BOOTSTRAP_TOOLS_NAME_PREFIX}{}" ";"
+	@echo
+	@echo "--------------------------------------------------------------"
+	@echo ">>> Finished installing cross bootstrap tools on `LC_ALL=C date`"
+	@echo "--------------------------------------------------------------"
 
 # allow building makefs
 makefs: _sanity_check _worldtmp
