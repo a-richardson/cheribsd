@@ -979,7 +979,7 @@ _worldtmp: .PHONY
 .for _dir in \
     lib lib/casper usr legacy/bin legacy/usr legacy/usr/bin legacy/usr/sbin \
     legacy/usr/lib legacy/usr/include/sys legacy/usr/include/machine \
-    legacy/usr/include/ufs/ufs legacy/usr/include/ufs/ffs
+    legacy/usr/include/ufs/ufs legacy/usr/include/ufs/ffs legacy/usr/include/x86
 	mkdir -p ${WORLDTMP}/${_dir}
 .endfor
 .if defined(CROSSBUILDING)

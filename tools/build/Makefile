@@ -4,13 +4,14 @@
 
 LIB=		egacy
 SRC=
-INCSGROUPS=	INCS SYSINCS MACHINESYSINCS UFSINCS FFSINCS
+INCSGROUPS=	INCS SYSINCS MACHINESYSINCS UFSINCS FFSINCS X86INCS
 INCS=
 
 SYSINCSDIR=	${INCLUDEDIR}/sys
 MACHINESYSINCSDIR=	${INCLUDEDIR}/machine
 UFSINCSDIR=	${INCLUDEDIR}/ufs/ufs
 FFSINCSDIR=	${INCLUDEDIR}/ufs/ffs
+X86INCSDIR=	${INCLUDEDIR}/x86
 
 BOOTSTRAPPING?=	0
 
@@ -60,6 +61,9 @@ _host_arch=${MACHINE}
 _host_arch=amd64
 .endif
 MACHINESYSINCS+=	${SRCTOP}/sys/${_host_arch}/include/elf.h
+.if ${_host_arch} == "amd64" || ${_host_arch} == "i386"
+X86INCS+=	${SRCTOP}/sys/x86/include/elf.h
+.endif
 
 .PATH: ${.CURDIR}/../../lib/libc/stdlib
 SRCS+=	strtonum.c
@@ -87,6 +91,9 @@ SRCS+=	fake_sysctl.c
 
 # for vtfontcvt:
 SYSINCS+=	${SRCTOP}/sys/sys/fnv_hash.h
+
+# opensolaris stuff
+INCS+=	${SRCTOP}/include/elf.h
 
 .endif
 

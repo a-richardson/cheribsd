@@ -4,6 +4,11 @@
 /* #pragma once*/
 
 #include_next <time.h>
+/* GLIBC sets this when multiple-including time.h */
+#ifndef __need_time_t
 /* On Linux utimes() is not defined in time.h */
 #include <utime.h>
+/* sys/types.h is needed for opensolaris compat */
+#include <sys/types.h>
 #include <sys/time.h>
+#endif

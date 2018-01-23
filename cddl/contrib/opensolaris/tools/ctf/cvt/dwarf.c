@@ -85,6 +85,7 @@
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
+#include <sys/endian.h>
 #include <libelf.h>
 #include <libdwarf.h>
 #include <libgen.h>

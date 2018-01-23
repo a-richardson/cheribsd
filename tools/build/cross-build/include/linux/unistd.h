@@ -5,6 +5,8 @@
 #include <string.h>
 #undef getopt
 
+__BEGIN_DECLS
+
 // Force POSIX compatibility in glibc getopt
 static inline int getopt_real(int argc, char * const argv[], const char *optstring)
 {
@@ -51,3 +53,5 @@ strtofflags(char **stringp, u_long *setp, u_long *clrp) {
 /* Used by elftoolchain: */
 extern char *program_invocation_name;
 extern char *program_invocation_short_name;
+
+__END_DECLS

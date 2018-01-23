@@ -36,7 +36,7 @@
 
 #define	MAXOFFSET_T	OFF_MAX
 
-#ifndef _KERNEL
+#if !defined(_KERNEL) && defined(__FreeBSD__)
 #include <sys/disk.h>
 
 static __inline int
