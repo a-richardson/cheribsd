@@ -927,7 +927,7 @@ _cleanobj_fast_depend_hack: .PHONY
 _host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
 	false fmt gzip \
 	head id ln mkdir mv nice rm ls realpath tee touch \
-	tr true sh sleep hostname \
+	tr true sleep hostname \
 	patch uname uniq wc which
 # needed for the fake sysctl script
 _host_tools_to_symlink+=python
@@ -944,6 +944,9 @@ _host_tools_to_symlink+=xcrun
 # overwrite it with the correct version. This requires m4 from homebrew.
 _host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
 .endif
+# On Ubuntu /bin/sh is dash which is totally useless. Let's just also link bash
+# as the build sh since that will work fine
+_host_abs_tools_to_symlink+=	/bin/bash:sh
 .endif
 
 _worldtmp: .PHONY

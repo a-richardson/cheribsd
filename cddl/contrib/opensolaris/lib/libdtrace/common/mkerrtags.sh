@@ -25,8 +25,14 @@
 # Use is subject to license terms.
 #
 #ident	"%Z%%M%	%I%	%E% SMI"
-
-BSDECHO=-e
+set -e
+BSDECHO=""
+if [ "$(echo -e foo)" = "foo" ] ; then
+	BSDECHO=-e
+else
+	echo "echo builtin is broken in $0" >&2
+	exit 1
+fi
 
 echo ${BSDECHO} "\
 /*\n\
