@@ -50,13 +50,19 @@ if __name__ == "__main__":
         bootstrap_bmake(bmake_install_dir)
     if not sys.platform.startswith("freebsd"):
 
-        if not os.getenv("CC") and not any(a.startswith("CC=") for a in sys.argv):
+        if not os.getenv("CC") or not os.getenv("CXX") or not os.getenv("CPP"):
             print("Crossbuilding FreeBSD from a non-FreeBSD system currently will"
-                  "not work without setting CC.")
+                  "not work without setting CC to point to clang.")
             print("You should set CC and CXX to point to a valid clang binary")
             print("For example:")
             print("MAKEOBJDIRPREFIX=... CC=/usr/bin/clang-4.0",
                   "CXX=/usr/bin/clang++-4.0 CPP=/usr/bin/clang-cpp-4.0"
                   "./make.py buildworld")
-
+            if sys.platform == "darwin":
+                os.environ["CC"] = "/usr/bin/clang"
+                os.environ["CPP"] = "/usr/bin/cpp"
+                os.environ["CXX"] = "/usr/bin/clang++"
+                os.environ["LD"] = "/usr/bin/ld"
+            else:
+                sys.exit(1)
     os.execv(str(bmake_binary), [str(bmake_binary)] + sys.argv[1:])
