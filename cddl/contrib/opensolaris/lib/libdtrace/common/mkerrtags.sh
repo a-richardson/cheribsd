@@ -26,22 +26,15 @@
 #
 #ident	"%Z%%M%	%I%	%E% SMI"
 set -e
-BSDECHO=""
-if [ "$(echo -e foo)" = "foo" ] ; then
-	BSDECHO=-e
-else
-	echo "echo builtin is broken in $0" >&2
-	exit 1
-fi
 
-echo ${BSDECHO} "\
+printf "\
 /*\n\
  * Copyright 2003 Sun Microsystems, Inc.  All rights reserved.\n\
  * Use is subject to license terms.\n\
  */\n\
-\n\
-#pragma ident\t\"%Z%%M%\t%I%\t%E% SMI\"\n\
-\n\
+\n"
+echo "#pragma ident	\"%Z%%M%\t%I%\t%E% SMI\""
+printf "\n\
 #include <dt_errtags.h>
 \n\
 static const char *const _dt_errtags[] = {"
@@ -51,7 +44,7 @@ replace='	"\1",'
 
 sed -n "s/$pattern/$replace/p" || exit 1
 
-echo ${BSDECHO} "\
+printf "\
 };\n\
 \n\
 static const int _dt_ntag = sizeof (_dt_errtags) / sizeof (_dt_errtags[0]);\n\

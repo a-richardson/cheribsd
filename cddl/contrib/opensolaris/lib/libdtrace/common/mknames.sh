@@ -26,16 +26,14 @@
 #
 #ident	"%Z%%M%	%I%	%E% SMI"
 
-BSDECHO=-e
-
-echo ${BSDECHO} "\
+printf "\
 /*\n\
  * Copyright 2005 Sun Microsystems, Inc.  All rights reserved.\n\
  * Use is subject to license terms.\n\
  */\n\
-\n\
-#pragma ident\t\"%Z%%M%\t%I%\t%E% SMI\"\n\
-\n\
+\n"
+echo "#pragma ident	\"%Z%%M%\t%I%\t%E% SMI\""
+printf "\n\
 #include <dtrace.h>\n\
 \n\
 /*ARGSUSED*/
@@ -49,7 +47,7 @@ nawk '
 	printf("\tcase %s: return (\"%s\");\n", $2, tolower(substr($2, 10)));
 }'
 
-echo ${BSDECHO} "\
+printf "\
 	default: return (\"unknown\");\n\
 	}\n\
 }"
