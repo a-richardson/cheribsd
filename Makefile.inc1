@@ -944,8 +944,9 @@ _host_tools_to_symlink+=xcrun
 # overwrite it with the correct version. This requires m4 from homebrew.
 _host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
 .endif
-# On Ubuntu /bin/sh is dash which is totally useless. Let's just also link bash
-# as the build sh since that will work fine
+# On Ubuntu /bin/sh is dash which is totally useless. Let's just link bash
+# as the build sh since that will work fine. Also on MacOS /bin/sh doesn't
+# support the -e flag to echo so let's use the builtin from bash
 _host_abs_tools_to_symlink+=	/bin/bash:sh
 .endif
 
