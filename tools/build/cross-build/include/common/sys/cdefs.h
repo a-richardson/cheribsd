@@ -41,6 +41,10 @@
     static int alias() __attribute__ ((weakref (#sym)));
 #endif
 
+#ifndef __malloc_like
+#define	__malloc_like	__attribute__((__malloc__))
+#endif
+
 #ifndef nitems
 // https://stackoverflow.com/questions/1598773/is-there-a-standard-function-in-c-that-would-return-the-length-of-an-array/1598827#1598827
 #define nitems(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))

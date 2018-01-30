@@ -57,7 +57,7 @@ iswalpha(wint_t wc)
 }
 
 #undef iswascii
-int
+wint_t
 iswascii(wint_t wc)
 {
 	return ((wc & ~0x7F) == 0);
@@ -92,14 +92,14 @@ iswgraph(wint_t wc)
 }
 
 #undef iswhexnumber 
-int
+wint_t
 iswhexnumber(wint_t wc)
 {
 	return (__istype(wc, _CTYPE_X));
 }
 
 #undef iswideogram
-int
+wint_t
 iswideogram(wint_t wc)
 {
 	return (__istype(wc, _CTYPE_I));
@@ -113,14 +113,14 @@ iswlower(wint_t wc)
 }
 
 #undef iswnumber
-int
+wint_t
 iswnumber(wint_t wc)
 {
 	return (__istype(wc, _CTYPE_N));
 }
 
-#undef iswphonogram	
-int
+#undef iswphonogram
+wint_t
 iswphonogram(wint_t wc)
 {
 	return (__istype(wc, _CTYPE_Q));
@@ -141,7 +141,7 @@ iswpunct(wint_t wc)
 }
 
 #undef iswrune
-int
+wint_t
 iswrune(wint_t wc)
 {
 	return (__istype(wc, 0xFFFFFF00L));
@@ -155,7 +155,7 @@ iswspace(wint_t wc)
 }
 
 #undef iswspecial
-int
+wint_t
 iswspecial(wint_t wc)
 {
 	return (__istype(wc, _CTYPE_T));

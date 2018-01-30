@@ -2159,9 +2159,12 @@ ${_bt}-${_tool}: ${_bt}-usr.bin/yacc ${_bt_lex_depend}
 
 ${_bt}-usr.bin/mandoc: ${_bt}-lib/libopenbsd
 
-.if !defined(CROSSBUILDING)
-#  without significant changes localedef won't bootstrap on non-FreeBSD systems
-_localedef=usr.bin/localedef
+.if ${MK_LOCALES} != "no"
+_localedef=	usr.bin/localedef
+.if defined(CROSSBUILDING)
+_localedef+=	tools/build/cross-build/xlocale_freebsd
+${_bt}-usr.bin/localedef: ${_bt}-tools/build/cross-build/xlocale_freebsd
+.endif
 .endif
 
 .if defined(CROSSBUILDING)

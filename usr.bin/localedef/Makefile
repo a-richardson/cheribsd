@@ -22,5 +22,9 @@ IGNORE_PRAGMA=	yes
 CFLAGS+=	-I. -I${.CURDIR}
 CFLAGS+=	-I${SRCTOP}/lib/libc/locale
 CFLAGS+=	-I${SRCTOP}/lib/libc/stdtime
+.if defined(BOOTSTRAPPING) && ${.MAKE.OS} != "FreeBSD"
+CFLAGS+=	-I ${SRCTOP}/tools/build/cross-build/xlocale_freebsd
+LDFLAGS+=	-lxlocale-freebsd
+.endif
 
 .include <bsd.prog.mk>
