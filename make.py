@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -49,7 +50,8 @@ if __name__ == "__main__":
     if not bmake_binary.exists():
         bootstrap_bmake(bmake_install_dir)
     if not sys.platform.startswith("freebsd"):
-
+        # localedef currently segfaults on non-FreeBSD systems
+        sys.argv.append("-DWITHOUT_LOCALES")
         if not os.getenv("CC") or not os.getenv("CXX") or not os.getenv("CPP"):
             print("Crossbuilding FreeBSD from a non-FreeBSD system currently will"
                   "not work without setting CC to point to clang.")
@@ -59,10 +61,12 @@ if __name__ == "__main__":
                   "CXX=/usr/bin/clang++-4.0 CPP=/usr/bin/clang-cpp-4.0"
                   "./make.py buildworld")
             if sys.platform == "darwin":
-                os.environ["CC"] = "/usr/bin/clang"
-                os.environ["CPP"] = "/usr/bin/cpp"
-                os.environ["CXX"] = "/usr/bin/clang++"
-                os.environ["LD"] = "/usr/bin/ld"
+                cc = "/usr/bin/clang"
+                cpp = "/usr/bin/cpp"
+                cxx = "/usr/bin/clang++"
             else:
-                sys.exit(1)
+                cc = shutil.which("clang") or "/usr/bin/gcc"
+                cpp = shutil.which("clang-cpp") or "/usr/bin/cpp"
+                cxx = shutil.which("clang++") or "/usr/bin/g++"
+            os.environ.update(CC=cc, CPP=cpp, CXX=cxx, LD="/usr/bin/ld")
     os.execv(str(bmake_binary), [str(bmake_binary)] + sys.argv[1:])
