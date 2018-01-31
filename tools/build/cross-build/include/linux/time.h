@@ -3,9 +3,13 @@
  * defines set */
 /* #pragma once*/
 
-#include_next <time.h>
 /* GLIBC sets this when multiple-including time.h */
-#ifndef __need_time_t
+#ifdef __need_time_t
+#include_next <time.h>
+#else
+/* In addtion to time.h we also need to include sys/time.h and utime.h to
+ * be compatible with FreeBSD */
+#include_next <time.h>
 /* On Linux utimes() is not defined in time.h */
 #include <utime.h>
 /* sys/types.h is needed for opensolaris compat */
