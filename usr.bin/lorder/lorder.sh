@@ -77,7 +77,8 @@ ${NM} ${NMFLAGS} -go $* | sed "
 
 export LC_ALL=C
 # eliminate references that can be resolved by the same library.
-if [ "$(expr "$*" : '.*\.a[[:>:]]')" -ne 0 ]; then
+# The [[:>:]] regex does not work on glib systems, so just skip this "optimization"
+if [ "`uname -s`" != "Linux" ] && [ "$(expr "$*" : '.*\.a[[:>:]]')" -ne 0 ]; then
 	sort -u -o $S $S
 	sort -u -o $R $R
 	T=$(mktemp -t _temp_)
