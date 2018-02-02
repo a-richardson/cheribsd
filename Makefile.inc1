@@ -337,6 +337,13 @@ BUILDENV_SHELL?=${SHELL}
 BUILDENV_SHELL?=/bin/sh
 .endif
 
+.if ${.MAKE.OS} != "FreeBSD"
+CROSSBUILDING=${.MAKE.OS}
+.if ${.MAKE.OS} != "Linux" && ${.MAKE.OS} != "Darwin"
+.warning "Unsupported crossbuild system: ${.MAKE.OS}. Build will probably fail!"
+.endif
+.endif
+
 .if !defined(SVN) || empty(SVN)
 . for _P in /usr/bin /usr/local/bin
 .  for _S in svn svnlite
@@ -358,6 +365,8 @@ VCS_REVISION=	$$(echo r${_VCS_REVISION})
 .if exists(/usr/include/osreldate.h)
 OSRELDATE!=	awk '/^\#define[[:space:]]*__FreeBSD_version/ { print $$3 }' \
 		/usr/include/osreldate.h
+.elif defined(CROSSBUILDING)
+OSRELDATE=	${MINIMUM_SUPPORTED_OSREL}
 .else
 OSRELDATE=	0
 .endif
@@ -455,7 +464,15 @@ WORLDTMP?=	${OBJTOP}/tmp
 BPATH=		${CCACHE_WRAPPER_PATH_PFX}${WORLDTMP}/legacy/usr/sbin:${WORLDTMP}/legacy/usr/bin:${WORLDTMP}/legacy/bin
 XPATH=		${WORLDTMP}/usr/sbin:${WORLDTMP}/usr/bin
 STRICTTMPPATH=	${BPATH}:${XPATH}
+.if !defined(CROSSBUILDING)
 TMPPATH=	${STRICTTMPPATH}:${PATH}
+.else
+# When crossbuilding we can't rely on the tools in /usr/bin being compatible
+# with what FreeBSD expects. Therefore we only use tools from STRICTTMPPATH
+# during the world build stage. We build most tools during the bootstrap-tools
+# phase but symlink host tools that are known to work instead of building them
+TMPPATH=	${STRICTTMPPATH}
+.endif
 
 #
 # Avoid running mktemp(1) unless actually needed.
@@ -507,6 +524,11 @@ BOOTSTRAPPING?=	0
 # Keep these in sync -- see below for special case exception
 MINIMUM_SUPPORTED_OSREL?= 900044
 MINIMUM_SUPPORTED_REL?= 9.1
+# When crossbuilding pretend that we are building from the minimum supported
+# version so that all bootstrap tools get built
+.if defined(CROSSBUILDING)
+BOOTSTRAPPING:=	${MINIMUM_SUPPORTED_OSREL}
+.endif
 
 # Common environment for world related stages
 CROSSENV+=	\
@@ -714,7 +736,13 @@ NO_META_IGNORE_HOST_HEADERS=	1
 # allows tracking the oldest osreldate to force rebuilds via
 # META_MODE_BADABI_REVS above.
 host-osreldate.h: # DO NOT ADD /usr/include/osreldate.h here
+.if !defined(CROSSBUILDING)
 	@cp -f /usr/include/osreldate.h ${.TARGET}
+.else
+	@echo "#ifndef __FreeBSD_version" > ${.TARGET}
+	@echo "#define __FreeBSD_version ${OSRELDATE}" >> ${.TARGET}
+	@echo "#endif" >> ${.TARGET}
+.endif
 
 WMAKE=		${WMAKEENV} ${MAKE} ${WORLD_FLAGS} -f Makefile.inc1 \
 		BWPHASE=${.TARGET:C,^_,,} \
@@ -751,6 +779,22 @@ INSTALLFLAGS+=	-h sha256
 IMAKE_INSTALL=	INSTALL="install ${INSTALLFLAGS}"
 IMAKE_MTREE=	MTREE_CMD="mtree ${MTREEFLAGS}"
 .endif
+
+
+DESTDIR_MTREEFLAGS=	-deU
+# When creating worldtmp we don't need to set the directories as owned by root
+# so we also pass -W
+WORLDTMP_MTREEFLAGS=	-deUW
+.if defined(NO_ROOT) || defined(CROSSBUILDING)
+# When building with -DNO_ROOT we shouldn't be changing the directories
+# that are created by mtree to be owned by root/wheel.
+# We also need to do thispass the -W flag to mtree since the BSD.foo.dist specs contain
+# users and groups that do not exist by default on a Linux/MacOS system
+DESTDIR_MTREEFLAGS+=	-W
+.else
+.endif
+WORLDTMP_MTREE=	${MTREE} ${WORLDTMP_MTREEFLAGS}
+DESTDIR_MTREE=	${MTREE} ${DESTDIR_MTREEFLAGS}
 
 # kernel stage
 KMAKEENV=	${WMAKEENV:NSYSROOT=*}
@@ -820,6 +864,40 @@ _cleanobj_fast_depend_hack: .PHONY
 .endif
 .endfor
 
+
+# when building on Linux/Mac we want to run the build with only ${WORLDTMP} in
+# $PATH to ensure we don't run tools that are incompatible with the FreeBSD
+# versions. In order to do this we symlink all the basic tools that are known
+# to be compatible into ${WORLDTMP} and build all others from the FreeBSD
+# sources during the bootstrap-tools stage
+.if defined(CROSSBUILDING)
+# basic commands (used only with known flags)
+_host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
+	false fmt gzip \
+	head id ln mkdir mv nice rm ls realpath tee touch \
+	tr true sleep hostname \
+	patch uname uniq wc which
+# needed for the fake sysctl script
+_host_tools_to_symlink+=python
+# should we bootstrap this instead?
+_host_tools_to_symlink+=gperf
+# needed by bootloader
+_host_tools_to_symlink+=bzip2 dd
+_host_abs_tools_to_symlink=	${MAKE}:make ${MAKE}:bmake
+.if ${CROSSBUILDING} == "Darwin"
+# /usr/bin/cpp may invoke xcrun:
+_host_tools_to_symlink+=xcrun
+# the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
+# Therefore we need to add this symlink and then have the bootstrap-tools phase
+# overwrite it with the correct version. This requires m4 from homebrew.
+_host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
+.endif
+# On Ubuntu /bin/sh is dash which is totally useless. Let's just link bash
+# as the build sh since that will work fine. Also on MacOS /bin/sh doesn't
+# support the -e flag to echo so let's use the builtin from bash
+_host_abs_tools_to_symlink+=	/bin/bash:sh
+.endif
+
 _worldtmp: .PHONY
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -845,29 +923,39 @@ _worldtmp: .PHONY
 .endif	# !defined(NO_CLEAN)
 	@mkdir -p ${WORLDTMP}
 	@touch ${WORLDTMP}/${.TARGET}
-
+# We can't use mtree here to create the legacy directories since it may no be
+# available on the target system (this happens e.g. when building on Linux)
+# In that case it will be built during the legacy stage and can only be used
+# after that has been completed.
 .for _dir in \
-    lib lib/casper usr legacy/bin legacy/usr
+    lib lib/casper usr legacy/bin legacy/usr legacy/usr/bin legacy/usr/sbin \
+    legacy/usr/lib legacy/usr/include/sys legacy/usr/include/machine \
+    legacy/usr/include/ufs/ufs legacy/usr/include/ufs/ffs legacy/usr/include/x86
 	mkdir -p ${WORLDTMP}/${_dir}
 .endfor
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
-	    -p ${WORLDTMP}/legacy/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
-	    -p ${WORLDTMP}/legacy/usr/include >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
-	    -p ${WORLDTMP}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
-	    -p ${WORLDTMP}/usr/include >/dev/null
-	ln -sf ${.CURDIR}/sys ${WORLDTMP}
-.if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
-	    -p ${WORLDTMP}/legacy/usr/lib >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
-	    -p ${WORLDTMP}/usr/lib >/dev/null
-.endif
-.for _mtree in ${LOCAL_MTREE}
-	mtree -deU -f ${.CURDIR}/${_mtree} -p ${WORLDTMP} > /dev/null
+.if defined(CROSSBUILDING)
+	@echo "Linking host tools into ${WORLDTMP}/legacy/usr/bin"
+.for _tool in ${_host_tools_to_symlink}
+	@if [ ! -e "${WORLDTMP}/legacy/usr/bin/${_tool}" ]; then \
+		source_path=`which ${_tool}`; \
+		if [ ! -e "$${source_path}" ] ; then \
+			echo "Cannot find host tool '${_tool}'"; false; \
+		fi; \
+		ln -sfnv "$${source_path}" "${WORLDTMP}/legacy/usr/bin/${_tool}"; \
+	fi
 .endfor
+.for _tool in ${_host_abs_tools_to_symlink}
+	@source_path=`which "${_tool:S/:/ /:[1]}"`; \
+	target_path="${WORLDTMP}/legacy/usr/bin/${_tool:S/:/ /:[2]}"; \
+	if [ ! -e "$${target_path}" ] ; then \
+		if [ ! -e "$${source_path}" ] ; then \
+			echo "Host tool '${src_path}' is missing"; false; \
+		fi; \
+		ln -sfnv "$${source_path}" "$${target_path}"; \
+	fi
+.endfor
+.endif # defined(CROSSBUILDING)
+
 _legacy:
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -911,6 +999,20 @@ _cross-tools:
 	@echo ">>> stage 3: cross tools"
 	@echo "--------------------------------------------------------------"
 	@rm -f ${OBJTOP}/compiler-metadata.mk
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	    -p ${WORLDTMP}/usr >/dev/null
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	    -p ${WORLDTMP}/usr/include >/dev/null
+	ln -sf ${.CURDIR}/sys ${WORLDTMP}
+.if ${MK_DEBUG_FILES} != "no"
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	    -p ${WORLDTMP}/legacy/usr/lib >/dev/null
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	    -p ${WORLDTMP}/usr/lib >/dev/null
+.endif
+.for _mtree in ${LOCAL_MTREE}
+	${WORLDTMP_MTREE} -f ${.CURDIR}/${_mtree} -p ${WORLDTMP} > /dev/null
+.endfor
 	${_+_}cd ${.CURDIR}; ${XMAKE} cross-tools
 	${_+_}cd ${.CURDIR}; ${XMAKE} kernel-tools
 _build-metadata:
@@ -1144,13 +1246,14 @@ MTREE_MAGIC?=	mtree 2.0
 distributeworld installworld stageworld: _installcheck_world .PHONY
 	mkdir -p ${INSTALLTMP}
 	progs=$$(for prog in ${ITOOLS}; do \
-		if progpath=`which $$prog`; then \
+		if progpath=`env PATH=${TMPPATH} which $$prog`; then \
 			echo $$progpath; \
 		else \
 			echo "Required tool $$prog not found in PATH." >&2; \
 			exit 1; \
 		fi; \
 	    done); \
+	if [ -z "${CROSSBUILDING}" ] ; then \
 	libs=$$(ldd -f "%o %p\n" -f "%o %p\n" $$progs 2>/dev/null | sort -u | \
 	    while read line; do \
 		set -- $$line; \
@@ -1161,6 +1264,7 @@ distributeworld installworld stageworld: _installcheck_world .PHONY
 			exit 1; \
 		fi; \
 	    done); \
+	fi; \
 	cp $$libs $$progs ${INSTALLTMP}
 	cp -R $${PATH_LOCALE:-"/usr/share/locale"} ${INSTALLTMP}/locale
 .if defined(NO_ROOT)
@@ -1170,42 +1274,42 @@ distributeworld installworld stageworld: _installcheck_world .PHONY
 .if make(distributeworld)
 .for dist in ${EXTRA_DISTRIBUTIONS}
 	-mkdir ${DESTDIR}/${DISTDIR}/${dist}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.root.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.root.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist} >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr/include >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr/lib >/dev/null
 .endif
 .if defined(LIBCOMPAT)
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr/lib/debug/usr >/dev/null
 .endif
 .endif
 .if ${MK_TESTS} != "no" && ${dist} == "tests"
 	-mkdir -p ${DESTDIR}/${DISTDIR}/${dist}${TESTSBASE}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}${TESTSBASE} >/dev/null
 .if ${MK_DEBUG_FILES} != "no"
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${DESTDIR}/${DISTDIR}/${dist}/usr/lib/debug/${TESTSBASE} >/dev/null
 .endif
 .endif
 .if defined(NO_ROOT)
-	${IMAKEENV} mtree -C -f ${.CURDIR}/etc/mtree/BSD.root.dist | \
+	${IMAKEENV} ${MTREE} -C -f ${.CURDIR}/etc/mtree/BSD.root.dist | \
 	    sed -e 's#^\./#./${dist}/#' >> ${METALOG}
-	${IMAKEENV} mtree -C -f ${.CURDIR}/etc/mtree/BSD.usr.dist | \
+	${IMAKEENV} ${MTREE} -C -f ${.CURDIR}/etc/mtree/BSD.usr.dist | \
 	    sed -e 's#^\./#./${dist}/usr/#' >> ${METALOG}
-	${IMAKEENV} mtree -C -f ${.CURDIR}/etc/mtree/BSD.include.dist | \
+	${IMAKEENV} ${MTREE} -C -f ${.CURDIR}/etc/mtree/BSD.include.dist | \
 	    sed -e 's#^\./#./${dist}/usr/include/#' >> ${METALOG}
 .if defined(LIBCOMPAT)
-	${IMAKEENV} mtree -C -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist | \
+	${IMAKEENV} ${MTREE} -C -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist | \
 	    sed -e 's#^\./#./${dist}/usr/#' >> ${METALOG}
 .endif
 .endif
@@ -1865,6 +1969,7 @@ ${_bt}-usr.bin/m4: ${_bt}-lib/libopenbsd
 ${_bt}-usr.bin/lex: ${_bt}-usr.bin/m4
 .endif
 
+MTREE?=	mtree
 # r245440 mtree -N support added
 # r313404 requires sha384.h for libnetbsd, added to libmd in r292782
 .if ${BOOTSTRAPPING} < 1100093
@@ -1872,6 +1977,7 @@ _nmtree=	lib/libmd \
 		lib/libnetbsd \
 		usr.sbin/nmtree
 
+MTREE=	${WORLDTMP}/legacy/usr/sbin/mtree
 ${_bt}-lib/libnetbsd: ${_bt}-lib/libmd
 ${_bt}-usr.sbin/nmtree: ${_bt}-lib/libnetbsd
 .endif
@@ -2040,7 +2146,7 @@ build-tools: build-tools_${_tool}
 #
 kernel-tools: .PHONY
 	mkdir -p ${WORLDTMP}/usr
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${WORLDTMP}/usr >/dev/null
 
 #
@@ -2297,9 +2403,9 @@ native-xtools: .PHONY
 
 native-xtools-install: .PHONY
 	mkdir -p ${NXBDESTDIR}/bin ${NXBDESTDIR}/sbin ${NXBDESTDIR}/usr
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${NXBDESTDIR}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${NXBDESTDIR}/usr/include >/dev/null
 	${_+_}cd ${.CURDIR}; ${NXBMAKE} \
 	    DESTDIR=${NXBDESTDIR} \
@@ -2919,7 +3025,7 @@ xdev-build: _xb-worldtmp _xb-bootstrap-tools _xb-build-tools _xb-cross-tools .PH
 
 _xb-worldtmp: .PHONY
 	mkdir -p ${CDTMP}/usr
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${CDTMP}/usr >/dev/null
 
 _xb-bootstrap-tools: .PHONY
@@ -2958,19 +3064,19 @@ _xb-cross-tools: .PHONY
 _xi-mtree: .PHONY
 	${_+_}@${ECHODIR} "mtree populating ${XDDESTDIR}"
 	mkdir -p ${XDDESTDIR}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.root.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.root.dist \
 	    -p ${XDDESTDIR} >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
 	    -p ${XDDESTDIR}/usr >/dev/null
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
 	    -p ${XDDESTDIR}/usr/include >/dev/null
 .if defined(LIBCOMPAT)
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.lib${libcompat}.dist \
 	    -p ${XDDESTDIR}/usr >/dev/null
 .endif
 .if ${MK_TESTS} != "no"
 	mkdir -p ${XDDESTDIR}${TESTSBASE}
-	mtree -deU -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
+	${DESTDIR_MTREE} -f ${.CURDIR}/etc/mtree/BSD.tests.dist \
 	    -p ${XDDESTDIR}${TESTSBASE} >/dev/null
 .endif
 
