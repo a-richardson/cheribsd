@@ -916,40 +916,6 @@ _cleanobj_fast_depend_hack: .PHONY
 .endif
 .endfor
 
-
-# when building on Linux/Mac we want to run the build with only ${WORLDTMP} in
-# $PATH to ensure we don't run tools that are incompatible with the FreeBSD
-# versions. In order to do this we symlink all the basic tools that are known
-# to be compatible into ${WORLDTMP} and build all others from the FreeBSD
-# sources during the bootstrap-tools stage
-.if defined(CROSSBUILDING)
-# basic commands (used only with known flags)
-_host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
-	false fmt gzip \
-	head id ln mkdir mv nice rm ls realpath tee touch \
-	tr true sleep hostname \
-	patch uname uniq wc which
-# needed for the fake sysctl script
-_host_tools_to_symlink+=python
-# should we bootstrap this instead?
-_host_tools_to_symlink+=gperf
-# needed by bootloader
-_host_tools_to_symlink+=bzip2 dd
-_host_abs_tools_to_symlink=	${MAKE}:make ${MAKE}:bmake
-.if ${CROSSBUILDING} == "Darwin"
-# /usr/bin/cpp may invoke xcrun:
-_host_tools_to_symlink+=xcrun
-# the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
-# Therefore we need to add this symlink and then have the bootstrap-tools phase
-# overwrite it with the correct version. This requires m4 from homebrew.
-_host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
-.endif
-# On Ubuntu /bin/sh is dash which is totally useless. Let's just link bash
-# as the build sh since that will work fine. Also on MacOS /bin/sh doesn't
-# support the -e flag to echo so let's use the builtin from bash
-_host_abs_tools_to_symlink+=	/bin/bash:sh
-.endif
-
 _worldtmp: .PHONY
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -975,36 +941,18 @@ _worldtmp: .PHONY
 .endif	# !defined(NO_CLEAN)
 	@mkdir -p ${WORLDTMP}
 	@touch ${WORLDTMP}/${.TARGET}
-# We can't use mtree to create the legacy directories since it may no be
+# We can't use mtree to create the worldtmp directories since it may no be
 # available on the target system (this happens e.g. when building on Linux)
-.for _dir in \
-    lib lib/casper usr legacy/bin legacy/usr legacy/usr/bin legacy/usr/sbin \
-    legacy/usr/lib legacy/usr/include/sys legacy/usr/include/machine \
-    legacy/usr/include/ufs/ufs legacy/usr/include/ufs/ffs legacy/usr/include/x86
+.for _dir in lib lib/casper usr
 	mkdir -p ${WORLDTMP}/${_dir}
 .endfor
-.if defined(CROSSBUILDING)
-	@echo "Linking host tools into ${WORLDTMP}/legacy/usr/bin"
-.for _tool in ${_host_tools_to_symlink}
-	@if [ ! -e "${WORLDTMP}/legacy/usr/bin/${_tool}" ]; then \
-		source_path=`which ${_tool}`; \
-		if [ ! -e "$${source_path}" ] ; then \
-			echo "Cannot find host tool '${_tool}'"; false; \
-		fi; \
-		ln -sfnv "$${source_path}" "${WORLDTMP}/legacy/usr/bin/${_tool}"; \
-	fi
-.endfor
-.for _tool in ${_host_abs_tools_to_symlink}
-	@source_path=`which "${_tool:S/:/ /:[1]}"`; \
-	target_path="${WORLDTMP}/legacy/usr/bin/${_tool:S/:/ /:[2]}"; \
-	if [ ! -e "$${target_path}" ] ; then \
-		if [ ! -e "$${source_path}" ] ; then \
-			echo "Host tool '${src_path}' is missing"; false; \
-		fi; \
-		ln -sfnv "$${source_path}" "$${target_path}"; \
-	fi
-.endfor
-.endif # defined(CROSSBUILDING)
+	cd ${.CURDIR}/tools/build; \
+	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy installdirs;
+# When crossbuilding we also need to add symlinks to the host tools since we
+# will be running the build with $PATH only containing $WORLDTMP.
+# TODO: in the future we should probably also do this when building on FreeBSD
+	cd ${.CURDIR}/tools/build; \
+	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy host-symlinks;
 
 _legacy:
 	@echo
