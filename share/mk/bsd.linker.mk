@@ -51,7 +51,7 @@ ${var}=	${${var}.${${X_}_ld_hash}}
 # before failing with ld: unknown option: --version
 # the test $? -eq 141 is there in order to silence the warning due to SIGPIPE
 # if the shell is running with -o pipefail
-_ld_version!=	(${${ld}} -v --version 2>&1 || echo none 2>/dev/null) | head -n 1 || test $$? -eq 141
+_ld_version!=	(${${ld}} -v --version 2>&1 || echo none 2>/dev/null || true) | head -n 1
 .if ${_ld_version} == "none"
 .warning Unable to determine linker type from ${ld}=${${ld}}
 .endif
