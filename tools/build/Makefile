@@ -81,8 +81,32 @@ _host_tools_to_symlink+=bzip2 dd
 _make_abs!=	which "${MAKE}"
 _host_abs_tools_to_symlink=	${_make_abs}:make ${_make_abs}:bmake
 
+.if ${.MAKE.OS} != "FreeBSD"
+# needed for the fake sysctl script
+_host_tools_to_symlink+=python
+# should we bootstrap this instead?
+_host_tools_to_symlink+=gperf
+# needed by bootloader
+_host_tools_to_symlink+=bzip2 dd
+
+_make_abs!=	which "${MAKE}"
+_host_abs_tools_to_symlink=	${_make_abs}:make ${_make_abs}:bmake
+.if ${.MAKE.OS} == "Darwin"
+# /usr/bin/cpp may invoke xcrun:
+_host_tools_to_symlink+=xcrun
+# the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
+# Therefore we need to add this symlink and then have the bootstrap-tools phase
+# overwrite it with the correct version. This requires m4 from homebrew.
+_host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
+.endif
+# On Ubuntu /bin/sh is dash which is totally useless. Let's just link bash
+# as the build sh since that will work fine. Also on MacOS /bin/sh doesn't
+# support the -e flag to echo so let's use the builtin from bash
+_host_abs_tools_to_symlink+=	/bin/bash:sh
+.endif
+
 host-symlinks:
-	@echo "Linking host tools into ${DESTDIR}/usr/bin"
+	@echo "Linking host tools into ${DESTDIR}/bin"
 .for _tool in ${_host_tools_to_symlink}
 	@if [ ! -e "${DESTDIR}/bin/${_tool}" ]; then \
 		source_path=`which ${_tool}`; \
@@ -101,6 +125,17 @@ host-symlinks:
 		fi; \
 		ln -sfnv "$${source_path}" "$${target_path}"; \
 	fi
+.endfor
+
+# Create all the directories that are needed during the legacy, bootstrap-tools
+# and cross-tools stages. We do this here using mkdir since mtree may not exist
+# yet (this happens if we are crossbuilding from Linux/Mac).
+installdirs:
+.for _dir in bin usr/bin usr/sbin usr/lib usr/include
+	mkdir -p "${DESTDIR}/${_dir}"
+.endfor
+.for _group in ${INCSGROUPS:NINCS}
+	mkdir -p "${DESTDIR}/${${_group}DIR}"
 .endfor
 
 .include <bsd.lib.mk>
