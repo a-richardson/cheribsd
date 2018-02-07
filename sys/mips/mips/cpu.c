@@ -311,15 +311,15 @@ mips_get_identity(struct mips_cpuinfo *cpuinfo)
 	cfg2 = mips_rd_config2();
 
 	tmp = (cfg2 >> MIPS_CONFIG2_SL_SHIFT) & MIPS_CONFIG2_SL_MASK;
-	if (tmp <= 7)
+	if (0 < tmp && tmp <= 7)
 		cpuinfo->l2.dc_linesize = 2 << tmp;
 
 	tmp = (cfg2 >> MIPS_CONFIG2_SS_SHIFT) & MIPS_CONFIG2_SS_MASK;
-	if (tmp <= 7)
+	if (0 <= tmp && tmp <= 7)
 		cpuinfo->l2.dc_nsets = 64 << tmp;
 
 	tmp = (cfg2 >> MIPS_CONFIG2_SA_SHIFT) & MIPS_CONFIG2_SA_MASK;
-	if (tmp <= 7)
+	if (0 <= tmp && tmp <= 7)
 		cpuinfo->l2.dc_nways = tmp + 1;
 
 	cpuinfo->l2.dc_size = cpuinfo->l2.dc_linesize
