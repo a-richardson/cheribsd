@@ -332,6 +332,21 @@ __MAKE_SHELL?=/bin/sh
 	path=${__MAKE_SHELL}
 .endif
 
+.if ${.MAKE.OS} != "FreeBSD"
+# Use bash with -o pipefail to make sure that all commands exist
+# somehow bmake won't use the check string so lets use a wrapper script
+# instead
+.if !exists(/tmp/bash-with-pipefail)
+_FOOOOO!=	echo '\#!/bin/sh' > /tmp/bash-with-pipefail
+_FOOOOO!=	echo 'exec /bin/bash -o pipefail "$$@"' >> /tmp/bash-with-pipefail
+_FOOOOO!=	chmod +x /tmp/bash-with-pipefail
+.endif
+.SHELL: name=bash path=/tmp/bash-with-pipefail hasErrCtl=true \
+		      check="set -uo pipefail" ignore="set +euo pipefail" \
+		      echo="set -xv" quiet="set +x" filter="set +x" \
+		      echoFlag=xv errFlag="e" newline="'\n'"
+.endif
+
 # Hack for ports compatibility. Historically, ports makefiles have
 # assumed they can examine MACHINE_CPU without including anything
 # because this was automatically included in sys.mk. For /usr/src,
