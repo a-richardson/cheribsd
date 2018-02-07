@@ -8,13 +8,11 @@ SRCS=	getdtablecount.c \
 	ohash.c
 INTERNALLIB=
 
-.if (!empty(${.TARGETS:Mbuild-tools}) || defined(BOOTSTRAPPING)) && \
-	${.MAKE.OS} != "FreeBSD"
-# libopenbsd won't compile during bootstrap for Linux, but it seems like we don't need
-# any of the functions there so it is fine
+.if defined(BOOTSTRAPPING) && ${.MAKE.OS} != "FreeBSD"
+# getdtablecount.c won't compile during bootstrap for Linux, but it seems like
+# it is not used by any of the cross tools so just skipping it works fine
 SRCS:=${SRCS:Ngetdtablecount.c}
 .endif
-
 
 CFLAGS+= -I${.CURDIR}
 
