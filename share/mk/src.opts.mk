@@ -435,11 +435,13 @@ MK_BINUTILS_BOOTSTRAP:=	no
 MK_CLANG_BOOTSTRAP:=	no
 MK_LLD_BOOTSTRAP:=	no
 MK_GCC_BOOTSTRAP:=	no
-# Also tablegen will not build on non-FreeBSD -> disable clang and lld
+# tablegen will not build on non-FreeBSD so also disable target clang and lld
 MK_CLANG:=	no
 MK_LLD:=	no
 # However, the elftoolchain tools build and should be used
 MK_ELFTOOLCHAIN_BOOTSTRAP:=	yes
+# localedef currently doesn't work on Linux/Mac so disable LOCALES there
+MK_LOCALES:=	no
 .endif
 
 #

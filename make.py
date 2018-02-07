@@ -50,8 +50,6 @@ if __name__ == "__main__":
     if not bmake_binary.exists():
         bootstrap_bmake(bmake_install_dir)
     if not sys.platform.startswith("freebsd"):
-        # localedef currently segfaults on non-FreeBSD systems
-        sys.argv.append("-DWITHOUT_LOCALES")
         if not os.getenv("CC") or not os.getenv("CXX") or not os.getenv("CPP"):
             print("Crossbuilding FreeBSD from a non-FreeBSD system currently will"
                   "not work without setting CC to point to clang.")
