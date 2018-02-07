@@ -360,12 +360,7 @@ _guard: .PHONY
 	@false
 
 STARTTIME!= LC_ALL=C date
-.if ${.MAKE.OS} != "Linux
-# One Linux /usr/bin/find only supports integer literals in the mtime flag
-# This does the same so we can skip it when building on Linux
-MTIME_SECONDS_SUFFIX=s
-.endif
-CHECK_TIME!= find ${.CURDIR}/sys/sys/param.h -mtime -0${MTIME_SECONDS_SUFFIX} ; echo
+CHECK_TIME!= cmp=`mktemp`; find ${.CURDIR}/sys/sys/param.h -newer "$$cmp" && rm "$$cmp"; echo
 .if !empty(CHECK_TIME)
 .error check your date/time: ${STARTTIME}
 .endif

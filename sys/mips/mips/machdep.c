@@ -210,8 +210,8 @@ cpu_startup(void *dummy)
 	vm_ksubmap_init(&kmi);
 
 	printf("avail memory = %ju (%juMB)\n", 
-	    ptoa((uintmax_t)vm_cnt.v_free_count),
-	    ptoa((uintmax_t)vm_cnt.v_free_count) / 1048576);
+	    ptoa((uintmax_t)vm_free_count()),
+	    ptoa((uintmax_t)vm_free_count()) / 1048576);
 	cpu_init_interrupts();
 
 	/*
@@ -384,13 +384,10 @@ void
 mips_postboot_fixup(void)
 {
 	/*
-	 * The compiler/linker can align fake_preload anyway it would like.
-	 * When building the kernel with gcc+bfd this always happened to
-	 * be a multiple of 8. However, when building with clang we have to
-	 * explicitly mark it as aligned to 8 bytes since the compiler will
-	 * emit sd instructions to store to this buffer.
+	 * We store u_long sized objects into the reload area, so the array
+	 * must be so aligned. The standard allows any alignment for char data.
 	 */
-	static char fake_preload[256] __aligned(8);
+	static char fake_preload[256] _Alignas(_Alignof(u_long));
 	caddr_t preload_ptr = (caddr_t)&fake_preload[0];
 	size_t size = 0;
 
