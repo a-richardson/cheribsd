@@ -467,10 +467,6 @@ _CPUTYPE!=	MAKEFLAGS= CPUTYPE=${_TARGET_CPUTYPE} ${MAKE} -f /dev/null \
 .endif
 .if make(buildworld)
 BUILD_ARCH!=	uname -p
-.if ${BUILD_ARCH} == "x86_64" || (${BUILD_ARCH} == "i386" && ${.MAKE.OS} == "Darwin")
-# Allow crossbuilding from Linux/MacOS where uname -p will print x86_64/i386
-BUILD_ARCH:=amd64
-.endif
 .if ${MACHINE_ARCH} != ${BUILD_ARCH}
 .error To cross-build, set TARGET_ARCH.
 .endif

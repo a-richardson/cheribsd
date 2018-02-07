@@ -315,13 +315,6 @@ _MAKE+=			NXB_TARGET=${NXB_TARGET} \
 			NXB_TARGET_ARCH=${NXB_TARGET_ARCH}
 .endif
 
-.if ${_TARGET} == "x86_64"
-# Some version of bmake (e.g. Linux and Mac when built with the default flags)
-# will report MACHINE as x86_64
-_TARGET:="amd64"
-_TARGET_ARCH:="amd64"
-.endif
-
 .if make(print-dir)
 .SILENT:
 .endif
