@@ -26,8 +26,9 @@ ioctl_includes=$(
 	if [ "${MK_PF}" = "no" ]; then
 		filter='egrep -v (net/pfvar|net/if_pfsync)\.h'
 	fi
-
-	find -H -s ./* -name '*.h' | \
+	# find -s would avoid the need to invoke sort but it is non-portable
+	find -H ./* -name '*.h' | \
+		env LC_ALL=C sort | \
 		$filter | \
 		xargs egrep -l \
 '^#[ 	]*define[ 	]+[A-Za-z_][A-Za-z0-9_]*[ 	]+_IO[^a-z0-9_]' |
