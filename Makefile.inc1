@@ -541,11 +541,6 @@ BOOTSTRAPPING?=	0
 # Keep these in sync -- see below for special case exception
 MINIMUM_SUPPORTED_OSREL?= 900044
 MINIMUM_SUPPORTED_REL?= 9.1
-# When crossbuilding pretend that we are building from the minimum supported
-# version so that all bootstrap tools get built
-.ifdef CROSSBUILDING
-BOOTSTRAPPING:=	${MINIMUM_SUPPORTED_OSREL}
-.endif
 
 # Common environment for world related stages
 CROSSENV+=	\
@@ -561,12 +556,12 @@ CROSSENV+=	${TARGET_CFLAGS}
 .endif
 
 .if !defined(CROSSBUILDING)
-HOST_TOOLS_COMMON_MAKEFLAGS=-DNO_PIC MK_PROFILE=no -DNO_SHARED
+HOST_TOOLS_COMMON_MAKEFLAGS=	-DNO_PIC MK_PROFILE=no -DNO_SHARED
 .else
 # When building Linux or Mac it will usually not be possible to link statically
-# so we can pass -DNO_PIC, -DNO_SHARED. Also we want to build BSD grep and
-# avoid any dependencies on libdialog (for tzsetup)
-HOST_TOOLS_COMMON_MAKEFLAGS=MK_PROFILE=no MK_NLS=no MK_BSD_GREP=yes \
+# so we can't pass -DNO_PIC, -DNO_SHARED.
+# We also want to build BSD grep and avoid any dependencies on libdialog (for tzsetup)
+HOST_TOOLS_COMMON_MAKEFLAGS=	MK_PROFILE=no MK_NLS=no MK_BSD_GREP=yes \
 	MK_DIALOG=no MK_DEBUG_FILES=no
 .endif
 
@@ -577,10 +572,6 @@ BMAKEENV=	INSTALL="sh ${.CURDIR}/tools/install.sh" \
 		WORLDTMP=${WORLDTMP} \
 		MAKEFLAGS="-m ${.CURDIR}/tools/build/mk ${.MAKEFLAGS}"
 .if defined(CROSSBUILDING)
-BMAKEENV+=	AWK="${WORLDTMP}/legacy/usr/bin/awk" \
-		LEX="${WORLDTMP}/legacy/usr/bin/lex" \
-		YACC="${WORLDTMP}/legacy/usr/bin/yacc"
-
 # Since we remove /usr/bin from $PATH when crossbuilding we need to pass an
 # absolute path for CC CPP CXX and LD
 .if ${LD} == "ld"
@@ -943,12 +934,12 @@ _worldtmp: .PHONY
 	mkdir -p ${WORLDTMP}/${_dir}
 .endfor
 	cd ${.CURDIR}/tools/build; \
-	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy installdirs;
+	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy installdirs
 # When crossbuilding we also need to add symlinks to the host tools since we
 # will be running the build with $PATH only containing $WORLDTMP.
 # TODO: in the future we should probably also do this when building on FreeBSD
 	cd ${.CURDIR}/tools/build; \
-	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy host-symlinks;
+	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy host-symlinks
 
 _legacy:
 	@echo
@@ -1033,7 +1024,6 @@ _libraries:
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 4.2: building libraries"
 	@echo "--------------------------------------------------------------"
-	# @echo "DONE"; false
 	${_+_}cd ${.CURDIR}; \
 	    ${WMAKE} -DNO_FSCHG MK_HTML=no -DNO_LINT MK_MAN=no \
 	    MK_PROFILE=no MK_TESTS=no MK_TESTS_SUPPORT=${MK_TESTS} libraries
@@ -2306,8 +2296,6 @@ _dtrace_tools= cddl/lib/libctf cddl/usr.bin/ctfconvert \
 
 # If we're given an XAS, don't build binutils.
 .if ${XAS:M/*} == ""
-# We also skip building binutils when crossbuilding from Linux/Mac since
-# the sources won't compile there.
 .if ${MK_BINUTILS_BOOTSTRAP} != "no"
 _binutils=	gnu/usr.bin/binutils
 .endif
