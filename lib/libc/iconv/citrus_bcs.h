@@ -30,7 +30,6 @@
  */
 
 #include <sys/types.h>
-#include <stdint.h>
 
 #ifndef _CITRUS_BCS_H_
 #define _CITRUS_BCS_H_

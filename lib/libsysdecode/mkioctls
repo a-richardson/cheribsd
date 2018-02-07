@@ -3,6 +3,7 @@
 # $FreeBSD$
 
 set -e
+
 if [ $# -ne 1 ]; then
 	echo "usage: sh $0 include-dir"
 	exit 1

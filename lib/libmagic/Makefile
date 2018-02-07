@@ -1,8 +1,6 @@
 # $FreeBSD$
 # Copyright (c) David E. O'Brien, 2000-2004, 2006, 2009
 
-.include <host-target.mk>
-
 PACKAGE=lib${LIB}
 CONTRDIR=	${SRCTOP}/contrib/file
 .PATH: ${CONTRDIR}/src
@@ -21,19 +19,7 @@ INCS=	magic.h
 MAGICPATH?=	/usr/share/misc
 
 CFLAGS+= -DMAGIC='"${MAGICPATH}/magic"' -DHAVE_CONFIG_H
-CFLAGS+= -I${.OBJDIR} -I${CONTRDIR}/src
-# .if !make(build-tools)
-CFLAGS+=-I${.CURDIR}
-# .else
-# # When crossbuilding the mkmagic build tool on non-FreeBSD systems we need to
-# # run the configure script to create config.h
-# ${.OBJDIR}/config.h: ${SRCTOP}/contrib/file/configure
-# .if ${HOST_OS} == "FreeBSD"
-# 	cp -f ${.CURDIR}/config.h ${.TARGET}
-# .else
-# 	cd ${.OBJDIR} && sh ${SRCTOP}/contrib/file/configure
-# .endif
-# .endif
+CFLAGS+= -I${.CURDIR} -I${.OBJDIR} -I${CONTRDIR}/src
 
 WARNS?=		3
 
@@ -54,7 +40,7 @@ magic.mgc: mkmagic magic
 
 CLEANFILES+=	mkmagic
 build-tools: mkmagic
-mkmagic: apprentice.c cdf_time.c encoding.c funcs.c magic.c print.c ${INCS} ${.CURDIR}/config.h ${BUILD_TOOLS_META}
+mkmagic: apprentice.c cdf_time.c encoding.c funcs.c magic.c print.c ${INCS} ${BUILD_TOOLS_META}
 	${CC} ${CFLAGS} -DCOMPILE_ONLY ${LDFLAGS} -o ${.TARGET} ${.ALLSRC:N*.h} \
 	    ${LDADD}
 
