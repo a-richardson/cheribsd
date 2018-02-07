@@ -22,6 +22,10 @@ CFLAGS+=	-DHAVE_NBTOOL_CONFIG_H=1
 CFLAGS+=	-D__BSD_VISIBLE=1
 CFLAGS+=	-isystem ${SRCTOP}/tools/build/cross-build/include/common
 
+# b64_pton and b64_ntop is in libresolv on MacOS and Linux:
+# TODO: only needed for uuencode and uudecode
+LDFLAGS+=-lresolv
+
 # ensure that we use the FreeBSD versions of libdb:
 FREEBSD_LIBDB:=	-ldb-freebsd
 
@@ -51,11 +55,7 @@ LDFLAGS+=	-L/usr/local/opt/libarchive/lib
 .else
 .error "Unsupported build OS: ${.MAKE.OS}"
 .endif
-
-# b64_pton and b64_ntop is in libresolv on MacOS and Linux:
-# TODO: only needed for uuencode and uudecode
-LDFLAGS+=-lresolv
-.endif
+.endif # ${.MAKE.OS} != "FreeBSD"
 
 # we do not want to capture dependencies referring to the above
 UPDATE_DEPENDFILE= no
