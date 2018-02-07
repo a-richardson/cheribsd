@@ -31,7 +31,6 @@
 #define _COMPAT_OPENSOLARIS_UNISTD_H_
 
 #include_next <unistd.h>
-#include <sys/endian.h>
 
 #define	fork1		fork
 #define	ftruncate64	ftruncate
