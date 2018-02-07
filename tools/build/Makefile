@@ -114,7 +114,7 @@ SUBDIR=		cross-build
 .if ${.MAKE.OS} != "FreeBSD"
 # basic commands (used only with known flags)
 _host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
-	false fmt gzip \
+	false find fmt gzip \
 	head id ln mkdir mv nice rm ls realpath tee touch \
 	tr true sleep hostname \
 	patch uname uniq wc which
