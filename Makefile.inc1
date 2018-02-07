@@ -339,6 +339,18 @@ BUILDENV_SHELL?=${SHELL}
 BUILDENV_SHELL?=/bin/sh
 .endif
 
+.if ${.MAKE.OS} != "FreeBSD"
+CROSSBUILD_HOST=${.MAKE.OS}
+.if ${.MAKE.OS} != "Linux" && ${.MAKE.OS} != "Darwin"
+.warning "Unsupported crossbuild system: ${.MAKE.OS}. Build will probably fail!"
+.endif
+# We need to force NO_ROOT builds when building on other operating systems since
+# the BSD.foo.dist specs contain users and groups that do not exist by default
+# on a Linux/MacOS system
+NO_ROOT:=	1
+.export NO_ROOT
+.endif
+
 .if !defined(SVN) || empty(SVN)
 . for _P in /usr/bin /usr/local/bin
 .  for _S in svn svnlite
@@ -457,7 +469,15 @@ WORLDTMP?=	${OBJTOP}/tmp
 BPATH=		${CCACHE_WRAPPER_PATH_PFX}${WORLDTMP}/legacy/usr/sbin:${WORLDTMP}/legacy/usr/bin:${WORLDTMP}/legacy/bin
 XPATH=		${WORLDTMP}/usr/sbin:${WORLDTMP}/usr/bin
 STRICTTMPPATH=	${BPATH}:${XPATH}
+.if !defined(CROSSBUILD_HOST)
 TMPPATH=	${STRICTTMPPATH}:${PATH}
+.else
+# When crossbuilding we can't rely on the tools in /usr/bin being compatible
+# with what FreeBSD expects. Therefore we only use tools from STRICTTMPPATH
+# during the world build stage. We build most tools during the bootstrap-tools
+# phase but symlink host tools that are known to work instead of building them
+TMPPATH=	${STRICTTMPPATH}
+.endif
 
 #
 # Avoid running mktemp(1) unless actually needed.
@@ -465,7 +485,12 @@ TMPPATH=	${STRICTTMPPATH}:${PATH}
 # when in the middle of installing over this system.
 #
 .if make(distributeworld) || make(installworld) || make(stageworld)
-INSTALLTMP!=	mktemp -d -u -t install
+.if defined(CROSSBUILD_HOST)
+MKTEMP=${WORLDTMP}/legacy/usr/bin/mktemp
+.else
+MKTEMP=mktemp
+.endif
+INSTALLTMP!=	${MKTEMP} -d -u -t install
 .endif
 
 .if make(stagekernel) || make(distributekernel)
@@ -509,6 +534,11 @@ BOOTSTRAPPING?=	0
 # Keep these in sync -- see below for special case exception
 MINIMUM_SUPPORTED_OSREL?= 900044
 MINIMUM_SUPPORTED_REL?= 9.1
+.if defined(CROSSBUILD_HOST)
+# When crossbuilding pretend that we are building from the minimum supported
+# version so that all bootstrap tools get built
+BOOTSTRAPPING:=	0
+.endif
 
 # Common environment for world related stages
 CROSSENV+=	\
@@ -523,12 +553,48 @@ CROSSENV+=	BUILD_TOOLS_META=.NOMETA
 CROSSENV+=	${TARGET_CFLAGS}
 .endif
 
+.if !defined(CROSSBUILD_HOST)
+HOST_TOOLS_COMMON_MAKEFLAGS=	-DNO_PIC MK_PROFILE=no -DNO_SHARED
+.else
+# When building Linux or Mac it will usually not be possible to link statically
+# so we can't pass -DNO_PIC, -DNO_SHARED.
+# We also want to build BSD grep and avoid any dependencies on libdialog
+HOST_TOOLS_COMMON_MAKEFLAGS=	MK_PROFILE=no MK_NLS=no MK_BSD_GREP=yes \
+	MK_DIALOG=no MK_DEBUG_FILES=no
+.endif
+
 # bootstrap-tools stage
 BMAKEENV=	INSTALL="sh ${.CURDIR}/tools/install.sh" \
 		TOOLS_PREFIX=${WORLDTMP} \
 		PATH=${BPATH}:${PATH} \
 		WORLDTMP=${WORLDTMP} \
 		MAKEFLAGS="-m ${.CURDIR}/tools/build/mk ${.MAKEFLAGS}"
+.if defined(CROSSBUILD_HOST)
+# Since we remove /usr/bin from $PATH when crossbuilding we need to pass an
+# absolute path for CC CPP CXX and LD
+.if ${LD} == "ld"
+LD!=	which ld
+.endif
+.if ${CC} == "cc"
+CC!=	which cc
+.endif
+.if ${CPP} == "cpp"
+CPP!=	which cpp
+.endif
+.if ${CXX} == "c++"
+CXX!=	which c++
+.endif
+BMAKEENV+=	CC=${CC} CXX=${CXX} CPP=${CPP} LD=${LD}
+
+# For some reason the bsd.compiler.mk hash doesn't work, lets just set it here to avoid extra work
+BMAKEENV+=	COMPILER_TYPE=${COMPILER_TYPE} \
+		COMPILER_VERSION=${COMPILER_VERSION} \
+		COMPILER_FREEBSD_VERSION=${COMPILER_FREEBSD_VERSION} \
+		XCC=${XCC} XCXX=${XCCX} \
+		X_COMPILER_TYPE=${X_COMPILER_TYPE} \
+		X_COMPILER_VERSION=${X_COMPILER_VERSION} \
+		X_COMPILER_FREEBSD_VERSION=${X_COMPILER_FREEBSD_VERSION}
+.endif
 # need to keep this in sync with targets/pseudo/bootstrap-tools/Makefile
 BSARGS= 	DESTDIR= \
 		OBJTOP='${WORLDTMP}/obj-tools' \
@@ -538,7 +604,7 @@ BSARGS= 	DESTDIR= \
 		BWPHASE=${.TARGET:C,^_,,} \
 		SSP_CFLAGS= \
 		MK_HTML=no NO_LINT=yes MK_MAN=no \
-		-DNO_PIC MK_PROFILE=no -DNO_SHARED \
+		${HOST_TOOLS_COMMON_MAKEFLAGS} \
 		-DNO_CPU_CFLAGS MK_WARNS=no MK_CTF=no \
 		MK_CLANG_EXTRAS=no MK_CLANG_FULL=no \
 		MK_LLDB=no MK_TESTS=no \
@@ -560,7 +626,7 @@ TMAKE=		\
 		-DNO_LINT \
 		-DNO_CPU_CFLAGS MK_WARNS=no MK_CTF=no \
 		MK_CLANG_EXTRAS=no MK_CLANG_FULL=no \
-		MK_LLDB=no MK_TESTS=no
+		MK_LLDB=no MK_TESTS=no MK_DEBUG_FILES=no
 
 # cross-tools stage
 # TOOLS_PREFIX set in BMAKE
@@ -581,7 +647,7 @@ KTMAKE=		TOOLS_PREFIX=${WORLDTMP} \
 		BOOTSTRAPPING=${OSRELDATE} \
 		SSP_CFLAGS= \
 		MK_HTML=no -DNO_LINT MK_MAN=no \
-		-DNO_PIC MK_PROFILE=no -DNO_SHARED \
+		${HOST_TOOLS_COMMON_MAKEFLAGS} \
 		-DNO_CPU_CFLAGS MK_WARNS=no MK_CTF=no
 
 # world stage
@@ -602,6 +668,14 @@ CROSSENV+=	CC="${XCC} ${XCFLAGS}" CXX="${XCXX} ${XCXXFLAGS} ${XCFLAGS}" \
 		NM=${XNM} OBJCOPY="${XOBJCOPY}" \
 		RANLIB=${XRANLIB} STRINGS=${XSTRINGS} \
 		SIZE="${XSIZE}"
+
+# Avoid computing all the information in bsd.compiler.mk again for the
+# unused X_COMPILER* variables. This saves two invocations of clang as well
+# as two echoes and one call of awk and sed each.
+# Not spawning those extra processes noticeably speeds up stages like "includes".
+CROSSENV+=	X_COMPILER_TYPE="${X_COMPILER_TYPE}" \
+		X_COMPILER_VERSION="${X_COMPILER_VERSION}" \
+		X_COMPILER_FREEBSD_VERSION="${X_COMPILER_FREEBSD_VERSION}"
 
 .if defined(CROSS_BINUTILS_PREFIX) && exists(${CROSS_BINUTILS_PREFIX})
 # In the case of xdev-build tools, CROSS_BINUTILS_PREFIX won't be a
@@ -716,7 +790,13 @@ NO_META_IGNORE_HOST_HEADERS=	1
 # allows tracking the oldest osreldate to force rebuilds via
 # META_MODE_BADABI_REVS above.
 host-osreldate.h: # DO NOT ADD /usr/include/osreldate.h here
+.if !defined(CROSSBUILD_HOST)
 	@cp -f /usr/include/osreldate.h ${.TARGET}
+.else
+	@echo "#ifndef __FreeBSD_version" > ${.TARGET}
+	@echo "#define __FreeBSD_version ${OSRELDATE}" >> ${.TARGET}
+	@echo "#endif" >> ${.TARGET}
+.endif
 
 WMAKE=		${WMAKEENV} ${MAKE} ${WORLD_FLAGS} -f Makefile.inc1 \
 		BWPHASE=${.TARGET:C,^_,,} \
@@ -764,6 +844,11 @@ WORLDTMP_MTREEFLAGS=	-deUW
 DESTDIR_MTREEFLAGS+=	-W
 .endif
 MTREE?=	mtree
+.if defined(CROSSBUILD_HOST)
+# When crossbuilding mtree will be missing so we need to use the one that was
+# built during the bootstrap-tools phase
+MTREE=	${WORLDTMP}/legacy/usr/sbin/mtree
+.endif
 WORLDTMP_MTREE=	${MTREE} ${WORLDTMP_MTREEFLAGS}
 DESTDIR_MTREE=	${MTREE} ${DESTDIR_MTREEFLAGS}
 
@@ -843,7 +928,8 @@ _worldtmp: .PHONY
 .if !defined(NO_CLEAN)
 	rm -rf ${WORLDTMP}
 .else
-.if exists(${WORLDTMP})
+.if exists(${WORLDTMP}) && !defined(CROSSBUILD_HOST)
+	# TODO: the delete-old step doesn't work yet when crossbuilding
 	@echo ">>> Deleting stale files in build tree..."
 	${_+_}cd ${.CURDIR}; ${WMAKE} -DBATCH_DELETE_OLD_FILES \
 	    delete-old delete-old-libs >/dev/null
@@ -860,29 +946,19 @@ _worldtmp: .PHONY
 .endif	# !defined(NO_CLEAN)
 	@mkdir -p ${WORLDTMP}
 	@touch ${WORLDTMP}/${.TARGET}
-
-.for _dir in \
-    lib lib/casper usr legacy/bin legacy/usr
+# We can't use mtree to create the worldtmp directories since it may no be
+# available on the target system (this happens e.g. when building on Linux)
+.for _dir in lib lib/casper usr
 	mkdir -p ${WORLDTMP}/${_dir}
 .endfor
-	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
-	    -p ${WORLDTMP}/legacy/usr >/dev/null
-	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
-	    -p ${WORLDTMP}/legacy/usr/include >/dev/null
-	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
-	    -p ${WORLDTMP}/usr >/dev/null
-	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
-	    -p ${WORLDTMP}/usr/include >/dev/null
-	ln -sf ${.CURDIR}/sys ${WORLDTMP}
-.if ${MK_DEBUG_FILES} != "no"
-	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
-	    -p ${WORLDTMP}/legacy/usr/lib >/dev/null
-	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
-	    -p ${WORLDTMP}/usr/lib >/dev/null
-.endif
-.for _mtree in ${LOCAL_MTREE}
-	${WORLDTMP_MTREE} -f ${.CURDIR}/${_mtree} -p ${WORLDTMP} > /dev/null
-.endfor
+	cd ${.CURDIR}/tools/build; \
+	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy installdirs
+# When crossbuilding we also need to add symlinks to the host tools since we
+# will be running the build with $PATH only containing $WORLDTMP.
+# TODO: in the future we should probably also do this when building on FreeBSD
+	cd ${.CURDIR}/tools/build; \
+	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy host-symlinks
+
 _legacy:
 	@echo
 	@echo "--------------------------------------------------------------"
@@ -926,6 +1002,20 @@ _cross-tools:
 	@echo ">>> stage 3: cross tools"
 	@echo "--------------------------------------------------------------"
 	@rm -f ${OBJTOP}/compiler-metadata.mk
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	    -p ${WORLDTMP}/usr >/dev/null
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	    -p ${WORLDTMP}/usr/include >/dev/null
+	ln -sf ${.CURDIR}/sys ${WORLDTMP}
+.if ${MK_DEBUG_FILES} != "no"
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	    -p ${WORLDTMP}/legacy/usr/lib >/dev/null
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	    -p ${WORLDTMP}/usr/lib >/dev/null
+.endif
+.for _mtree in ${LOCAL_MTREE}
+	${WORLDTMP_MTREE} -f ${.CURDIR}/${_mtree} -p ${WORLDTMP} > /dev/null
+.endfor
 	${_+_}cd ${.CURDIR}; ${XMAKE} cross-tools
 	${_+_}cd ${.CURDIR}; ${XMAKE} kernel-tools
 _build-metadata:
@@ -1159,23 +1249,28 @@ MTREE_MAGIC?=	mtree 2.0
 distributeworld installworld stageworld: _installcheck_world .PHONY
 	mkdir -p ${INSTALLTMP}
 	progs=$$(for prog in ${ITOOLS}; do \
-		if progpath=`which $$prog`; then \
+		if [ -n "${CROSSBUILD_HOST}" ] ; then \
+			tools_env="env PATH=${TMPPATH}"
+		fi; \
+		if progpath=`$$tools_env which $$prog`; then \
 			echo $$progpath; \
 		else \
 			echo "Required tool $$prog not found in PATH." >&2; \
 			exit 1; \
 		fi; \
 	    done); \
-	libs=$$(ldd -f "%o %p\n" -f "%o %p\n" $$progs 2>/dev/null | sort -u | \
-	    while read line; do \
-		set -- $$line; \
-		if [ "$$2 $$3" != "not found" ]; then \
-			echo $$2; \
-		else \
-			echo "Required library $$1 not found." >&2; \
-			exit 1; \
-		fi; \
-	    done); \
+	if [ -z "${CROSSBUILD_HOST}" ] ; then \
+		libs=$$(ldd -f "%o %p\n" -f "%o %p\n" $$progs 2>/dev/null | sort -u | \
+		    while read line; do \
+			set -- $$line; \
+			if [ "$$2 $$3" != "not found" ]; then \
+				echo $$2; \
+			else \
+				echo "Required library $$1 not found." >&2; \
+				exit 1; \
+			fi; \
+		    done); \
+	fi; \
 	cp $$libs $$progs ${INSTALLTMP}
 	cp -R $${PATH_LOCALE:-"/usr/share/locale"} ${INSTALLTMP}/locale
 .if defined(NO_ROOT)
@@ -1823,6 +1918,9 @@ update: .PHONY
 .if ${BOOTSTRAPPING} < 1200020
 _elftoolchain_libs= lib/libelf lib/libdwarf
 .endif
+.if defined(CROSSBUILD_HOST)
+_host_bootstrap_libs=	lib/libmd lib/libsbuf
+.endif
 
 legacy: .PHONY
 # Temporary special case for automatically detecting the clang compiler issue
@@ -1842,7 +1940,7 @@ legacy: .PHONY
 	false
 .endif
 
-.for _tool in tools/build ${_elftoolchain_libs}
+.for _tool in tools/build ${_elftoolchain_libs} ${_host_bootstrap_libs}
 	${_+_}@${ECHODIR} "===> ${_tool} (obj,includes,all,install)"; \
 	    cd ${.CURDIR}/${_tool}; \
 	    if [ -z "${NO_OBJWALK}" ]; then ${MAKE} DIRPRFX=${_tool}/ obj; fi; \
@@ -1875,9 +1973,10 @@ _vtfontcvt=	usr.bin/vtfontcvt
 .if ${BOOTSTRAPPING} < 1000033
 _m4=		usr.bin/m4
 _lex=		usr.bin/lex
-
-${_bt}-usr.bin/m4: ${_bt}-lib/libopenbsd
-${_bt}-usr.bin/lex: ${_bt}-usr.bin/m4
+# Note: lex needs m4 to build but m4 also depends on lex. However, lex can be
+# bootstrapped with the host systems m4 so we build lex first.
+${_bt}-${_m4}: ${_bt}-lib/libopenbsd ${_bt}-usr.bin/yacc ${_bt}-${_lex}
+_bt_lex_depend=${_bt}-usr.bin/lex ${_bt}-usr.bin/m4
 .endif
 
 # r245440 mtree -N support added
@@ -1912,8 +2011,8 @@ _crunchgen=	usr.sbin/crunch/crunchgen
 .endif
 
 # r296926 -P keymap search path, MFC to stable/10 in r298297
-.if ${BOOTSTRAPPING} < 1003501 || \
-	(${BOOTSTRAPPING} >= 1100000 && ${BOOTSTRAPPING} < 1100103)
+.if !defined(CROSSBUILD_HOST) && (${BOOTSTRAPPING} < 1003501 || \
+	(${BOOTSTRAPPING} >= 1100000 && ${BOOTSTRAPPING} < 1100103))
 _kbdcontrol=	usr.sbin/kbdcontrol
 .endif
 
@@ -1956,9 +2055,81 @@ _kerberos5_bootstrap_tools= \
 	usr.bin/compile_et
 
 .ORDER: ${_kerberos5_bootstrap_tools:C/^/${_bt}-/g}
+.for _tool in ${_kerberos5_bootstrap_tools}
+${_bt}-${_tool}: ${_bt}-usr.bin/yacc ${_bt_lex_depend}
+.endfor
 .endif
 
 ${_bt}-usr.bin/mandoc: ${_bt}-lib/libopenbsd
+
+.if ${MK_LOCALES} != "no"
+_localedef=	usr.bin/localedef
+.endif
+
+.if defined(CROSSBUILD_HOST)
+# most awk scripts used during the build won't work with GNU awk
+_crossbuild_bootstrap_tools=usr.bin/awk
+${_bt}-usr.bin/awk: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+
+# find on Linux and Mac doesn't support all the flags used by buildworld
+#_crossbuild_bootstrap_tools+=usr.bin/find
+# ${_bt}-usr.bin/find: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+
+# grep is also incompatible
+_crossbuild_bootstrap_tools+=usr.bin/grep
+# and sed
+_crossbuild_bootstrap_tools+=usr.bin/sed
+# there was/is some flag passed to rmdir that didn't work on Linux
+_crossbuild_bootstrap_tools+=bin/rmdir
+# similarly test also needs some flags that don't work on Linux
+_crossbuild_bootstrap_tools+=bin/test
+# mktemp is also slightly different (Linux only accepts a single template,
+# whereas FreeBSD can take multiple). I don't think this feature is used but
+# as this is just a single portable C file let's use the one from the source
+# tree just to be absolutely safe.
+_crossbuild_bootstrap_tools+=usr.bin/mktemp
+# join on MacOS doesn't understand everything that the build uses
+_crossbuild_bootstrap_tools+=usr.bin/join
+# and expr
+_crossbuild_bootstrap_tools+=bin/expr
+${_bt}-bin/expr: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+
+# for usr.sbin/config we need file2c (which doesn't exist on Linux)
+_crossbuild_bootstrap_tools+=usr.bin/file2c
+${_bt}-usr.sbin/config: ${_bt}-usr.bin/file2c ${_bt_lex_depend}
+
+# gencat also needs to be built from FreeBSD sources
+_crossbuild_bootstrap_tools+=usr.bin/gencat
+
+# Linux tsort doesn't accept any flags
+_crossbuild_bootstrap_tools+=usr.bin/tsort
+# sorts also uses different flags
+_crossbuild_bootstrap_tools+=usr.bin/sort
+
+# xargs is needed by mkioctls
+_crossbuild_bootstrap_tools+=usr.bin/xargs
+
+_crossbuild_bootstrap_tools+=usr.bin/bmake
+
+_crossbuild_bootstrap_tools+=usr.bin/unifdef
+
+# needed by share/tabset
+_crossbuild_bootstrap_tools+=usr.bin/uuencode usr.bin/uudecode
+
+# needed by share/termcap:
+_crossbuild_bootstrap_tools+=usr.bin/cap_mkdb
+# needed by installworld
+_crossbuild_bootstrap_tools+=usr.sbin/services_mkdb usr.sbin/pwd_mkdb
+
+.if ${MK_ZONEINFO} != "no"
+_crossbuild_bootstrap_tools+=usr.sbin/zic usr.sbin/tzsetup
+.endif
+
+# We want to be able to build disk images when crossbuilding:
+_crossbuild_bootstrap_tools+=usr.sbin/makefs
+${_bt}-usr.sbin/makefs: ${_bt}-lib/libnetbsd
+
+.endif
 
 bootstrap-tools: .PHONY
 
@@ -1980,6 +2151,7 @@ bootstrap-tools: .PHONY
     ${_yacc} \
     ${_m4} \
     ${_lex} \
+    ${_crossbuild_bootstrap_tools} \
     usr.bin/xinstall \
     ${_gensnmptree} \
     usr.sbin/config \
@@ -1987,11 +2159,14 @@ bootstrap-tools: .PHONY
     ${_crunchgen} \
     ${_nmtree} \
     ${_vtfontcvt} \
-    usr.bin/localedef
+    ${_localedef}
 ${_bt}-${_tool}: .PHONY .MAKE
 	${_+_}@${ECHODIR} "===> ${_tool} (obj,all,install)"; \
 		cd ${.CURDIR}/${_tool}; \
 		if [ -z "${NO_OBJWALK}" ]; then ${MAKE} DIRPRFX=${_tool}/ obj; fi; \
+		if [ "${_tool}" = "usr.bin/lex" ]; then \
+			${MAKE} DIRPRFX=${_tool}/ bootstrap; \
+		fi; \
 		${MAKE} DIRPRFX=${_tool}/ all; \
 		${MAKE} DIRPRFX=${_tool}/ DESTDIR=${WORLDTMP}/legacy install
 
@@ -2099,6 +2274,11 @@ _elftctools=	lib/libelftc \
 		lib/libpe \
 		usr.bin/elfcopy
 .endif
+# when crossbuilding we can't use the default ar since that may not work
+# as expected
+.if defined(CROSSBUILD_HOST)
+_ar=	usr.bin/ar
+.endif
 
 .if ${MK_CLANG_BOOTSTRAP} != "no"
 _clang=		usr.bin/clang
@@ -2123,6 +2303,7 @@ cross-tools: .MAKE .PHONY
     ${_clang} \
     ${_lld} \
     ${_binutils} \
+    ${_ar} \
     ${_elftctools} \
     ${_dtrace_tools} \
     ${_gcc} \
