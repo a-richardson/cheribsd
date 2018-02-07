@@ -101,6 +101,8 @@ SYSINCS+=	${SRCTOP}/sys/sys/fnv_hash.h
 # opensolaris stuff
 INCS+=	${SRCTOP}/include/elf.h
 
+# include the chflags and sysctl stub scripts for Linux/Mac
+SUBDIR+=	cross-build/fake_chflags cross-build/fake_sysctl
 # We need to build a FreeBSD compatible libdb for tools like tsort, etc.
 # I believe the db routines shipped with MacOS are compatible but on Linux they
 # definitelty aren't. To avoid any surprises let's just always build it when
@@ -113,7 +115,7 @@ SRCS=		dummy.c
 .endif
 
 .if defined(CROSS_BUILD_TESTING)
-SUBDIR=		cross-build
+SUBDIR+=		cross-build
 .endif
 
 # Needed to build config (since it uses libnv)
