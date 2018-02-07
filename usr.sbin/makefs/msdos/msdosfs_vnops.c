@@ -104,15 +104,8 @@ msdosfs_times(struct msdosfsmount *pmp, struct denode *dep,
 	if (stampst.st_ino) 
 	    st = &stampst;
 
-#if defined(st_mtim) || defined(st_mtimespec)
 	at = st->st_atim;
 	mt = st->st_mtim;
-#else
-	at.tv_sec = st->st_atime;
-	at.tv_nsec = 0;
-	mt.tv_sec = st->st_mtime;
-	mt.tv_nsec = 0;
-#endif
 	unix2dostime(&at, pmp->pm_gmtoff, &dep->de_ADate, NULL, NULL);
 	unix2dostime(&mt, pmp->pm_gmtoff, &dep->de_MDate, &dep->de_MTime, NULL);
 }
