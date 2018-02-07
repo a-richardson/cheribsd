@@ -114,10 +114,8 @@ SUBDIR=		cross-build
 .if ${.MAKE.OS} != "FreeBSD"
 # basic commands (used only with known flags)
 _host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
-	false find fmt gzip \
-	head id ln mkdir mv nice rm ls realpath tee touch \
-	tr true sleep hostname \
-	patch uname uniq wc which
+	false find fmt gzip head hostname id ln ls mkdir mv nice patch rm realpath \
+	sleep tee touch tr true uname uniq wc which
 # needed for the fake sysctl script
 _host_tools_to_symlink+=python
 # should we bootstrap this instead?
@@ -167,7 +165,7 @@ host-symlinks:
 
 # Create all the directories that are needed during the legacy, bootstrap-tools
 # and cross-tools stages. We do this here using mkdir since mtree may not exist
-# yet (happens if we are crossbuilding from Linux/Mac).
+# yet (this happens if we are crossbuilding from Linux/Mac).
 installdirs:
 .for _dir in bin usr/bin usr/sbin usr/lib usr/include
 	mkdir -p "${DESTDIR}/${_dir}"
