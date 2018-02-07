@@ -2116,9 +2116,10 @@ ${_bt}-usr.bin/localedef: ${_bt}-tools/build/cross-build/xlocale_freebsd
 # most awk scripts used during the build won't work with GNU awk
 _crossbuild_bootstrap_tools=usr.bin/awk
 ${_bt}-usr.bin/awk: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+
 # find on Linux and Mac doesn't support all the flags used by buildworld
-_crossbuild_bootstrap_tools+=usr.bin/find
-${_bt}-usr.bin/find: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+#_crossbuild_bootstrap_tools+=usr.bin/find
+# ${_bt}-usr.bin/find: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
 
 # grep is also incompatible
 _crossbuild_bootstrap_tools+=usr.bin/grep
