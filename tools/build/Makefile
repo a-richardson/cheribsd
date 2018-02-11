@@ -121,8 +121,8 @@ SUBDIR+=		cross-build
 .if ${.MAKE.OS} != "FreeBSD"
 # basic commands (used only with known flags)
 _host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
-	false find fmt gzip head hostname id ln ls mkdir mv nice patch rm realpath \
-	sleep tee touch tr true uname uniq wc which
+	false find fmt gzip head hostname id ln ls md5 mkdir mv nice patch rm \
+	realpath sleep tee touch tr true uname uniq wc which
 # needed for the fake sysctl script
 _host_tools_to_symlink+=python
 # should we bootstrap this instead?
