@@ -790,7 +790,9 @@ meta_cmd_finish(void *pbmp)
 {
     int error = 0;
     BuildMon *pbm = pbmp;
+#ifdef USE_FILEMON
     int x;
+#endif
 
     if (!pbm)
 	pbm = &Mybm;

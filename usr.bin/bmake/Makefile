@@ -92,7 +92,9 @@ CFLAGS+= -I. -I${srcdir} ${XDEFS} -DMAKE_NATIVE
 CFLAGS+= ${COPTS.${.ALLSRC:M*.c:T:u}}
 COPTS.main.c+= "-DMAKE_VERSION=\"${_MAKE_VERSION}\""
 
-# meta mode can be useful even without filemon 
+# meta mode can be useful even without filemon
+# FIXME: this logic is wrong, we should be detecting if the target system
+# has filemon and not be looking at the host.
 FILEMON_H ?= /usr/include/dev/filemon/filemon.h
 .if exists(${FILEMON_H}) && ${FILEMON_H:T} == "filemon.h"
 COPTS.meta.c += -DHAVE_FILEMON_H -I${FILEMON_H:H}
