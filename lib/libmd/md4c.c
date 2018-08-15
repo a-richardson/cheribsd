@@ -30,6 +30,7 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/types.h>
 #include <string.h>
+#include <strings.h>
 #include "md4.h"
 
 typedef unsigned char *POINTER;
