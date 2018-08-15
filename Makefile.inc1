@@ -2072,42 +2072,19 @@ _bt=		_bootstrap-tools
 
 # We want to run the build with only ${WORLDTMP} in $PATH to ensure we don't
 # accidentally run tools that are incompatible but happen to be in $PATH.
-# TODO: All of the following tools will need bootstrapping instead of linking
-# when building on Linux/MacOS  since they accept slightly different flags
-_bootstrap_tools_links=[ awk expr find join mktemp rmdir sed sort test xargs
-_bootstrap_tools_links+=grep egrep fgrep
-# Build tools where the host versions are fine:
-_bootstrap_tools_links+=ar ranlib tsort unifdef
-# needed for manpages:
-_bootstrap_tools_links+=gencat
-# needed by share/tabset
-_bootstrap_tools_links+=uuencode uudecode
-# needed by share/termcap
-_bootstrap_tools_links+=cap_mkdb
-# needed by installworld
-_bootstrap_tools_links+=services_mkdb pwd_mkdb
-# needed for config
-_bootstrap_tools_links+=file2c
-# needed for installcheck:
-_bootstrap_tools_links+=ldd
-# needed by bootloader
-_bootstrap_tools_links+=dd btxld
-# Needed by some of the MK_TESTS Makefiles
-_bootstrap_tools_links+=bzip2 bunzip2 gzip gunzip truncate
-# Needed by lib/atf/libatf-c/tests:
-_bootstrap_tools_links+=cut
-# Needed by sparc64 build
-_bootstrap_tools_links+=elf2aout
-# Needed by EFI
-_bootstrap_tools_links+=xz unxz
-# Needed for installkernel:
-_bootstrap_tools_links+=sysctl chflags
-
-
-.if ${MK_ZONEINFO} != "no"
-_bootstrap_tools_links+=zic tzsetup
+# If BOOTSTRAP_ALL_TOOLS is set we will build all the required tools from the
+# current source tree. Otherwise we create link to the version from $PATH
+# in ${WORLDTMP} during the bootstrap-tools stage.
+# If you add a new bootstrap tool where we could also use the host version,
+# please ensure that you also add it to the _bootstrap_tools_links variable if
+# BOOTSTRAPPING is new enough.
+BOOTSTRAP_ALL_TOOLS?=	0
+# When building on non-FreeBSD systems we can't assume that the host binaries
+# accept compatible flags or produce compatible output. Therefore we force
+# BOOTSTRAP_ALL_TOOLS and just build the FreeBSD version of the binary.
+.if defined(CROSSBUILD_HOST)
+BOOTSTRAP_ALL_TOOLS:=1
 .endif
-
 
 .if ${MK_GAMES} != "no"
 _strfile=	usr.bin/fortune/strfile
@@ -2175,11 +2152,14 @@ _bootstrap_tools_links+=crunchgen
 .endif
 
 # r296926 -P keymap search path, MFC to stable/10 in r298297
-.if !defined(CROSSBUILD_HOST) && (${BOOTSTRAPPING} < 1003501 || \
+# Note: kbdcontrol can not be bootstrapped on non-FreeBSD systems
+.if !defined(CROSSBUILD_HOST)
+.if (${BOOTSTRAPPING} < 1003501 || \
 	(${BOOTSTRAPPING} >= 1100000 && ${BOOTSTRAPPING} < 1100103))
 _kbdcontrol=	usr.sbin/kbdcontrol
 .else
 _bootstrap_tools_links+=kbdcontrol
+.endif
 .endif
 
 _yacc=		lib/liby \
@@ -2228,10 +2208,129 @@ ${_bt}-${_tool}: ${_bt}-usr.bin/yacc ${_bt_lex_depend}
 
 ${_bt}-usr.bin/mandoc: ${_bt}-lib/libopenbsd
 
+
+.if defined(BOOTSTRAP_ALL_TOOLS)
+_other_bootstrap_tools=usr.bin/ar
+_other_bootstrap_tools=usr.bin/awk
+${_bt}-usr.bin/awk: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+# gzip/bzip2 are needed by some of the MK_TESTS Makefiles
+_other_bootstrap_tools+=usr.bin/bzip2 usr.bin/gzip
+# cut is needed by lib/atf/libatf-c/tests:
+_other_bootstrap_tools+=usr.bin/cut
+# elf2aout is required for by sparc64 build
+_other_bootstrap_tools+=usr.bin/elf2aout
+_other_bootstrap_tools+=bin/expr
+${_bt}-bin/expr: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+_other_bootstrap_tools+=usr.bin/file2c
+# file2c is needed by usr.sbin/config:
+${_bt}-usr.sbin/config: ${_bt}-usr.bin/file2c ${_bt_lex_depend}
+_other_bootstrap_tools+=usr.bin/gencat
+_other_bootstrap_tools+=usr.bin/grep
+_other_bootstrap_tools+=usr.bin/join
+_other_bootstrap_tools+=usr.sbin/makefs
+${_bt}-usr.sbin/makefs: ${_bt}-lib/libnetbsd
+_other_bootstrap_tools+=usr.bin/mktemp
+_other_bootstrap_tools+=bin/rmdir
+_other_bootstrap_tools+=usr.bin/sed
+_other_bootstrap_tools+=usr.bin/sort
+_other_bootstrap_tools+=bin/test
+_other_bootstrap_tools+=usr.bin/truncate
+_other_bootstrap_tools+=usr.bin/tsort
+_other_bootstrap_tools+=usr.bin/unifdef
+# uuencode/uudecode needed by share/tabset
+_other_bootstrap_tools+=usr.bin/uuencode usr.bin/uudecode
+# xargs is onlynneeded by mkioctls
+_other_bootstrap_tools+=usr.bin/xargs
+# needed by share/termcap:
+_other_bootstrap_tools+=usr.bin/cap_mkdb
+# needed by installworld:
+_other_bootstrap_tools+=usr.sbin/services_mkdb usr.sbin/pwd_mkdb
+.else
+_bootstrap_tools_links+=ar ranlib
+_bootstrap_tools_links+=awk
+_bootstrap_tools_links+=bzip2 bunzip2 gzip gunzip
+_bootstrap_tools_links+=cut
+_bootstrap_tools_links+=elf2aout
+_bootstrap_tools_links+=expr
+_bootstrap_tools_links+=file2c
+_bootstrap_tools_links+=gencat
+_bootstrap_tools_links+=grep egrep fgrep
+_bootstrap_tools_links+=join
+_bootstrap_tools_links+=makefs
+_bootstrap_tools_links+=mktemp
+_bootstrap_tools_links+=rmdir
+_bootstrap_tools_links+=sed
+_bootstrap_tools_links+=sort
+_bootstrap_tools_links+=test [
+_bootstrap_tools_links+=tsort
+_bootstrap_tools_links+=uuencode uudecode
+_bootstrap_tools_links+=unifdef
+_bootstrap_tools_links+=truncate
+_bootstrap_tools_links+=xargs
+_bootstrap_tools_links+=cap_mkdb
+_bootstrap_tools_links+=services_mkdb pwd_mkdb
+.endif
+
+.if ${MK_BOOT} != "no"
+.if defined(BOOTSTRAP_ALL_TOOLS)
+_other_bootstrap_tools+=usr.sbin/btxld bin/dd
+# Needed by EFI
+_other_bootstrap_tools+=usr.bin/xz
+.else
+_bootstrap_tools_links+=btxld dd
+_bootstrap_tools_links+=xz unxz
+.endif
+.endif
+
+# ldd is needed for installcheck:
+.if defined(BOOTSTRAP_ALL_TOOLS)
+_other_bootstrap_tools+=usr.bin/ldd
+.elif !defined(CROSSBUILD_HOST)
+# But don't create a link when not building on FreeBSD since ldd is only needed
+# when replacing binaries in the root directory
+_bootstrap_tools_links+=ldd
+.endif
+
+# sysctl+chflags is needed for installkernel:
+.if defined(CROSSBUILD_HOST)
+# When building on non-FreeBSD install stubs instead since the versions from
+# the source tree cannot work:
+_other_bootstrap_tools+=tools/build/cross-build/fake_chflags
+_other_bootstrap_tools+=tools/build/cross-build/fake_sysctl
+.elif defined(BOOTSTRAP_ALL_TOOLS)
+_other_bootstrap_tools+=sbin/sysctl bin/chflags
+.else
+_bootstrap_tools_links+=sysctl chflags
+.endif
+
+.if defined(BOOTSTRAP_ALL_TOOLS)
+_other_bootstrap_tools+=usr.bin/bmake
+# Note: no symlink to make/bmake in the !BOOTSTRAP_ALL_TOOLS case here since
+# the links to make/bmake make links will have already have been created in the
+# `make legacy` step. Not adding a link to make is important on non-FreeBSD
+# since make will usually point to GNU make there.
+.endif
+
+.if defined(BOOTSTRAP_ALL_TOOLS)
+# TODO: do I need this? && !defined(CROSSBUILD_HOST)
+_other_bootstrap_tools+=usr.bin/find
+${_bt}-usr.bin/find: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
+.else
+_bootstrap_tools_links+=find
+.endif
+
+.if ${MK_ZONEINFO} != "no"
+.if defined(BOOTSTRAP_ALL_TOOLS)
+_other_bootstrap_tools+=usr.sbin/zic usr.sbin/tzsetup
+.else
+_bootstrap_tools_links+=zic tzsetup
+.endif
+.endif
+
 # Link the tools that we need for builing but don't need to bootstrap because
 # the host version is known to be compatible into ${WORLDTMP}/legacy
-# We do this before building any bootstrap tools in case they depend on those
-# links (such as m4/lex/awk)
+# We do this before building any of the bootstrap tools in case they depend on
+# the presence of any of the links (e.g. as m4/lex/awk)
 ${_bt}-links: .PHONY
 
 .for _tool in ${_bootstrap_tools_links}
@@ -2253,72 +2352,6 @@ bootstrap-tools: ${_bt}-links .PHONY
 _localedef=	usr.bin/localedef
 .endif
 
-.if defined(CROSSBUILD_HOST)
-# most awk scripts used during the build won't work with GNU awk
-_crossbuild_bootstrap_tools=usr.bin/awk
-${_bt}-usr.bin/awk: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
-
-# find on Linux and Mac doesn't support all the flags used by buildworld
-#_crossbuild_bootstrap_tools+=usr.bin/find
-# ${_bt}-usr.bin/find: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
-
-# grep is also incompatible
-_crossbuild_bootstrap_tools+=usr.bin/grep
-# and sed
-_crossbuild_bootstrap_tools+=usr.bin/sed
-# there was/is some flag passed to rmdir that didn't work on Linux
-_crossbuild_bootstrap_tools+=bin/rmdir
-# similarly test also needs some flags that don't work on Linux
-_crossbuild_bootstrap_tools+=bin/test
-# mktemp is also slightly different (Linux only accepts a single template,
-# whereas FreeBSD can take multiple). I don't think this feature is used but
-# as this is just a single portable C file let's use the one from the source
-# tree just to be absolutely safe.
-_crossbuild_bootstrap_tools+=usr.bin/mktemp
-# join on MacOS doesn't understand everything that the build uses
-_crossbuild_bootstrap_tools+=usr.bin/join
-# and expr
-_crossbuild_bootstrap_tools+=bin/expr
-${_bt}-bin/expr: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
-
-# for usr.sbin/config we need file2c (which doesn't exist on Linux)
-_crossbuild_bootstrap_tools+=usr.bin/file2c
-${_bt}-usr.sbin/config: ${_bt}-usr.bin/file2c ${_bt_lex_depend}
-
-# gencat also needs to be built from FreeBSD sources
-_crossbuild_bootstrap_tools+=usr.bin/gencat
-
-# Linux tsort doesn't accept any flags
-_crossbuild_bootstrap_tools+=usr.bin/tsort
-# sorts also uses different flags
-_crossbuild_bootstrap_tools+=usr.bin/sort
-
-# xargs is needed by mkioctls
-_crossbuild_bootstrap_tools+=usr.bin/xargs
-
-_crossbuild_bootstrap_tools+=usr.bin/bmake
-
-_crossbuild_bootstrap_tools+=usr.bin/unifdef
-
-# needed by share/tabset
-_crossbuild_bootstrap_tools+=usr.bin/uuencode usr.bin/uudecode
-
-# needed by share/termcap:
-_crossbuild_bootstrap_tools+=usr.bin/cap_mkdb
-# needed by installworld
-_crossbuild_bootstrap_tools+=usr.sbin/services_mkdb usr.sbin/pwd_mkdb
-
-.if ${MK_ZONEINFO} != "no"
-_crossbuild_bootstrap_tools+=usr.sbin/zic usr.sbin/tzsetup
-.endif
-
-# We want to be able to build disk images when crossbuilding:
-_crossbuild_bootstrap_tools+=usr.sbin/makefs
-${_bt}-usr.sbin/makefs: ${_bt}-lib/libnetbsd
-
-.endif
-
-
 #	Please document (add comment) why something is in 'bootstrap-tools'.
 #	Try to bound the building of the bootstrap-tool to just the
 #	FreeBSD versions that need the tool built at this stage of the build.
@@ -2337,7 +2370,7 @@ ${_bt}-usr.sbin/makefs: ${_bt}-lib/libnetbsd
     ${_yacc} \
     ${_m4} \
     ${_lex} \
-    ${_crossbuild_bootstrap_tools} \
+    ${_other_bootstrap_tools} \
     usr.bin/xinstall \
     ${_gensnmptree} \
     usr.sbin/config \
@@ -2466,11 +2499,6 @@ _elftctools=	lib/libelftc \
 		lib/libpe \
 		usr.bin/objcopy
 .endif
-# when crossbuilding we can't use the default ar since that may not work
-# as expected
-.if defined(CROSSBUILD_HOST)
-_ar=	usr.bin/ar
-.endif
 
 .if ${MK_CLANG_BOOTSTRAP} != "no"
 _clang=		usr.bin/clang
@@ -2495,7 +2523,6 @@ cross-tools: .MAKE .PHONY
     ${_clang} \
     ${_lld} \
     ${_binutils} \
-    ${_ar} \
     ${_elftctools} \
     ${_dtrace_tools} \
     ${_gcc} \
