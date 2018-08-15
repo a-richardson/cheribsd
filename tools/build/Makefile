@@ -201,7 +201,7 @@ host-symlinks:
 # and cross-tools stages. We do this here using mkdir since mtree may not exist
 # yet (this happens if we are crossbuilding from Linux/Mac).
 installdirs:
-.for _dir in bin usr/bin usr/sbin usr/lib usr/include
+.for _dir in bin usr/bin usr/sbin usr/lib usr/include lib/geom lib/casper
 	mkdir -p "${DESTDIR}/${_dir}"
 .endfor
 .for _group in ${INCSGROUPS:NINCS}

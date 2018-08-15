@@ -1062,12 +1062,10 @@ _worldtmp: .PHONY
 	@touch ${WORLDTMP}/${.TARGET}
 # We can't use mtree to create the worldtmp directories since it may no be
 # available on the target system (this happens e.g. when building on Linux)
-.for _dir in lib lib/casper usr
-	mkdir -p ${WORLDTMP}/${_dir}
-.endfor
-
 	cd ${.CURDIR}/tools/build; \
 	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP}/legacy installdirs
+	cd ${.CURDIR}/tools/build; \
+	    ${MAKE} DIRPRFX=tools/build/ DESTDIR=${WORLDTMP} installdirs
 # When crossbuilding we also need to add symlinks to the host tools since we
 # will be running the build with $PATH only containing $WORLDTMP.
 # TODO: in the future we should probably also do this when building on FreeBSD
