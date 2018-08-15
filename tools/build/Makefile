@@ -50,6 +50,7 @@ _WITH_EXPLICIT_BZERO!= grep -c explicit_bzero /usr/include/strings.h || true
 .PATH: ${SRCTOP}/sys/libkern
 INCS+=		strings.h
 SRCS+=		explicit_bzero.c
+.endif
 
 .if ${.MAKE.OS} != "FreeBSD"
 # don't copy stdlib.h when cross-building since it will cause
@@ -62,8 +63,8 @@ SYSINCS+=	${SRCTOP}/sys/sys/elf64.h
 SYSINCS+=	${SRCTOP}/sys/sys/elf_common.h
 SYSINCS+=	${SRCTOP}/sys/sys/elf_generic.h
 _host_arch=${MACHINE}
-.if ${_host_arch} == "x86_64"
 # bmake on Linux/mac often prints that instead of amd64
+.if ${_host_arch} == "x86_64"
 _host_arch=amd64
 .endif
 MACHINESYSINCS+=	${SRCTOP}/sys/${_host_arch}/include/elf.h
@@ -108,7 +109,7 @@ SUBDIR+=	cross-build/fake_chflags cross-build/fake_sysctl
 # definitelty aren't. To avoid any surprises let's just always build it when
 # we are crossbuilding.
 SUBDIR+=	cross-build/libdb_freebsd
-.endif
+.endif # ${.MAKE.OS} != "FreeBSD"
 
 .if empty(SRCS)
 SRCS=		dummy.c
@@ -119,7 +120,7 @@ SUBDIR+=		cross-build
 .endif
 
 # Needed to build config (since it uses libnv)
-SYSINCS+=	${SRCTOP}/sys/sys/nv.h ${SRCTOP}/sys/sys/cnv.h
+SYSINCS+=	${SRCTOP}/sys/sys/nv.h ${SRCTOP}/sys/sys/cnv.h ${SRCTOP}/sys/sys/dnv.h
 
 # We want to run the build with only ${WORLDTMP} in $PATH to ensure we don't
 # accidentally run tools that are incompatible but happen to be in $PATH.
@@ -132,8 +133,14 @@ SYSINCS+=	${SRCTOP}/sys/sys/nv.h ${SRCTOP}/sys/sys/cnv.h
 # basic commands: It is fine to use the host version for all of these even on
 # Linux/MacOS since we only use flags that are supported by all of them.
 _host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
-	false find fmt gzip head hostname id ldd ln ls md5 mkdir mv nice patch rm \
+	false find fmt gzip head hostname id ln ls md5 mkdir mv nice patch rm \
 	realpath sh sleep tee touch tr true uname uniq wc which
+
+.if ${.MAKE.OS} == "FreeBSD"
+# Needed for installworld
+_host_tools_to_symlink+=ldd
+.endif
+
 # needed by bootloader and some MK_TESTS Makefiles
 _host_tools_to_symlink+=bzip2 dd
 
@@ -151,8 +158,6 @@ _host_tools_to_symlink+=gperf
 # needed by bootloader
 _host_tools_to_symlink+=bzip2 dd
 
-_make_abs!=	which "${MAKE}"
-_host_abs_tools_to_symlink=	${_make_abs}:make ${_make_abs}:bmake
 .if ${.MAKE.OS} == "Darwin"
 # /usr/bin/cpp may invoke xcrun:
 _host_tools_to_symlink+=xcrun
@@ -160,12 +165,13 @@ _host_tools_to_symlink+=xcrun
 # Therefore we need to add this symlink and then have the bootstrap-tools phase
 # overwrite it with the correct version. This requires m4 from homebrew.
 _host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
-.endif
+.endif  # ${.MAKE.OS} == "Darwin"
 # On Ubuntu /bin/sh is dash which is totally useless. Let's just link bash
 # as the build sh since that will work fine. Also on MacOS /bin/sh doesn't
 # support the -e flag to echo so let's use the builtin from bash
 _host_abs_tools_to_symlink+=	/bin/bash:sh
-.endif
+.endif  # ${.MAKE.OS} != "FreeBSD"
+
 
 host-symlinks:
 	@echo "Linking host tools into ${DESTDIR}/bin"
