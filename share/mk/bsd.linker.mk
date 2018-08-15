@@ -12,7 +12,11 @@
 # LINKER_FEATURES may contain one or more of the following, based on
 # linker support for that feature:
 #
-# - build-id : support for generating a Build-ID note
+# - build-id:  support for generating a Build-ID note
+# - retpoline: support for generating PLT with retpoline speculative
+#              execution vulnerability mitigation
+#
+# LINKER_FREEBSD_VERSION is the linker's internal source version.
 #
 # These variables with an X_ prefix will also be provided if XLD is set.
 #
@@ -27,7 +31,8 @@ __<bsd.linker.mk>__:
 # Try to import LINKER_TYPE and LINKER_VERSION from parent make.
 # The value is only used/exported for the same environment that impacts
 # LD and LINKER_* settings here.
-_exported_vars=	${X_}LINKER_TYPE ${X_}LINKER_VERSION ${X_}LINKER_FEATURES
+_exported_vars=	${X_}LINKER_TYPE ${X_}LINKER_VERSION ${X_}LINKER_FEATURES \
+		${X_}LINKER_FREEBSD_VERSION
 ${X_}_ld_hash=	${${ld}}${MACHINE}${PATH}
 ${X_}_ld_hash:=	${${X_}_ld_hash:hash}
 # Only import if none of the vars are set somehow else.
@@ -52,17 +57,21 @@ _ld_version!=	(${${ld}} --version 2>/dev/null || echo none) | head -n 1
 # The MacOS /usr/bin/ld doesn't accept --version but -v works.
 # The final test -eq 141 is there in order to make this work even when the bmake
 # shell is set to bash -o pipefail
-_ld_version!=	(${${ld}} -v 2>&1 || echo none) | head -n 1 || test $$? -eq 141
+_ld_version!=	(${${ld}} -v 2>&1 || echo none) | sed -n 1p || test $$? -eq 141
 .if ${_ld_version} == "none"
 .warning Unable to determine linker type from ${ld}=${${ld}}
 .endif
 .endif
 .if ${_ld_version:[1..2]} == "GNU ld"
 ${X_}LINKER_TYPE=	bfd
+${X_}LINKER_FREEBSD_VERSION=	0
 _v=	${_ld_version:M[1-9].[0-9]*:[1]}
 .elif ${_ld_version:[1]} == "LLD"
 ${X_}LINKER_TYPE=	lld
 _v=	${_ld_version:[2]}
+${X_}LINKER_FREEBSD_VERSION!= \
+	${${ld}} --version | \
+	awk '$$3 ~ /FreeBSD/ {print substr($$4, 1, length($$4)-1)}'
 .elif ${_ld_version:[1]} == "@(\#)PROGRAM:ld"
 # bootstrap linker on MacOS
 ${X_}LINKER_TYPE=	mac
@@ -82,9 +91,13 @@ ${X_}LINKER_VERSION!=	echo "${_v:M[1-9].[0-9]*}" | \
 ${X_}LINKER_FEATURES=
 .if ${${X_}LINKER_TYPE} != "bfd" || ${${X_}LINKER_VERSION} > 21750
 ${X_}LINKER_FEATURES+=	build-id
+${X_}LINKER_FEATURES+=	ifunc
 .endif
 .if ${${X_}LINKER_TYPE} != "lld" || ${${X_}LINKER_VERSION} >= 50000
 ${X_}LINKER_FEATURES+=	filter
+.endif
+.if ${${X_}LINKER_TYPE} == "lld" && ${${X_}LINKER_VERSION} >= 60000
+${X_}LINKER_FEATURES+=	retpoline
 .endif
 .endif
 .else
@@ -92,6 +105,7 @@ ${X_}LINKER_FEATURES+=	filter
 X_LINKER_TYPE=		${LINKER_TYPE}
 X_LINKER_VERSION=	${LINKER_VERSION}
 X_LINKER_FEATURES=	${LINKER_FEATURES}
+X_LINKER_FREEBSD_VERSION= ${LINKER_FREEBSD_VERSION}
 .endif	# ${ld} == "LD" || (${ld} == "XLD" && ${XLD} != ${LD})
 
 # Export the values so sub-makes don't have to look them up again, using the

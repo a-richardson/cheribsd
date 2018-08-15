@@ -45,6 +45,13 @@ SYSINCS+=	stat.h
 SRCS+=		futimens.c utimensat.c
 .endif
 
+_WITH_EXPLICIT_BZERO!= grep -c explicit_bzero /usr/include/strings.h || true
+.if ${_WITH_EXPLICIT_BZERO} == 0
+.PATH: ${SRCTOP}/sys/libkern
+INCS+=		strings.h
+SRCS+=		explicit_bzero.c
+.endif
+
 .if ${.MAKE.OS} != "FreeBSD"
 # don't copy stdlib.h when cross-building since it will cause
 # conflicts with the host system's headers
@@ -104,7 +111,6 @@ SRCS=		dummy.c
 .if defined(CROSS_BUILD_TESTING)
 SUBDIR=		cross-build
 .endif
-
 
 # When building on Linux/Mac we want to run the build with only ${WORLDTMP} in
 # $PATH to ensure we don't run tools that are incompatible with the FreeBSD
@@ -173,5 +179,8 @@ installdirs:
 .for _group in ${INCSGROUPS:NINCS}
 	mkdir -p "${DESTDIR}/${${_group}DIR}"
 .endfor
+
+# Needed to build config (since it uses libnv)
+SYSINCS+=	${SRCTOP}/sys/sys/nv.h ${SRCTOP}/sys/sys/cnv.h
 
 .include <bsd.lib.mk>
