@@ -660,11 +660,6 @@ BOOTSTRAPPING?=	0
 # Keep these in sync
 MINIMUM_SUPPORTED_OSREL?= 1002501
 MINIMUM_SUPPORTED_REL?= 10.3
-.if defined(CROSSBUILD_HOST)
-# When crossbuilding pretend that we are building from the minimum supported
-# version so that all bootstrap tools get built
-BOOTSTRAPPING:=	0
-.endif
 
 # Common environment for world related stages
 CROSSENV+=	\
@@ -683,7 +678,8 @@ CROSSENV+=	${TARGET_CFLAGS}
 HOST_TOOLS_COMMON_MAKEFLAGS=	-DNO_PIC MK_PROFILE=no -DNO_SHARED
 .else
 # When building Linux or Mac it will usually not be possible to link statically
-# so we can't pass -DNO_PIC, -DNO_SHARED.
+# so we can't pass -DNO_PIC, -DNO_SHARED (it is also no necessary since we
+# will never overwrite any of the host libraries).
 # We also want to build BSD grep and avoid any dependencies on libdialog
 HOST_TOOLS_COMMON_MAKEFLAGS=	MK_PROFILE=no MK_NLS=no MK_BSD_GREP=yes \
 	MK_DIALOG=no MK_DEBUG_FILES=no
@@ -1090,14 +1086,32 @@ _bootstrap-tools:
 	@echo ">>> stage 1.2: bootstrap tools"
 	@echo "--------------------------------------------------------------"
 	${_+_}cd ${.CURDIR}; ${BMAKE} bootstrap-tools
-# Avoid including bsd.compiler.mk in clean and obj with _NO_INCLUDE_COMPILERMK
-# since the restricted $PATH might not contain a valid cc binary
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	    -p ${WORLDTMP}/legacy/usr >/dev/null
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	    -p ${WORLDTMP}/legacy/usr/include >/dev/null
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.usr.dist \
+	    -p ${WORLDTMP}/usr >/dev/null
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.include.dist \
+	    -p ${WORLDTMP}/usr/include >/dev/null
+	ln -sf ${.CURDIR}/sys ${WORLDTMP}
+.if ${MK_DEBUG_FILES} != "no"
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	    -p ${WORLDTMP}/legacy/usr/lib >/dev/null
+	${WORLDTMP_MTREE} -f ${.CURDIR}/etc/mtree/BSD.debug.dist \
+	    -p ${WORLDTMP}/usr/lib >/dev/null
+.endif
+.for _mtree in ${LOCAL_MTREE}
+	${WORLDTMP_MTREE} -f ${.CURDIR}/${_mtree} -p ${WORLDTMP} > /dev/null
+.endfor
 _cleanobj:
 .if !defined(NO_CLEAN)
 	@echo
 	@echo "--------------------------------------------------------------"
 	@echo ">>> stage 2.1: cleaning up the object tree"
 	@echo "--------------------------------------------------------------"
+	# Avoid including bsd.compiler.mk in clean and obj with _NO_INCLUDE_COMPILERMK
+	# since the restricted $PATH might not contain a valid cc binary
 	${_+_}cd ${.CURDIR}; ${WMAKE} _NO_INCLUDE_COMPILERMK=t ${CLEANDIR}
 .if defined(LIBCOMPAT)
 	${_+_}cd ${.CURDIR}; ${LIBCOMPATWMAKE} _NO_INCLUDE_COMPILERMK=t -f Makefile.inc1 ${CLEANDIR}
@@ -2083,7 +2097,10 @@ BOOTSTRAP_ALL_TOOLS?=	0
 # accept compatible flags or produce compatible output. Therefore we force
 # BOOTSTRAP_ALL_TOOLS and just build the FreeBSD version of the binary.
 .if defined(CROSSBUILD_HOST)
-BOOTSTRAP_ALL_TOOLS:=1
+BOOTSTRAP_ALL_TOOLS:=	1
+# When crossbuilding pretend that we are building from the minimum supported
+# version so that all bootstrap tools get built
+BOOTSTRAPPING:=	0
 .endif
 
 .if ${MK_GAMES} != "no"
@@ -2208,9 +2225,7 @@ ${_bt}-${_tool}: ${_bt}-usr.bin/yacc ${_bt_lex_depend}
 
 ${_bt}-usr.bin/mandoc: ${_bt}-lib/libopenbsd
 
-
 .if defined(BOOTSTRAP_ALL_TOOLS)
-_other_bootstrap_tools=usr.bin/ar
 _other_bootstrap_tools=usr.bin/awk
 ${_bt}-usr.bin/awk: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
 # gzip/bzip2 are needed by some of the MK_TESTS Makefiles
@@ -2234,7 +2249,10 @@ _other_bootstrap_tools+=bin/rmdir
 _other_bootstrap_tools+=usr.bin/sed
 _other_bootstrap_tools+=usr.bin/sort
 _other_bootstrap_tools+=bin/test
+.ifndef CROSSBUILD_HOST
+# currently broken?
 _other_bootstrap_tools+=usr.bin/truncate
+.endif
 _other_bootstrap_tools+=usr.bin/tsort
 _other_bootstrap_tools+=usr.bin/unifdef
 # uuencode/uudecode needed by share/tabset
@@ -2246,7 +2264,6 @@ _other_bootstrap_tools+=usr.bin/cap_mkdb
 # needed by installworld:
 _other_bootstrap_tools+=usr.sbin/services_mkdb usr.sbin/pwd_mkdb
 .else
-_bootstrap_tools_links+=ar ranlib
 _bootstrap_tools_links+=awk
 _bootstrap_tools_links+=bzip2 bunzip2 gzip gunzip
 _bootstrap_tools_links+=cut
@@ -2282,13 +2299,12 @@ _bootstrap_tools_links+=xz unxz
 .endif
 .endif
 
-# ldd is needed for installcheck:
+# ldd is needed for installcheck (but only when installing into the rootfs
+.if !defined(NO_ROOT)
 .if defined(BOOTSTRAP_ALL_TOOLS)
 _other_bootstrap_tools+=usr.bin/ldd
-.elif !defined(CROSSBUILD_HOST)
-# But don't create a link when not building on FreeBSD since ldd is only needed
-# when replacing binaries in the root directory
 _bootstrap_tools_links+=ldd
+.endif
 .endif
 
 # sysctl+chflags is needed for installkernel:
@@ -2516,9 +2532,14 @@ _gcc=		gnu/usr.bin/cc
 _usb_tools=	stand/usb/tools
 .endif
 
+.if defined(BUILD_WITH_STRICT_TMPPATH) || defined(BOOTSTRAP_ALL_TOOLS)
+_ar=usr.bin/ar
+.endif
+
 cross-tools: .MAKE .PHONY
 .for _tool in \
     ${LOCAL_XTOOL_DIRS} \
+    ${_ar} \
     ${_clang_libs} \
     ${_clang} \
     ${_lld} \
