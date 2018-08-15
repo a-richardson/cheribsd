@@ -325,14 +325,26 @@ MAKEFILE_PREFERENCE?= BSDmakefile makefile Makefile
 # By default bmake does *not* use set -e
 # when running target scripts, this is a problem for many makefiles here.
 # So define a shell that will do what FreeBSD expects.
-.ifndef WITHOUT_SHELL_ERRCTL
-__MAKE_SHELL?=/bin/sh
-.SHELL: name=sh \
-	quiet="set -" echo="set -v" filter="set -" \
-	hasErrCtl=yes check="set -e" ignore="set +e" \
-	echoFlag=v errFlag=e \
-	path=${__MAKE_SHELL}
+# .ifndef WITHOUT_SHELL_ERRCTL
+# __MAKE_SHELL?=/bin/sh
+# .SHELL: name=sh \
+# 	quiet="set -" echo="set -v" filter="set -" \
+# 	hasErrCtl=yes check="set -e" ignore="set +e" \
+# 	echoFlag=v errFlag=e \
+# 	path=${__MAKE_SHELL}
+# .endif
+
+# HACK to find missing commands
+.if !exists(/tmp/bash-with-pipefail)
+_FOOOOO!=      echo '\#!/bin/sh' > /tmp/bash-with-pipefail
+_FOOOOO!=      echo 'exec /usr/local/bin/bash -o pipefail "$$@"' >> /tmp/bash-with-pipefail
+_FOOOOO!=      chmod +x /tmp/bash-with-pipefail
 .endif
+.SHELL: name=bash path=/tmp/bash-with-pipefail hasErrCtl=true \
+                     check="set -uo pipefail" ignore="set +euo pipefail" \
+                     echo="set -xv" quiet="set +x" filter="set +x" \
+                     echoFlag=xv errFlag="e" newline="'\n'"
+
 
 # Hack for ports compatibility. Historically, ports makefiles have
 # assumed they can examine MACHINE_CPU without including anything
