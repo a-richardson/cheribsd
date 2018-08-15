@@ -76,9 +76,8 @@ _host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
 _host_tools_to_symlink+=bzip2 dd
 
 # We also need a symlink to the absolute path to the make binary used for
-# the toplevel makefile. This is not necessarily make from $PATH since e.g. on
-# Linux and MacOS that will be GNU make and we are currently running with a
-# bmake binary from some other directory
+# the toplevel makefile. This is not necessarily the same as `which make`
+# since e.g. on Linux and MacOS that will be GNU make.
 _make_abs!=	which "${MAKE}"
 _host_abs_tools_to_symlink=	${_make_abs}:make ${_make_abs}:bmake
 
