@@ -1379,10 +1379,7 @@ MTREE_MAGIC?=	mtree 2.0
 distributeworld installworld stageworld: _installcheck_world .PHONY
 	mkdir -p ${INSTALLTMP}
 	progs=$$(for prog in ${ITOOLS}; do \
-		if [ -n "${CROSSBUILD_HOST}" ] ; then \
-			tools_env="env PATH=${TMPPATH}"
-		fi; \
-		if progpath=`$$tools_env which $$prog`; then \
+		if progpath=`env PATH=${TMPPATH} which $$prog`; then \
 			echo $$progpath; \
 		else \
 			echo "Required tool $$prog not found in PATH." >&2; \
