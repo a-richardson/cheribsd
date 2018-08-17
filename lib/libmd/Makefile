@@ -1,5 +1,7 @@
 # $FreeBSD$
 
+.include <src.opts.mk>
+
 PACKAGE=lib${LIB}
 LIB=	md
 SHLIB_MAJOR= 6
@@ -114,7 +116,8 @@ CFLAGS+= -DSHA1_ASM
 SRCS+=	rmd160.S
 CFLAGS+= -DRMD160_ASM
 .endif
-.if exists(${MACHINE_ARCH}/skein_block_asm.s)
+.if exists(${MACHINE_ARCH}/skein_block_asm.s) && \
+    (defined(XAS) || ${MK_BINUTILS_BOOTSTRAP} != "no")
 AFLAGS += --strip-local-absolute
 # Fully unroll all loops in the assembly optimized version
 AFLAGS+= --defsym SKEIN_LOOP=0
