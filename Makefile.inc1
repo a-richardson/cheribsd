@@ -617,6 +617,9 @@ TMPPATH=	${STRICTTMPPATH}:${PATH}
 .if make(distributeworld) || make(installworld) || make(stageworld)
 .if defined(CROSSBUILD_HOST)
 MKTEMP=${WORLDTMP}/legacy/usr/bin/mktemp
+.if !exists(${MKTEMP})
+.error "mktemp binary doesn't exist in expected location: ${MKTEMP}"
+.endif
 .else
 MKTEMP=mktemp
 .endif
