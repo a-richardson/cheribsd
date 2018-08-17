@@ -2231,8 +2231,6 @@ ${_bt}-usr.bin/mandoc: ${_bt}-lib/libopenbsd
 .if defined(BOOTSTRAP_ALL_TOOLS)
 _other_bootstrap_tools=usr.bin/awk
 ${_bt}-usr.bin/awk: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
-# gzip/bzip2 are needed by some of the MK_TESTS Makefiles
-_other_bootstrap_tools+=usr.bin/bzip2 usr.bin/gzip
 # cut is needed by lib/atf/libatf-c/tests:
 _other_bootstrap_tools+=usr.bin/cut
 # elf2aout is required for by sparc64 build
@@ -2269,7 +2267,6 @@ _other_bootstrap_tools+=usr.bin/cap_mkdb
 _other_bootstrap_tools+=usr.sbin/services_mkdb usr.sbin/pwd_mkdb
 .else
 _bootstrap_tools_links+=awk
-_bootstrap_tools_links+=bzip2 bunzip2 gzip gunzip
 _bootstrap_tools_links+=cut
 _bootstrap_tools_links+=elf2aout
 _bootstrap_tools_links+=expr
@@ -2332,8 +2329,15 @@ _other_bootstrap_tools+=usr.bin/bmake
 # since make will usually point to GNU make there.
 .endif
 
-.if defined(BOOTSTRAP_ALL_TOOLS)
-# TODO: do I need this? && !defined(CROSSBUILD_HOST)
+.if defined(BOOTSTRAP_ALL_TOOLS) && (!defined(CROSSBUILD_HOST) || ${CROSSBUILD_HOST} != "Linux")
+# gzip/bzip2 are needed by some of the MK_TESTS Makefiles
+# Note: gzip won't bootstrap on Linux (yet)
+_other_bootstrap_tools+=usr.bin/bzip2 usr.bin/gzip
+.else
+_bootstrap_tools_links+=bzip2 bunzip2 gzip gunzip
+.endif
+
+.if defined(BOOTSTRAP_ALL_TOOLS) && !defined(CROSSBUILD_HOST)
 _other_bootstrap_tools+=usr.bin/find
 ${_bt}-usr.bin/find: ${_bt_lex_depend} ${_bt}-usr.bin/yacc
 .else
