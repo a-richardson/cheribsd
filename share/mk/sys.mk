@@ -335,7 +335,7 @@ MAKEFILE_PREFERENCE?= BSDmakefile makefile Makefile
 # .endif
 
 # HACK to find missing commands
-.if ${.MAKE.OS} != "FreeBSD"
+.if ${.MAKE.OS} != "FreeBSD" && defined(BUILD_WITH_OPIPEFAIL)
 # Use bash with -o pipefail to make sure that all commands exist
 # somehow bmake won't use the check string so lets use a wrapper script
 # instead
