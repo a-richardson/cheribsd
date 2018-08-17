@@ -2089,6 +2089,17 @@ _bt=		_bootstrap-tools
 
 # We want to run the build with only ${WORLDTMP} in $PATH to ensure we don't
 # accidentally run tools that are incompatible but happen to be in $PATH.
+# This is especially important when building on Linux/MacOS where many of the
+# programs used during the build accept different flags or generate different
+# output. On those platforms we only symlink the tools known to be compatible
+# (e.g. basic utilities such as mkdir) into ${WORLDTMP} and build all others
+# from the FreeBSD sources during the bootstrap-tools stage.
+# Since we want to build without the user's $PATH in the bootstrap-tools phase
+# we have to ensure that the basic commands used in that phase (ln, cp, etc)
+# have already been linked to $WORLDTMP. For all tools listed in the
+# _host_tools_to_symlink variable in tools/build/Makefile, the build must only
+# use flags that are portable across operating systems.
+
 # If BOOTSTRAP_ALL_TOOLS is set we will build all the required tools from the
 # current source tree. Otherwise we create link to the version from $PATH
 # in ${WORLDTMP} during the bootstrap-tools stage.
@@ -2125,7 +2136,7 @@ _vtfontcvt=	usr.bin/vtfontcvt
 _m4=		usr.bin/m4
 _lex=		usr.bin/lex
 # Note: lex needs m4 to build but m4 also depends on lex. However, lex can be
-# bootstrapped with the host systems m4 so we build lex first.
+# bootstrapped so we build lex first.
 ${_bt}-usr.bin/m4: ${_bt}-lib/libopenbsd ${_bt}-usr.bin/yacc ${_bt}-${_lex}
 _bt_lex_depend=${_bt}-usr.bin/lex ${_bt}-usr.bin/m4
 .else
@@ -2315,6 +2326,8 @@ _bootstrap_tools_links+=ldd
 # the source tree cannot work:
 _other_bootstrap_tools+=tools/build/cross-build/fake_chflags
 _other_bootstrap_tools+=tools/build/cross-build/fake_sysctl
+# python is needed for the fake sysctl script
+_bootstrap_tools_links+=python
 .elif defined(BOOTSTRAP_ALL_TOOLS)
 _other_bootstrap_tools+=sbin/sysctl bin/chflags
 .else

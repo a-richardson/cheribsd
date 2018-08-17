@@ -137,16 +137,8 @@ SYSINCS+=	${SRCTOP}/sys/sys/nv.h ${SRCTOP}/sys/sys/cnv.h ${SRCTOP}/sys/sys/dnv.h
 # basic commands: It is fine to use the host version for all of these even on
 # Linux/MacOS since we only use flags that are supported by all of them.
 _host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
-	false find fmt gzip head hostname id ln ls mkdir mv nice patch rm \
+	false find fmt head hostname id ln ls mkdir mv nice patch rm \
 	realpath sh sleep tee touch tr true uname uniq wc which
-
-.if ${.MAKE.OS} == "FreeBSD"
-# Needed for installworld
-_host_tools_to_symlink+=ldd
-.endif
-
-# needed by bootloader and some MK_TESTS Makefiles
-_host_tools_to_symlink+=bzip2 dd
 
 # We also need a symlink to the absolute path to the make binary used for
 # the toplevel makefile. This is not necessarily the same as `which make`
@@ -155,12 +147,8 @@ _make_abs!=	which "${MAKE}"
 _host_abs_tools_to_symlink=	${_make_abs}:make ${_make_abs}:bmake
 
 .if ${.MAKE.OS} != "FreeBSD"
-# needed for the fake sysctl script
-_host_tools_to_symlink+=python
-# should we bootstrap this instead?
+# can we bootstrap this instead?
 _host_tools_to_symlink+=gperf
-# needed by bootloader
-_host_tools_to_symlink+=bzip2 dd
 
 .if ${.MAKE.OS} == "Darwin"
 # /usr/bin/cpp may invoke xcrun:
@@ -168,7 +156,7 @@ _host_tools_to_symlink+=xcrun
 # the m4 in /usr/bin does not accept the flags necessary to bootstrap lex+m4.
 # Therefore we need to add this symlink and then have the bootstrap-tools phase
 # overwrite it with the correct version. This requires m4 from homebrew.
-_host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
+# TODO? _host_abs_tools_to_symlink+=	/usr/local/opt/m4/bin/m4:m4
 .endif  # ${.MAKE.OS} == "Darwin"
 # On Ubuntu /bin/sh is dash which is totally useless. Let's just link bash
 # as the build sh since that will work fine. Also on MacOS /bin/sh doesn't
