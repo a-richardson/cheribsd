@@ -28,4 +28,9 @@ MLINKS=	md5.1 rmd160.1 \
 
 LIBADD=	md
 
+.ifndef(BOOTSTRAPPING)
+# Avoid depending on capsicum during bootstrap
+CFLAGS+=-DHAVE_CAPSICUM
+.endif
+
 .include <bsd.prog.mk>

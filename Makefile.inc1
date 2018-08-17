@@ -2246,6 +2246,7 @@ _other_bootstrap_tools+=usr.bin/gencat
 _other_bootstrap_tools+=usr.bin/grep
 _other_bootstrap_tools+=usr.bin/join
 _other_bootstrap_tools+=usr.sbin/makefs
+_other_bootstrap_tools+=sbin/md5
 ${_bt}-usr.sbin/makefs: ${_bt}-lib/libnetbsd
 _other_bootstrap_tools+=usr.bin/mktemp
 _other_bootstrap_tools+=bin/rmdir
@@ -2277,6 +2278,7 @@ _bootstrap_tools_links+=gencat
 _bootstrap_tools_links+=grep egrep fgrep
 _bootstrap_tools_links+=join
 _bootstrap_tools_links+=makefs
+_bootstrap_tools_links+=md5
 _bootstrap_tools_links+=mktemp
 _bootstrap_tools_links+=rmdir
 _bootstrap_tools_links+=sed

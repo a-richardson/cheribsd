@@ -135,7 +135,7 @@ SYSINCS+=	${SRCTOP}/sys/sys/nv.h ${SRCTOP}/sys/sys/cnv.h ${SRCTOP}/sys/sys/dnv.h
 # basic commands: It is fine to use the host version for all of these even on
 # Linux/MacOS since we only use flags that are supported by all of them.
 _host_tools_to_symlink=	basename chmod chown cmp comm cp date dirname echo env \
-	false find fmt gzip head hostname id ln ls md5 mkdir mv nice patch rm \
+	false find fmt gzip head hostname id ln ls mkdir mv nice patch rm \
 	realpath sh sleep tee touch tr true uname uniq wc which
 
 .if ${.MAKE.OS} == "FreeBSD"
@@ -201,7 +201,7 @@ host-symlinks:
 # and cross-tools stages. We do this here using mkdir since mtree may not exist
 # yet (this happens if we are crossbuilding from Linux/Mac).
 installdirs:
-.for _dir in bin usr/bin usr/sbin usr/lib usr/include lib/geom lib/casper
+.for _dir in bin usr/bin usr/sbin sbin usr/lib usr/include lib/geom lib/casper
 	mkdir -p "${DESTDIR}/${_dir}"
 .endfor
 .for _group in ${INCSGROUPS:NINCS}
