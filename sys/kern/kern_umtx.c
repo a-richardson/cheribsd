@@ -4144,9 +4144,8 @@ __umtx_op_wait_c(struct thread *td, struct cheriabi__umtx_op_args *uap)
 	if (uap->uaddr2 == NULL)
 		tm_p = NULL;
 	else {
-		error = umtx_copyin_umtx_time(
-		    __USER_CAP(uap->uaddr2, (size_t)uap->uaddr1),
-		    (size_t)uap->uaddr1, &timeout);
+		error = umtx_copyin_umtx_time(uap->uaddr2,
+		    (__cheri_addr size_t)uap->uaddr1, &timeout);
 		if (error != 0)
 			return (error);
 		tm_p = &timeout;
@@ -4163,9 +4162,8 @@ __umtx_op_wait_uint_c(struct thread *td, struct cheriabi__umtx_op_args *uap)
 	if (uap->uaddr2 == NULL)
 		tm_p = NULL;
 	else {
-		error = umtx_copyin_umtx_time(
-		    __USER_CAP(uap->uaddr2, (size_t)uap->uaddr1),
-		    (size_t)uap->uaddr1, &timeout);
+		error = umtx_copyin_umtx_time(uap->uaddr2,
+		    (__cheri_addr size_t)uap->uaddr1, &timeout);
 		if (error != 0)
 			return (error);
 		tm_p = &timeout;
@@ -4183,9 +4181,8 @@ __umtx_op_wait_uint_private_c(struct thread *td,
 	if (uap->uaddr2 == NULL)
 		tm_p = NULL;
 	else {
-		error = umtx_copyin_umtx_time(
-		    __USER_CAP(uap->uaddr2, (size_t)uap->uaddr1),
-		    (size_t)uap->uaddr1, &timeout);
+		error = umtx_copyin_umtx_time(uap->uaddr2,
+		    (__cheri_addr size_t)uap->uaddr1, &timeout);
 		if (error != 0)
 			return (error);
 		tm_p = &timeout;
@@ -4269,9 +4266,8 @@ __umtx_op_wait_umutex_c(struct thread *td, struct cheriabi__umtx_op_args *uap)
 	if (uap->uaddr2 == NULL)
 		tm_p = NULL;
 	else {
-		error = umtx_copyin_umtx_time(
-		    __USER_CAP(uap->uaddr2, (size_t)uap->uaddr1),
-		    (size_t)uap->uaddr1, &timeout);
+		error = umtx_copyin_umtx_time(uap->uaddr2,
+		    (__cheri_addr size_t)uap->uaddr1, &timeout);
 		if (error != 0)
 			return (error);
 		tm_p = &timeout;
@@ -4310,9 +4306,7 @@ __umtx_op_cv_wait_c(struct thread *td, struct cheriabi__umtx_op_args *uap)
 	if (uap->uaddr2 == NULL)
 		ts = NULL;
 	else {
-		error = umtx_copyin_timeout(
-		    __USER_CAP(uap->uaddr2, sizeof(struct timespec)),
-		    &timeout);
+		error = umtx_copyin_timeout(uap->uaddr2, &timeout);
 		if (error != 0)
 			return (error);
 		ts = &timeout;
