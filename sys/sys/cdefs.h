@@ -334,7 +334,6 @@
 
 #if !__has_builtin(__builtin_no_change_bounds)
 #define __builtin_no_change_bounds(expr) (expr)
-#ifdef __CHERI_S
 #endif
 #define __unbounded_addressof(obj) (&__builtin_no_change_bounds(obj))
 #define __bounded_addressof(obj, size) \
