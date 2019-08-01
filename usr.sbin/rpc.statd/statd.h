@@ -91,7 +91,7 @@ typedef struct
   int ourState;		/* State number as defined in statd protocol	*/
   int noOfHosts;	/* Number of elements in hosts[]		*/
   char reserved[248];	/* Reserved for future use			*/
-  HostInfo hosts[1];	/* vector of monitored hosts			*/
+  __subobject_variable_length HostInfo hosts[1];	/* vector of monitored hosts			*/
 } FileLayout;
 
 #define	HEADER_LEN (sizeof(FileLayout) - sizeof(HostInfo))

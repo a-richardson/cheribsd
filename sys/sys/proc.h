@@ -121,7 +121,7 @@ struct pgrp {
 struct pargs {
 	u_int	ar_ref;		/* Reference count. */
 	u_int	ar_length;	/* Length. */
-	u_char	ar_args[1];	/* Arguments. */
+	__subobject_variable_length u_char	ar_args[1];	/* Arguments. */
 };
 
 /*-

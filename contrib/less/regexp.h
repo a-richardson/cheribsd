@@ -16,7 +16,7 @@ typedef struct regexp {
 	char reganch;		/* Internal use only. */
 	char *regmust;		/* Internal use only. */
 	int regmlen;		/* Internal use only. */
-	char program[1];	/* Unwarranted chumminess with compiler. */
+	__subobject_variable_length char program[1];	/* Unwarranted chumminess with compiler. */
 } regexp;
 
 #if defined(__STDC__) || defined(__cplusplus)

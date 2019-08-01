@@ -144,19 +144,19 @@ typedef struct {
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  Header;
   EFI_GUID                  Guid;
-  UINT8                     VendorDefinedData[1];
+  UINT8                     VendorDefinedData[1] __subobject_variable_length;
 } VENDOR_DEFINED_HARDWARE_DEVICE_PATH;
 
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  Header;
   EFI_GUID                  Guid;
-  UINT8                     VendorDefinedData[1];
+  UINT8                     VendorDefinedData[1] __subobject_variable_length;
 } VENDOR_DEFINED_MESSAGING_DEVICE_PATH;
 
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  Header;
   EFI_GUID                  Guid;
-  UINT8                     VendorDefinedData[1];
+  UINT8                     VendorDefinedData[1] __subobject_variable_length;
 } VENDOR_DEFINED_MEDIA_DEVICE_PATH;
 
 typedef struct {
@@ -164,7 +164,7 @@ typedef struct {
   UINT32                    Hid;
   UINT32                    Uid;
   UINT32                    Cid;
-  CHAR8                     HidUidCidStr[3];
+  CHAR8                     HidUidCidStr[3] __subobject_variable_length;
 } ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR;
 
 typedef struct {
@@ -173,13 +173,13 @@ typedef struct {
   UINT16                    LoginOption;
   UINT64                    Lun;
   UINT16                    TargetPortalGroupTag;
-  CHAR8                     TargetName[1];
+  CHAR8                     TargetName[1] __subobject_variable_length;
 } ISCSI_DEVICE_PATH_WITH_NAME;
 
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  Header;
   EFI_GUID                  Guid;
-  UINT8                     VendorDefinedData[1];
+  UINT8                     VendorDefinedData[1] __subobject_variable_length;
 } VENDOR_DEVICE_PATH_WITH_DATA;
 
 #pragma pack()

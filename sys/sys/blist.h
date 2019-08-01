@@ -82,7 +82,7 @@ typedef struct blist {
 	daddr_t		bl_avail;	/* # available blocks		*/
 	u_daddr_t	bl_radix;	/* coverage radix		*/
 	daddr_t		bl_cursor;	/* next-fit search starts at	*/
-	blmeta_t	bl_root[1];	/* root of radix tree		*/
+	__subobject_variable_length blmeta_t	bl_root[1];	/* root of radix tree		*/
 } *blist_t;
 
 #define BLIST_BMAP_RADIX	(sizeof(u_daddr_t)*8)

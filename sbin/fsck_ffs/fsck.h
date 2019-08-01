@@ -284,7 +284,7 @@ struct inoinfo {
 	ino_t	i_dotdot;		/* inode number of `..' */
 	size_t	i_isize;		/* size of inode */
 	u_int	i_numblks;		/* size of block array in bytes */
-	ufs2_daddr_t i_blks[1];		/* actually longer */
+	__subobject_variable_length ufs2_daddr_t i_blks[1];		/* actually longer */
 } **inphead, **inpsort;
 extern long dirhash, inplast;
 extern unsigned long numdirs, listmax;

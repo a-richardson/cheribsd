@@ -36,7 +36,7 @@
 
 struct report_desc {
 	uint32_t size;
-	uint8_t data[1];
+	uint8_t data[1] __subobject_variable_length;
 };
 
 /* internal backwards compatibility functions */

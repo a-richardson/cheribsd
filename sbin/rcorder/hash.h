@@ -63,7 +63,7 @@ typedef struct Hash_Entry {
 	ClientData	clientData;	/* Arbitrary piece of data associated
 					 * with key. */
 	unsigned	namehash;	/* hash value of key */
-	char		name[1];	/* key string */
+	__subobject_variable_length char		name[1];	/* key string */
 } Hash_Entry;
 
 typedef struct Hash_Table {

@@ -66,7 +66,7 @@ SOFTWARE.
 
 struct in_addr_list {
     unsigned int	linkcount, addrcount;
-    struct in_addr	addr[1];		/* Dynamically extended */
+    __subobject_variable_length struct in_addr	addr[1];		/* Dynamically extended */
 };
 
 
@@ -77,12 +77,12 @@ struct in_addr_list {
 
 struct shared_string {
     unsigned int	linkcount;
-    char		string[1];		/* Dynamically extended */
+    __subobject_variable_length char		string[1];		/* Dynamically extended */
 };
 
 struct shared_bindata {
     unsigned int	linkcount, length;
-    byte		data[1];		/* Dynamically extended */
+    __subobject_variable_length byte		data[1];		/* Dynamically extended */
 };
 
 

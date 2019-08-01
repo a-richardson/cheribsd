@@ -109,10 +109,10 @@ struct rip {
 	u_int8_t    rip_vers;		/* protocol version # */
 	u_int16_t   rip_res1;		/* pad to 32-bit boundary */
 	union {				/* variable length... */
-	    struct netinfo ru_nets[1];
-	    int8_t    ru_tracefile[1];
-	    struct netauth ru_auth[1];
-	} ripun;
+	    __subobject_variable_length struct netinfo ru_nets[1];
+	    __subobject_variable_length int8_t    ru_tracefile[1];
+	    __subobject_variable_length struct netauth ru_auth[1];
+	} ripun __subobject_variable_length;
 #define	rip_nets	ripun.ru_nets
 #define rip_auths	ripun.ru_auth
 #define	rip_tracefile	ripun.ru_tracefile

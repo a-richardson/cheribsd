@@ -77,7 +77,7 @@ typedef struct {
  */
 typedef struct {
 	int		len;
-	char		name[1];
+	__subobject_variable_length char		name[1];
 } *rpc_gss_principal_t;
 
 /*

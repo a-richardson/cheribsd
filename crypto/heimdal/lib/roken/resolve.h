@@ -126,14 +126,14 @@ struct rk_dns_query{
 
 struct rk_mx_record{
     unsigned  preference;
-    char domain[1];
+    __subobject_variable_length char domain[1];
 };
 
 struct rk_srv_record{
     unsigned priority;
     unsigned weight;
     unsigned port;
-    char target[1];
+    __subobject_variable_length char target[1];
 };
 
 struct rk_key_record {
@@ -141,7 +141,7 @@ struct rk_key_record {
     unsigned protocol;
     unsigned algorithm;
     size_t   key_len;
-    u_char   key_data[1];
+    __subobject_variable_length u_char   key_data[1];
 };
 
 struct rk_sig_record {
@@ -154,7 +154,7 @@ struct rk_sig_record {
     unsigned key_tag;
     char     *signer;
     size_t   sig_len;
-    char     sig_data[1];	/* also includes signer */
+    __subobject_variable_length char     sig_data[1];	/* also includes signer */
 };
 
 struct rk_cert_record {
@@ -162,14 +162,14 @@ struct rk_cert_record {
     unsigned tag;
     unsigned algorithm;
     size_t   cert_len;
-    u_char   cert_data[1];
+    __subobject_variable_length u_char   cert_data[1];
 };
 
 struct rk_sshfp_record {
     unsigned algorithm;
     unsigned type;
     size_t   sshfp_len;
-    u_char   sshfp_data[1];
+    __subobject_variable_length u_char   sshfp_data[1];
 };
 
 struct rk_ds_record {
@@ -177,7 +177,7 @@ struct rk_ds_record {
     unsigned algorithm;
     unsigned digest_type;
     size_t digest_len;
-    u_char digest_data[1];
+    __subobject_variable_length u_char digest_data[1];
 };
 
 struct rk_resource_record{

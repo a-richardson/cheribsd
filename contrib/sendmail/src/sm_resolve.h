@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (c) 1995, 1996, 1997, 1998, 1999 Kungliga Tekniska Högskolan
+ * Copyright (c) 1995, 1996, 1997, 1998, 1999 Kungliga Tekniska Hï¿½gskolan
  * (Royal Institute of Technology, Stockholm, Sweden).
  * All rights reserved.
  *
@@ -72,7 +72,7 @@ typedef struct
 typedef struct
 {
 	unsigned int	mx_r_preference;
-	char		mx_r_domain[1];
+	__subobject_variable_length char		mx_r_domain[1];
 } MX_RECORD_T;
 
 typedef struct
@@ -80,7 +80,7 @@ typedef struct
 	unsigned int	srv_r_priority;
 	unsigned int	srv_r_weight;
 	unsigned int	srv_r_port;
-	char		srv_r_target[1];
+	__subobject_variable_length char		srv_r_target[1];
 } SRV_RECORDT_T;
 
 

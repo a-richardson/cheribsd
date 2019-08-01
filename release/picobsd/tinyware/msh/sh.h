@@ -362,7 +362,7 @@ struct	wdblock {
 	short	w_bsize;
 	short	w_nword;
 	/* bounds are arbitrary */
-	char	*w_words[1];
+	__subobject_variable_length char	*w_words[1];
 };
 
 _PROTOTYPE(struct wdblock *addword , (char *wd , struct wdblock *wb ));

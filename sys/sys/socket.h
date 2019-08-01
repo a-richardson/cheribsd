@@ -553,7 +553,7 @@ struct sockcred {
 	gid_t	sc_gid;			/* real group id */
 	gid_t	sc_egid;		/* effective group id */
 	int	sc_ngroups;		/* number of supplemental groups */
-	gid_t	sc_groups[1];		/* variable length */
+	__subobject_variable_length gid_t	sc_groups[1];		/* variable length */
 };
 
 /*

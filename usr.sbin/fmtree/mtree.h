@@ -90,7 +90,7 @@ typedef struct _node {
 #define	F_SOCK	0x040				/* socket */
 	u_char	type;				/* file type */
 
-	char	name[1];			/* file name (must be last) */
+	__subobject_variable_length char	name[1];			/* file name (must be last) */
 } NODE;
 
 #define	RP(p)	\

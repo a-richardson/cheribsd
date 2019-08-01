@@ -92,7 +92,7 @@ struct ktr_syscall {
 	/*
 	 * followed by ktr_narg register_t
 	 */
-	register_t	ktr_args[1];
+	__subobject_variable_length register_t	ktr_args[1];
 };
 
 /*

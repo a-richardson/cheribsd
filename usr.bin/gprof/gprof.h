@@ -159,7 +159,7 @@ int	nname;			/* the number of function names */
 struct cl {
     int		size;		/* length of cycle */
     struct cl	*next;		/* next member of list */
-    arctype	*list[1];	/* list of arcs in cycle */
+    __subobject_variable_length arctype	*list[1];	/* list of arcs in cycle */
     /* actually longer */
 };
 typedef struct cl cltype;

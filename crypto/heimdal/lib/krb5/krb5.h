@@ -797,7 +797,7 @@ typedef struct krb5_krbhst_info {
     unsigned short def_port;
     struct addrinfo *ai;
     struct krb5_krbhst_info *next;
-    char hostname[1]; /* has to come last */
+    __subobject_variable_length char hostname[1]; /* has to come last */
 } krb5_krbhst_info;
 
 /* flags for krb5_krbhst_init_flags (and krb5_send_to_kdc_flags) */

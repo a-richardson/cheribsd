@@ -49,7 +49,7 @@ struct hashtab {		/* Hash table */
      int (*cmp)(void *, void *); /* Compare function */
      unsigned (*hash)(void *);	/* hash function */
      int sz;			/* Size */
-     Hashentry *tab[1];		/* The table */
+     __subobject_variable_length Hashentry *tab[1];		/* The table */
 };
 
 typedef struct hashtab Hashtab;

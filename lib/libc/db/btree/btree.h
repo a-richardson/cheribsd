@@ -79,7 +79,7 @@ typedef struct _page {
 
 	indx_t	lower;			/* lower bound of free space on page */
 	indx_t	upper;			/* upper bound of free space on page */
-	indx_t	linp[1];		/* indx_t-aligned VAR. LENGTH DATA */
+	__subobject_variable_length indx_t	linp[1];		/* indx_t-aligned VAR. LENGTH DATA */
 } PAGE;
 
 /* First and next index. */
@@ -122,7 +122,7 @@ typedef struct _binternal {
 #define	P_BIGDATA	0x01		/* overflow data */
 #define	P_BIGKEY	0x02		/* overflow key */
 	u_char	flags;
-	char	bytes[1];		/* data */
+	__subobject_variable_length char	bytes[1];		/* data */
 } BINTERNAL;
 
 /* Get the page's BINTERNAL structure at index indx. */
@@ -172,7 +172,7 @@ typedef struct _bleaf {
 	u_int32_t	ksize;		/* size of key */
 	u_int32_t	dsize;		/* size of data */
 	u_char	flags;			/* P_BIGDATA, P_BIGKEY */
-	char	bytes[1];		/* data */
+	__subobject_variable_length char	bytes[1];		/* data */
 } BLEAF;
 
 /* Get the page's BLEAF structure at index indx. */
@@ -204,7 +204,7 @@ typedef struct _bleaf {
 typedef struct _rleaf {
 	u_int32_t	dsize;		/* size of data */
 	u_char	flags;			/* P_BIGDATA */
-	char	bytes[1];
+	__subobject_variable_length char	bytes[1];
 } RLEAF;
 
 /* Get the page's RLEAF structure at index indx. */

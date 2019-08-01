@@ -124,7 +124,7 @@ typedef struct Struct_Needed_Entry {
 
 typedef struct Struct_Name_Entry {
     STAILQ_ENTRY(Struct_Name_Entry) link;
-    char   name[1];
+    __subobject_variable_length char   name[1];
 } Name_Entry;
 
 /* Lock object */

@@ -57,9 +57,9 @@ struct tftphdr {
 	union {
 		unsigned short	tu_block;	/* block # */
 		unsigned short	tu_code;	/* error code */
-		char	tu_stuff[1];	/* request packet stuff */
+		__subobject_variable_length char	tu_stuff[1];	/* request packet stuff */
 	} __packed th_u;
-	char	th_data[1];		/* data or error string */
+	__subobject_variable_length char	th_data[1];		/* data or error string */
 } __packed;
 
 #define	th_block	th_u.tu_block

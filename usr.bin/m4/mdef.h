@@ -146,7 +146,7 @@ struct ndblock {			/* hashtable structure         */
 	unsigned int		builtin_type;
 	unsigned int		trace_flags;
 	struct macro_definition *d;
-	char		name[1];	/* entry name..               */
+	__subobject_variable_length char		name[1];	/* entry name..               */
 };
 
 typedef union {			/* stack structure */

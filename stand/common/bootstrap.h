@@ -182,7 +182,7 @@ struct file_metadata
     size_t			md_size;
     uint16_t			md_type;
     struct file_metadata	*md_next;
-    char			md_data[1];	/* data are immediately appended */
+    __subobject_variable_length char			md_data[1];	/* data are immediately appended */
 };
 
 struct preloaded_file;

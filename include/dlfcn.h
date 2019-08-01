@@ -107,7 +107,7 @@ typedef struct dl_serpath {
 typedef struct  dl_serinfo {
         size_t		dls_size;       /* total buffer size */
         unsigned int	dls_cnt;        /* number of path entries */
-        Dl_serpath	dls_serpath[1]; /* there may be more than one */
+        __subobject_variable_length Dl_serpath	dls_serpath[1]; /* there may be more than one */
 } Dl_serinfo;
 
 #endif /* __BSD_VISIBLE */

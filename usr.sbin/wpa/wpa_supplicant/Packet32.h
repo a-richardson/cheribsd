@@ -43,7 +43,7 @@
 struct PACKET_OID_DATA {
 	uint32_t		Oid;
 	uint32_t		Length;
-	uint8_t			Data[1];
+	__subobject_variable_length uint8_t			Data[1];
 };
 
 

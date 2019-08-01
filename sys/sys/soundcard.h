@@ -450,7 +450,7 @@ struct patch_info {
 
 	int		volume;
 	int		spare[4];
-	char data[1];	/* The waveform data starts here */
+	__subobject_variable_length char data[1];	/* The waveform data starts here */
 };
 
 struct sysex_info {
@@ -459,7 +459,7 @@ struct sysex_info {
 #define MAUI_PATCH	_PATCHKEY(0x06)
 	short device_no;	/* Synthesizer number */
 	long len;	/* Size of the sysex data in bytes */
-	u_char data[1];	/* Sysex data starts here */
+	__subobject_variable_length u_char data[1];	/* Sysex data starts here */
 };
 
 /*

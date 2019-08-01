@@ -63,7 +63,7 @@ typedef struct {
   ///
   /// The format of the signature is defined by the SignatureType.
   ///
-  UINT8             SignatureData[1];
+  UINT8             SignatureData[1] __subobject_variable_length;
 } EFI_SIGNATURE_DATA;
 
 typedef struct {

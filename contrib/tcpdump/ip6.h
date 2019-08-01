@@ -183,7 +183,7 @@ struct ip6_rthdr0 {
 	nd_uint8_t  ip6r0_type;		/* always zero */
 	nd_uint8_t  ip6r0_segleft;	/* segments left */
 	nd_uint32_t ip6r0_reserved;	/* reserved field */
-	struct in6_addr ip6r0_addr[1];	/* up to 23 addresses */
+	__subobject_variable_length struct in6_addr ip6r0_addr[1];	/* up to 23 addresses */
 };
 
 /* Fragment header */

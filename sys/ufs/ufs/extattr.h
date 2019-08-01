@@ -79,7 +79,7 @@ struct extattr {
 	uint8_t	ea_namespace;	    /* name space of this attribute */
 	uint8_t	ea_contentpadlen;   /* bytes of padding at end of attribute */
 	uint8_t	ea_namelength;	    /* length of attribute name */
-	char	ea_name[1];	    /* attribute name (NOT nul-terminated) */
+	__subobject_variable_length char	ea_name[1];	    /* attribute name (NOT nul-terminated) */
 	/* padding, if any, to align attribute content to 8 byte boundary */
 	/* extended attribute content follows */
 };

@@ -32,7 +32,7 @@ struct _csc {
 	char	*pbuf;		/* Search path buffer. */
 	size_t	 pblen;		/* Search path buffer length. */
 
-	char	 buf[1];	/* Variable length buffer. */
+	__subobject_variable_length char	 buf[1];	/* Variable length buffer. */
 };
 
 /*
@@ -89,7 +89,7 @@ struct _tag {			/* Tag list. */
 	CHAR_T	*msg;		/* Message string. */
 	size_t	 mlen;		/* Message string length. */
 
-	CHAR_T	 buf[1];	/* Variable length buffer. */
+	__subobject_variable_length CHAR_T	 buf[1];	/* Variable length buffer. */
 };
 
 struct _tagq {			/* Tag queue. */
@@ -105,5 +105,5 @@ struct _tagq {			/* Tag queue. */
 #define	TAG_CSCOPE	0x01	/* Cscope tag. */
 	u_int8_t flags;
 
-	char	 buf[1];	/* Variable length buffer. */
+	__subobject_variable_length char	 buf[1];	/* Variable length buffer. */
 };

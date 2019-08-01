@@ -113,7 +113,7 @@ struct hash_tblstruct_hdr {
 struct hash_tblstruct {
     unsigned	size, bucketnum;
     hash_member *member;		/* Used for linear dump */
-    hash_member	*table[1];		/* Dynamically extended */
+    __subobject_variable_length hash_member	*table[1];		/* Dynamically extended */
 };
 
 /* ANSI function prototypes or empty arg list? */

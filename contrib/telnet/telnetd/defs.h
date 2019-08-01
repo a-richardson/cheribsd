@@ -122,6 +122,7 @@ typedef unsigned char cc_t;
 
 #ifndef	FD_SET
 #ifndef	HAVE_fd_set
+#error "Should not be needed"
 typedef struct fd_set { int fds_bits[1]; } fd_set;
 #endif
 

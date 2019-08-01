@@ -106,7 +106,7 @@ struct	printer {
  */
 struct	req_user {
 	TAILQ_ENTRY(req_user)	ru_link; /* macro glue */
-	char	ru_uname[1];	/* name of user */
+	__subobject_variable_length char	ru_uname[1];	/* name of user */
 };
 TAILQ_HEAD(req_user_head, req_user);
 
@@ -114,7 +114,7 @@ struct	req_file {
 	TAILQ_ENTRY(req_file)	rf_link; /* macro glue */
 	char	 rf_type;	/* type (lowercase cf file letter) of file */
 	char	*rf_prettyname;	/* user-visible name of file */
-	char	 rf_fname[1];	/* name of file */
+	__subobject_variable_length char	 rf_fname[1];	/* name of file */
 };
 TAILQ_HEAD(req_file_head, req_file);
 

@@ -85,5 +85,5 @@ typedef struct {
 	char *group;
 	char *flags;
 	char *label;
-	char data[1];
+	__subobject_variable_length char data[1];
 } NAMES;

@@ -201,13 +201,13 @@ struct lsa {
 	/* Network links advertisements */
 	struct {
 	    struct in_addr nla_mask;
-	    struct in_addr nla_router[1];	/* may repeat	*/
+	    __subobject_variable_length struct in_addr nla_router[1];	/* may repeat	*/
 	} un_nla;
 
 	/* Summary links advertisements */
 	struct {
 	    struct in_addr sla_mask;
-	    uint32_t sla_tosmetric[1];	/* may repeat	*/
+	    __subobject_variable_length uint32_t sla_tosmetric[1];	/* may repeat	*/
 	} un_sla;
 
 	/* AS external links advertisements */
@@ -217,11 +217,11 @@ struct lsa {
 		uint32_t asla_tosmetric;
 		struct in_addr asla_forward;
 		struct in_addr asla_tag;
-	    } asla_metric[1];		/* may repeat	*/
+	    } asla_metric[1] __subobject_variable_length;		/* may repeat	*/
 	} un_asla;
 
 	/* Multicast group membership */
-	struct mcla {
+	__subobject_variable_length struct mcla {
 	    uint32_t mcla_vtype;
 	    struct in_addr mcla_vid;
 	} un_mcla[1];
@@ -230,26 +230,26 @@ struct lsa {
         struct {
 	    uint16_t type;
 	    uint16_t length;
-	    uint8_t data[1]; /* may repeat   */
+	    __subobject_variable_length uint8_t data[1]; /* may repeat   */
 	} un_te_lsa_tlv;
 
         /* Opaque Grace LSA */
         struct {
 	    uint16_t type;
 	    uint16_t length;
-	    uint8_t data[1]; /* may repeat   */
+	    __subobject_variable_length uint8_t data[1]; /* may repeat   */
 	} un_grace_tlv;
 
         /* Opaque Router information LSA */
         struct {
 	    uint16_t type;
 	    uint16_t length;
-	    uint8_t data[1]; /* may repeat   */
+	    __subobject_variable_length uint8_t data[1]; /* may repeat   */
 	} un_ri_tlv;
 
         /* Unknown LSA */
         struct unknown {
-	    uint8_t data[1]; /* may repeat   */
+	    __subobject_variable_length uint8_t data[1]; /* may repeat   */
 	} un_unknown[1];
 
     } lsa_un;
@@ -280,7 +280,7 @@ struct ospfhdr {
 	    uint32_t hello_deadint;
 	    struct in_addr hello_dr;
 	    struct in_addr hello_bdr;
-	    struct in_addr hello_neighbor[1]; /* may repeat	*/
+	    __subobject_variable_length struct in_addr hello_neighbor[1]; /* may repeat	*/
 	} un_hello;
 
 	/* Database Description packet */
@@ -289,7 +289,7 @@ struct ospfhdr {
 	    uint8_t db_options;
 	    uint8_t db_flags;
 	    uint32_t db_seq;
-	    struct lsa_hdr db_lshdr[1]; /* may repeat	*/
+	    __subobject_variable_length struct lsa_hdr db_lshdr[1]; /* may repeat	*/
 	} un_db;
 
 	/* Link State Request */
@@ -303,17 +303,17 @@ struct ospfhdr {
                 } opaque_field;
             } un_ls_stateid;
 	    struct in_addr ls_router;
-	} un_lsr[1];		/* may repeat	*/
+	} un_lsr[1] __subobject_variable_length;		/* may repeat	*/
 
 	/* Link State Update */
 	struct {
 	    uint32_t lsu_count;
-	    struct lsa lsu_lsa[1]; /* may repeat	*/
+	    __subobject_variable_length struct lsa lsu_lsa[1]; /* may repeat	*/
 	} un_lsu;
 
 	/* Link State Acknowledgement */
 	struct {
-	    struct lsa_hdr lsa_lshdr[1]; /* may repeat	*/
+	    __subobject_variable_length struct lsa_hdr lsa_lshdr[1]; /* may repeat	*/
 	} un_lsa ;
     } ospf_un ;
 };
