@@ -22,3 +22,6 @@ MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
 MLINKS+=strftime.3 strftime_l.3
 MLINKS+=strptime.3 strptime_l.3
 MLINKS+=time2posix.3 posix2time.3
+
+# FIXME: find out why this crashes
+CFLAGS.localtime.c+=-O0 -Wcheri-subobject-bounds -Rcheri-subobject-bounds -Xclang -cheri-bounds=conservative
