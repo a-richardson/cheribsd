@@ -94,6 +94,11 @@ asm (
 );
 #endif
 
+#ifndef __CHERI_PURE_CAPABILITY__
+#define HAVE_JCR
+#endif
+
+#ifdef HAVE_JCR
 /*
  * Handler for gcj. These provide a _Jv_RegisterClasses function and fill
  * out the .jcr section. We just need to call this function with a pointer
@@ -126,3 +131,5 @@ asm (
     ".popsection		\n"
 );
 #endif
+
+#endif /* HAVE_JCR */
