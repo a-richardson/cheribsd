@@ -51,6 +51,10 @@ extern int eprol;
 extern int etext;
 #endif
 
+#ifdef __CHERI_PURE_CAPABILITY__
+Elf_Auxinfo *__auxargs = NULL;
+#endif
+
 void __start(int argc, char **argv, char **env, void (*cleanup)(void));
 #ifdef __CHERI_PURE_CAPABILITY__
 #pragma message("FIXME: implement real purecap crtbegin")
