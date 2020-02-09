@@ -451,6 +451,8 @@ RISCV_ABI:=	${RISCV_ABI}d
 
 CFLAGS += -march=${RISCV_MARCH} -mabi=${RISCV_ABI}
 LDFLAGS += -march=${RISCV_MARCH} -mabi=${RISCV_ABI}
+# LLVM is still quite unstable -> add -verify-machineinstrs
+CFLAGS.clang += -mllvm -verify-machineinstrs=1 -O0
 .endif
 
 # NB: COPTFLAGS is handled in /usr/src/sys/conf/kern.pre.mk
