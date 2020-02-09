@@ -66,6 +66,14 @@ static volatile int trace;
 #endif
 static volatile int alarm_fired;
 
+#ifndef CHERI_START_TRACE
+#define CHERI_START_TRACE ((void)0)
+#endif
+
+#ifndef CHERI_STOP_TRACE
+#define CHERI_STOP_TRACE ((void)0)
+#endif
+
 #define	BENCHMARK_FOREACH(I, NUM) for (I = 0; I < NUM && alarm_fired == 0; I++)
 
 static void
