@@ -656,8 +656,8 @@ MK_LLVM_COV:= no
 MK_LOADER_VERIEXEC_PASS_MANIFEST := no
 .endif
 
-# COMPAT_CHERIABI and LIBCHERI depend on CHERI support on mips.
-.if ${MK_CHERI} == "no" && ${__TT} == "mips"
+# COMPAT_CHERIABI and LIBCHERI depend on CHERI support
+.if ${MK_CHERI} == "no"
 MK_LIBCHERI:=	no
 MK_COMPAT_CHERIABI:=	no
 .endif
