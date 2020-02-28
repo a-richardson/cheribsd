@@ -447,7 +447,7 @@ __DEFAULT_YES_OPTIONS+=PIE
 __DEFAULT_NO_OPTIONS+=PIE
 .endif
 
-.if ${__T} != "mips64" && (${__TT} != "riscv" || ${__T:Mriscv*64*c})
+.if ${__T} != "mips64" && ${__T} != "riscv64"
 BROKEN_OPTIONS+=COMPAT_CHERIABI
 .endif
 

@@ -80,6 +80,7 @@ __DEFAULT_NO_OPTIONS = \
 
 __DEFAULT_NO_OPTIONS+= \
     CHERI_PURE \
+    CHERI \
     CHERI128 \
     CHERI256 \
     DEMO_VULNERABILITIES
@@ -142,8 +143,10 @@ MK_LLVM_LIBUNWIND:=	yes
 .if !defined(WITHOUT_CHERIBSDBOX)
 MK_CHERIBSDBOX:=	yes
 .endif
-.else
-MK_CHERI:=	no
+.endif
+
+.if ${MK_CHERI} != "no" && !(${__T:Mmips64*} || ${__T:Mriscv64*})
+.error "MK_CHERI is currently only support for MIPS64 and RISCV64"
 .endif
 
 #
