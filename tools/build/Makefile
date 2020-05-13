@@ -162,7 +162,11 @@ _host_tools_to_symlink=	basename bzip2 bunzip2 chmod chown cmp comm cp date dd \
 
 .if ${MK_BOOT} != "no"
 # xz/unxz is used by EFI
-_host_tools_to_symlink+=xz unxz
+# macOS does not include xz by default, so also search in /usr/local
+_xz_abs!=	env PATH=${PATH}:/usr/local/bin:/usr/local/sbin which xz 2>/dev/null || echo "/invalid/path/to/xz"
+_host_abs_tools_to_symlink+=	${_xz_abs}:xz
+_unxz_abs!=	env PATH=${PATH}:/usr/local/bin:/usr/local/sbin which unxz 2>/dev/null || echo "/invalid/path/to/xz"
+_host_abs_tools_to_symlink+=	${_unxz_abs}:unxz
 .endif
 
 # We also need a symlink to the absolute path to the make binary used for
@@ -173,13 +177,9 @@ _host_abs_tools_to_symlink=	${_make_abs}:make ${_make_abs}:bmake
 
 .if ${.MAKE.OS} != "FreeBSD"
 _py3_abs=${PYTHON3_BINARY}
+# Python3 might not be installed to /usr/bin, so also check /usr/local
 .if empty(_py3_abs)
-_py3_abs!=	which python3 2>/dev/null || echo "/invalid/path/to/python3"
-.if !exists(${_py3_abs})
-# Fall back to /usr/local/bin/python3 (macOS) if /usr/local/bin is not in $PATH
-# or fail the build if that doesn't exist either
-_py3_abs=/usr/local/bin/python3
-.endif
+_py3_abs!=	env PATH=${PATH}:/usr/local/bin:/usr/local/sbin which python3 2>/dev/null || echo "/invalid/path/to/python3"
 .endif
 .if empty(_py3_abs) || !exists(${_py3_abs})
 .error "Could not determine path to python3. Please set PYTHON3_BINARY"
@@ -188,6 +188,7 @@ _host_abs_tools_to_symlink+=	${_py3_abs}:python3
 
 _make_abs!=	which "${MAKE}"
 _host_abs_tools_to_symlink+=	${_make_abs}:make ${_make_abs}:bmake
+
 .if ${.MAKE.OS} == "Darwin"
 # /usr/bin/cpp may invoke xcrun:
 _host_tools_to_symlink+=xcrun
@@ -204,7 +205,7 @@ host-symlinks:
 	@if [ ! -e "${DESTDIR}/bin/${_tool}" ]; then \
 		source_path=`which ${_tool} || true`; \
 		if [ ! -e "$${source_path}" ] ; then \
-			echo "Cannot find host tool '${_tool}'" >&2; false; \
+			echo "Cannot find host tool '${_tool}' (PATH=$${PATH})" >&2; false; \
 		fi; \
 		ln -sfnv "$${source_path}" "${DESTDIR}/bin/${_tool}"; \
 	fi
