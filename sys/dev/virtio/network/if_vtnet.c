@@ -231,6 +231,8 @@ static void	vtnet_disable_interrupts(struct vtnet_softc *);
 
 static int	vtnet_tunable_int(struct vtnet_softc *, const char *, int);
 
+DEBUGNET_DEFINE(vtnet);
+
 #ifdef PR_1300428 /* FIXME: Needs rework to adapt to stable_11 changes */
 static void	vtnet_rxq_accum_stats(struct vtnet_rxq *,
 		    struct vtnet_rxq_stats *);
@@ -3483,11 +3485,10 @@ vtnet_rx_filter_mac(struct vtnet_softc *sc)
 	    ("%s: CTRL_RX feature not negotiated", __func__));
 
 	/* Unicast MAC addresses: */
-	if_ucastaddrs_exclude(ifp, (void *)filter->vmf_unicast.macs, &ucnt,
-	    VTNET_MAX_MAC_ENTRIES, sc->vtnet_hwaddr);
+	ucnt = if_foreach_lladdr(ifp, vtnet_copy_ifaddr, sc);
+	promisc = (ucnt > VTNET_MAX_MAC_ENTRIES);
 
-	if (ucnt == VTNET_MAX_MAC_ENTRIES) {
-		promisc = 1;
+	if (promisc) {
 		filter->vmf_unicast.nentries = 0;
 		if_printf(ifp, "more than %d MAC addresses assigned, "
 		    "falling back to promiscuous mode\n",
@@ -3496,10 +3497,10 @@ vtnet_rx_filter_mac(struct vtnet_softc *sc)
 		filter->vmf_unicast.nentries = ucnt;
 
 	/* Multicast MAC addresses: */
-	if_multiaddr_array(ifp, (void *)filter->vmf_multicast.macs, &mcnt,
-	    VTNET_MAX_MAC_ENTRIES);
-	if (mcnt == VTNET_MAX_MAC_ENTRIES) {
-		allmulti = 1;
+	mcnt = if_foreach_llmaddr(ifp, vtnet_copy_maddr, filter);
+	allmulti = (mcnt > VTNET_MAX_MAC_ENTRIES);
+
+	if (allmulti) {
 		filter->vmf_multicast.nentries = 0;
 		if_printf(ifp, "more than %d multicast MAC addresses "
 		    "assigned, falling back to all-multicast mode\n",
