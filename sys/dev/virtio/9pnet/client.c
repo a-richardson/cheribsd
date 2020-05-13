@@ -732,7 +732,7 @@ p9_client_walk(struct p9_fid *oldfid, char  *wname,
 	} else
 		fid = oldfid;
 
-	p9_debug(TRANS, "TWALK fids %d,%d wnamelen %ud wname %s\n",
+	p9_debug(TRANS, "TWALK fids %d,%d wnamelen %zu wname %s\n",
 	    oldfid->fid, fid->fid, wnamelen, wname ? wname : NULL);
 
 	/*
@@ -899,7 +899,7 @@ p9_client_wstat(struct p9_fid *fid, struct p9_wstat *wst)
 	struct p9_req_t *req;
 	struct p9_client *clnt;
 
-	p9_debug(TRANS, "TWSTAT fid %d  %p%d\n", fid->fid, wst);
+	p9_debug(TRANS, "TWSTAT fid %d  %p\n", fid->fid, wst);
 
 	clnt = fid->clnt;
 	/*Computing the size as we have variable sized strings */
@@ -1124,7 +1124,7 @@ p9_client_file_create(struct p9_fid *fid, char *name, uint32_t perm, int mode,
 	if (err != 0)
 		goto error;
 
-	p9_debug(TRANS, "RCREATE qid %x.%llx.%x mtu %x\n", qid.type, qid.path, qid.version, mtu);
+	p9_debug(TRANS, "RCREATE qid %x.%jx.%x mtu %x\n", qid.type, (uintmax_t)qid.path, qid.version, mtu);
 	fid->mode = mode;
 	fid->mtu = mtu;
 

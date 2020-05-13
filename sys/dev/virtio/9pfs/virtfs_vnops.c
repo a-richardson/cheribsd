@@ -209,7 +209,7 @@ virtfs_lookup(struct vop_lookup_args *ap)
 
 	} else if (error == ENOENT) {
 
-		if (dvp->v_iflag & VI_DOOMED)
+		if (dvp->v_iflag & VIRF_DOOMED)
 			return (ENOENT);
 		if (VOP_GETATTR(dvp, &vattr, cnp->cn_cred) == 0)
 			return (ENOENT);
@@ -252,18 +252,18 @@ virtfs_lookup(struct vop_lookup_args *ap)
 
 		if (error != 0) {
 			vfs_ref(mp);
-			VOP_UNLOCK(dvp, 0);
+			VOP_UNLOCK(dvp);
 			error = vfs_busy(mp, 0);
 			VOP_LOCK(dvp, ltype | LK_RETRY);
 			vfs_rel(mp);
-			if (error == 0 && (dvp->v_iflag & VI_DOOMED)) {
+			if (error == 0 && (dvp->v_iflag & VIRF_DOOMED)) {
 				vfs_unbusy(mp);
 				error = ENOENT;
 			}
 			if (error != 0)
 				return (error);
 		}
-		VOP_UNLOCK(dvp, 0);
+		VOP_UNLOCK(dvp);
 
 		/* Try to create/reuse the node */
 		error =  virtfs_vget_common(mp, NULL, cnp->cn_lkflags, newfid, &vp);
@@ -276,7 +276,7 @@ virtfs_lookup(struct vop_lookup_args *ap)
 		if (vp != dvp)
 			VOP_LOCK(dvp, ltype | LK_RETRY);
 
-		if (dvp->v_iflag & VI_DOOMED) {
+		if (dvp->v_iflag & VIRF_DOOMED) {
 			if (error == 0) {
 				if (vp == dvp)
 					vrele(vp);
@@ -377,7 +377,7 @@ create_common(struct virtfs_node *dir_node,
 		if ((cnp->cn_flags & MAKEENTRY) != 0)
 			cache_enter(VIRTFS_NTOV(dir_node), *vpp, cnp);
 	}
-	p9_debug(VOPS, "created file under vp %p node %p fid %d\n", *vpp, dir_node,
+	p9_debug(VOPS, "created file under vp %p node %p fid %jd\n", *vpp, dir_node,
 		(uintmax_t)dir_node->vfid->fid);
 	/* Clunk the open ofid. */
 	if (ofid != NULL) {
@@ -916,7 +916,7 @@ virtfs_chown(struct vnode *vp, uid_t uid, gid_t gid, struct ucred *cred,
 	 */
 	if (((uid != inode->n_uid && uid != cred->cr_uid) ||
 	    (gid != inode->n_gid && !groupmember(gid, cred))) &&
-	    (error = priv_check_cred(cred, PRIV_VFS_CHOWN, 0)))
+	    (error = priv_check_cred(cred, PRIV_VFS_CHOWN)))
 		return (error);
 
 	ogid = inode->n_gid;
@@ -928,7 +928,7 @@ virtfs_chown(struct vnode *vp, uid_t uid, gid_t gid, struct ucred *cred,
 	if ((inode->i_mode & (ISUID | ISGID)) &&
 	    (ouid != uid || ogid != gid)) {
 
-		if (priv_check_cred(cred, PRIV_VFS_RETAINSUGID, 0))
+		if (priv_check_cred(cred, PRIV_VFS_RETAINSUGID))
 			inode->i_mode &= ~(ISUID | ISGID);
 	}
 	p9_debug(VOPS, "%s: vp %p, cred %p, td %p - ret OK\n", __func__, vp, cred, td);
@@ -963,11 +963,11 @@ virtfs_chmod(struct vnode *vp, uint32_t  mode, struct ucred *cred, struct thread
 	 * jail(8).
 	 */
 	if (vp->v_type != VDIR && (mode & S_ISTXT)) {
-		if (priv_check_cred(cred, PRIV_VFS_STICKYFILE, 0))
+		if (priv_check_cred(cred, PRIV_VFS_STICKYFILE))
 			return (EFTYPE);
 	}
 	if (!groupmember(inode->n_gid, cred) && (mode & ISGID)) {
-		error = priv_check_cred(cred, PRIV_VFS_SETGID, 0);
+		error = priv_check_cred(cred, PRIV_VFS_SETGID);
 		if (error)
 			return (error);
 	}
@@ -976,7 +976,7 @@ virtfs_chmod(struct vnode *vp, uint32_t  mode, struct ucred *cred, struct thread
 	 * Deny setting setuid if we are not the file owner.
 	 */
 	if ((mode & ISUID) && inode->n_uid != cred->cr_uid) {
-		error = priv_check_cred(cred, PRIV_VFS_ADMIN, 0);
+		error = priv_check_cred(cred, PRIV_VFS_ADMIN);
 		if (error)
 			return (error);
 	}
@@ -1044,7 +1044,7 @@ virtfs_setattr(struct vop_setattr_args *ap)
 		 */
 
 		flags = inode->i_flags;
-		if (!priv_check_cred(cred, PRIV_VFS_SYSFLAGS, 0)) {
+		if (!priv_check_cred(cred, PRIV_VFS_SYSFLAGS)) {
 			if (flags & (SF_NOUNLINK | SF_IMMUTABLE | SF_APPEND)) {
 				error = securelevel_gt(cred, 0);
 			if (error)
@@ -1244,7 +1244,7 @@ virtfs_write(struct vop_write_args *ap)
 	case VREG:
 		if (ioflag & IO_APPEND)
 			uio->uio_offset = file_size;
-			break;
+		break;
 	case VDIR:
 		return (EISDIR);
 	case VLNK:
