@@ -174,6 +174,12 @@ MK_${var}_SUPPORT:= yes
 MK_CTF:=	no
 .endif
 
+.if ${.MAKE.OS} == "Darwin"
+# Infinite loop in ctfmerge
+# TODO: investigate
+MK_CTF:=	no
+.endif
+
 # FIXME: duplicated from bsd.own.mk since the value of MK_CTF may have changed
 .if ${MK_CTF} != "no"
 CTFCONVERT_CMD=	${CTFCONVERT} ${CTFFLAGS} ${.TARGET}

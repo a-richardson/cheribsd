@@ -499,6 +499,12 @@ MK_LOADER_ZFS:=	no
 MK_CTF:=	no
 .endif
 
+.if ${.MAKE.OS} == "Darwin"
+# ctfmerge is broken on macos
+MK_CTF:=	no
+.endif
+
+
 .if ${MK_CRYPT} == "no"
 MK_OPENSSL:=	no
 MK_OPENSSH:=	no
