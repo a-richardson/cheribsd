@@ -1440,7 +1440,7 @@ virtfs_readdir(struct vop_readdir_args *ap)
 
 	io_buffer = uma_zalloc(virtfs_io_buffer_zone, M_WAITOK);
 
-	/* We havnt reached the end yet. read more. */
+	/* We haven't reached the end yet. read more. */
 	diroffset = uio->uio_offset;
 	while (uio->uio_resid >= sizeof(struct dirent)) {
 		/*
@@ -1479,19 +1479,19 @@ virtfs_readdir(struct vop_readdir_args *ap)
 				goto out;
 			}
 
-			/*
-			 * If there isn't enough space in the uio to return a
-			 * whole dirent, break off read
-			 */
-			if (uio->uio_resid < GENERIC_DIRSIZ(&cde))
-				break;
-
 			bzero(&cde, sizeof(cde));
 			strncpy(cde.d_name, dent.d_name, dent.len);
 			cde.d_fileno = virtfs_qid2ino(&dent.qid) + offset;
 			cde.d_type = dent.d_type;
 			cde.d_namlen = dent.len;
 			cde.d_reclen = GENERIC_DIRSIZ(&cde);
+
+			/*
+			 * If there isn't enough space in the uio to return a
+			 * whole dirent, break off read
+			 */
+			if (uio->uio_resid < GENERIC_DIRSIZ(&cde))
+				break;
 
 			/* Transfer */
 			error = uiomove(&cde, GENERIC_DIRSIZ(&cde), uio);
