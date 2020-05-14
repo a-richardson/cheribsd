@@ -3424,6 +3424,20 @@ dev/virtio/balloon/virtio_balloon.c	optional	virtio_balloon
 dev/virtio/scsi/virtio_scsi.c		optional	virtio_scsi
 dev/virtio/random/virtio_random.c	optional	virtio_random
 dev/virtio/console/virtio_console.c	optional	virtio_console
+
+dev/virtio/9pfs/virtfs_subr.c		optional	virtio_9pfs
+dev/virtio/9pfs/virtfs_vnops.c		optional	virtio_9pfs
+dev/virtio/9pfs/virtfs_vfops.c		optional	virtio_9pfs
+dev/virtio/9pnet/trans_virtio.c		optional	virtio_9pnet
+dev/virtio/9pnet/client.c		optional	virtio_9pnet
+dev/virtio/9pnet/protocol.c		optional	virtio_9pnet
+
+
+fs/tmpfs/tmpfs_vnops.c		optional tmpfs
+fs/tmpfs/tmpfs_fifoops.c 	optional tmpfs
+fs/tmpfs/tmpfs_vfsops.c 	optional tmpfs
+fs/tmpfs/tmpfs_subr.c 		optional tmpfs
+
 dev/vkbd/vkbd.c			optional vkbd
 dev/vmgenc/vmgenc_acpi.c	optional acpi
 dev/vr/if_vr.c			optional vr pci

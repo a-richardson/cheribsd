@@ -360,6 +360,10 @@ device		virtio_blk		# VirtIO Block device
 device		virtio_scsi		# VirtIO SCSI device
 device		virtio_balloon		# VirtIO Memory Balloon device
 
+# VirtFS support:
+device		virtio_9pfs
+device		virtio_9pnet
+
 # HyperV drivers and enhancement support
 device		hyperv			# HyperV drivers 
 
