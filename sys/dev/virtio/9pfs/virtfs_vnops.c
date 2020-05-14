@@ -1674,3 +1674,4 @@ struct vop_vector virtfs_vnops = {
 	.vop_strategy =		virtfs_strategy,
 	.vop_symlink =		virtfs_symlink,
 };
+VFS_VOP_VECTOR_REGISTER(virtfs_vnops);
