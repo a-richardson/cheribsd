@@ -90,8 +90,11 @@ p9_parse_opts(struct mount  *mp, struct p9_client *clnt)
 	clnt->msize = 8192;
 
 	trans = vfs_getopts(mp->mnt_optnew, "trans", &error);
-	if (error != 0)
+	if (error != 0) {
+		p9_debug(ERROR, "Missing 'trans' option\n");
 		return (error);
+	}
+	// XXX: trans is unused?
 
 	p9_debug(TRANS, " Attaching to the %s transport \n", trans);
 	/* Get the default trans callback */
@@ -426,6 +429,7 @@ p9_client_version(struct p9_client *c)
 		    c->msize, "9P2000");
 		break;
 	default:
+		p9_debug(ERROR, "Invalid version %d\n", c->proto_version);
 		return (EINVAL);
 	}
 
@@ -448,6 +452,7 @@ p9_client_version(struct p9_client *c)
 	else if (!strncmp(version, "9P2000", 6))
 		c->proto_version = p9_proto_legacy;
 	else {
+		p9_debug(ERROR, "Invalid protocol version %s\n", version);
 		err = ENOMEM;
 		goto error;
 	}
@@ -504,8 +509,10 @@ p9_client_create(struct mount *mp, int *error)
 
 	/* Parse should have set trans_mod */
 	err = p9_parse_opts(mp, clnt);
-	if (err != 0)
+	if (err != 0) {
+		p9_debug(ERROR, "Failed to parse options\n");
 		goto bail_out;
+	}
 
 	if (clnt->trans_mod == NULL) {
 		err = EINVAL;
@@ -517,14 +524,14 @@ p9_client_create(struct mount *mp, int *error)
 	clnt->fidpool = new_unrhdr(VIRTFS_ROOT_FID_NO, VIRTFS_MAX_FID_CNT, NULL);
 	if (clnt->fidpool == NULL) {
 		err = ENOMEM;
-		p9_debug(ERROR, "Coudlnt initilize fid pool\n");
+		p9_debug(ERROR, "Couldn't initialize fid pool\n");
 		goto bail_out;
 	}
 
 	clnt->tagpool = new_unrhdr(VIRTFS_MIN_TAG, VIRTFS_MAX_TAG, NULL);
         if (clnt->tagpool == NULL) {
                 err = ENOMEM;
-                p9_debug(ERROR, "Couldnt initialize tag pool\n");
+                p9_debug(ERROR, "Couldn't initialize tag pool\n");
                 goto bail_out;
         }
 
@@ -538,8 +545,10 @@ p9_client_create(struct mount *mp, int *error)
 	}
 
 	err = p9_client_version(clnt);
-	if (err != 0)
+	if (err != 0) {
+		p9_debug(ERROR, "Couldn't get 9p version\n");
 		goto bail_out;
+	}
 
 	p9_debug(TRANS, "Client creation success .\n");
 	*error = 0;
