@@ -214,7 +214,7 @@ virtfs_vget_common(struct mount *mp, struct virtfs_node *virtfs_node,
 	/* Allocate a new vnode. */
 	if ((error = getnewvnode("virtfs", mp, &virtfs_vnops, &vp)) != 0) {
 		*vpp = NULLVP;
-		p9_debug(ERROR, "Couldnt allocate vnode from VFS \n");
+		p9_debug(ERROR, "Couldn't allocate vnode from VFS \n");
 		return (error);
 	}
 	/* If we dont have it, create one. */
