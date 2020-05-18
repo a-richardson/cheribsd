@@ -1539,8 +1539,8 @@ virtfs_strategy(struct vop_strategy_args *ap)
 	io_buffer = uma_zalloc(virtfs_io_buffer_zone, M_WAITOK | M_ZERO);
 
 	if (bp->b_iocmd == BIO_READ) {
-		io.iov_len = uiov->uio_resid = bp->b_bcount;
-		io.iov_base = bp->b_data;
+		uiov->uio_resid = bp->b_bcount;
+		IOVEC_INIT(&io, bp->b_data, bp->b_bcount);
 		uiov->uio_rw = UIO_READ;
 
 		switch (vp->v_type) {
@@ -1587,9 +1587,10 @@ virtfs_strategy(struct vop_strategy_args *ap)
 		}
 	} else {
 		if (bp->b_dirtyend > bp->b_dirtyoff) {
-			io.iov_len = uiov->uio_resid = bp->b_dirtyend - bp->b_dirtyoff;
+			uiov->uio_resid = bp->b_dirtyend - bp->b_dirtyoff;
 			uiov->uio_offset = ((off_t)bp->b_blkno) * PAGE_SIZE + bp->b_dirtyoff;
-			io.iov_base = (char *)bp->b_data + bp->b_dirtyoff;
+			IOVEC_INIT(&io, (char *)bp->b_data + bp->b_dirtyoff, uiov->uio_resid);
+
 			uiov->uio_rw = UIO_WRITE;
 
 			if (uiov->uio_offset < 0) {
