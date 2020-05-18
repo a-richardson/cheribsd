@@ -259,7 +259,7 @@ vt9p_attach(device_t dev)
 		goto out;
 	}
 
-	err = virtio_setup_intr(dev, INTR_TYPE_MISC|INTR_MPSAFE);
+	err = virtio_setup_intr(dev, INTR_TYPE_MISC);
 
 	if (err != 0) {
 		p9_debug(ERROR, "Cannot setup virtqueue interrupt\n");
