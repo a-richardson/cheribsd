@@ -71,3 +71,13 @@ device		miibus
 device		bpf
 device		md
 device		uart
+
+# VirtIO support
+device		virtio			# Generic VirtIO bus (required)
+device		virtio_pci		# VirtIO PCI device
+device		vtnet			# VirtIO Ethernet device
+device		virtio_blk		# VirtIO Block device
+device		virtio_mmio		# VirtIO MMIO bus
+# VirtFS support:
+device		virtio_9pfs
+device		virtio_9pnet
