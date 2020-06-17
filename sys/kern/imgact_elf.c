@@ -1499,12 +1499,17 @@ __elfN(freebsd_copyout_auxargs)(struct image_params *imgp, uintcap_t base)
 	 * XXX: AT_BASE is both writable and executable to permit textrel
 	 * fixups.
 	 */
-	if (imgp->interp_end == 0)
-		exec_base = prog_cap(imgp, CHERI_CAP_USER_DATA_PERMS |
-		    CHERI_CAP_USER_CODE_PERMS);
-	else
-		exec_base = interp_cap(imgp, args, CHERI_CAP_USER_DATA_PERMS |
-		    CHERI_CAP_USER_CODE_PERMS);
+	if (imgp->interp_end == 0) {
+		/*
+		 * In the statically linked case AT_BASE should be untagged
+		 * args->base (zero) rather than a massively out-of-bounds
+		 * capability with address zero that may or may not be tagged.
+		 */
+		exec_base = NULL;
+	} else {
+		exec_base = interp_cap(imgp, args,
+		    CHERI_CAP_USER_DATA_PERMS | CHERI_CAP_USER_CODE_PERMS);
+	}
 	AUXARGS_ENTRY_PTR(pos, AT_BASE, cheri_setaddress(exec_base,
 	    args->base));
 #else
