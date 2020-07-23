@@ -34,12 +34,15 @@
 #ifndef _SYS_LOCK_H_
 #define _SYS_LOCK_H_
 
+#include <sys/_null.h>
 #include <sys/queue.h>
 #include <sys/_lock.h>
 #include <sys/ktr_class.h>
 
 struct lock_list_entry;
 struct thread;
+
+__NULLABILITY_PRAGMA_PUSH
 
 /*
  * Lock classes.  Each lock has a class which describes characteristics
@@ -188,10 +191,19 @@ struct lock_delay_arg {
 };
 
 static inline void
-lock_delay_arg_init(struct lock_delay_arg *la, struct lock_delay_config *lc)
+lock_delay_arg_init(struct lock_delay_arg *_Nonnull la,
+    struct lock_delay_config *_Nonnull lc)
 {
 	la->config = lc;
 	la->delay = lc->base;
+	la->spin_cnt = 0;
+}
+
+static inline void
+lock_delay_arg_init_noadapt(struct lock_delay_arg *la)
+{
+	la->config = NULL;
+	la->delay = 0;
 	la->spin_cnt = 0;
 }
 
@@ -322,4 +334,5 @@ void	witness_startup(void *);
 #endif	/* WITNESS */
 
 #endif	/* _KERNEL */
+__NULLABILITY_PRAGMA_POP
 #endif	/* _SYS_LOCK_H_ */
