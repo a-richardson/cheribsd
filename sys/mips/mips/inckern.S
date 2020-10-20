@@ -26,6 +26,7 @@
 __FBSDID("$FreeBSD$")
 
 ENTRY(_start)
+	.cfi_startproc
 	PTR_LA	t0, kernel_end
 	move	sp, t0
 	add	sp, 0x2000
