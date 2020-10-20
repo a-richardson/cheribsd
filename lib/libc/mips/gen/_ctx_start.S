@@ -51,6 +51,7 @@ __FBSDID("$FreeBSD$");
  * stack frame setup by makecontext() for the callback function.
  */
 ENTRY(_ctx_start)
+	.cfi_startproc
 #ifdef __CHERI_PURE_CAPABILITY__
 	PIC_PROLOGUE(_ctx_start)
 	cjalr $c12, $c17
