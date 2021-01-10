@@ -50,7 +50,7 @@ vtnet_netmap_reg(struct netmap_adapter *na, int state)
 	    : VTNET_INIT_NETMAP_EXIT);
 	VTNET_CORE_UNLOCK(sc);
 
-	return 0;
+	return (0);
 }
 
 
